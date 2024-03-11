@@ -9,7 +9,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import axios from "axios";
 import styled from "styled-components";
@@ -43,6 +43,9 @@ import LinkIcon from "static/icon/icon-link.svg";
 import NFTTabs from "../../components/NFTTabs";
 import { NFTInfo } from "../../components/NFTInfo";
 import { NFTMore } from "../../components/NFTMore";
+import { getPrices } from "../../store/dexSlice";
+import { UnknownAction } from "@reduxjs/toolkit";
+import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
 
 const CryptoIcon = styled.img`
   width: 16px;
@@ -301,6 +304,19 @@ const TokenSkeleton: React.FC = () => (
 );
 
 export const Token: React.FC = () => {
+  const dispatch = useDispatch();
+  /* Dex */
+  const prices = useSelector((state: RootState) => state.dex.prices);
+  const dexStatus = useSelector((state: RootState) => state.dex.status);
+  useEffect(() => {
+    dispatch(getPrices() as unknown as UnknownAction);
+  }, [dispatch]);
+  const exchangeRate = useMemo(() => {
+    if (!prices || dexStatus !== "succeeded") return 0;
+    const voiPrice = prices.find((p) => p.contractId === CTCINFO_LP_WVOI_VOI);
+    if (!voiPrice) return 0;
+    return voiPrice.rate;
+  }, [prices, dexStatus]);
   /* Router */
   const { id, tid } = useParams();
   const navigate = useNavigate();
@@ -443,6 +459,7 @@ export const Token: React.FC = () => {
               collection={collection}
               collectionInfo={collectionInfo}
               loading={isLoading}
+              exchangeRate={exchangeRate}
             />
             <NFTTabs nft={nft} loading={isLoading} />
             <NFTMore

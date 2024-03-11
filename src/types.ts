@@ -69,6 +69,7 @@ export interface ListingI {
   tokenId: number;
   seller: string;
   price: number;
+  normalPrice?: number;
   currency: number;
   createRound: number;
   createTimestamp: number;

@@ -31,6 +31,8 @@ import {
 import { getSales } from "../../store/saleSlice";
 import Marquee from "react-fast-marquee";
 import CartNftCard from "../../components/CartNFTCard";
+import { getPrices } from "../../store/dexSlice";
+import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
 
 const CollectionName = styled.div`
   color: var(--White, #fff);
@@ -165,6 +167,18 @@ function shuffleArray<T>(array: T[]): T[] {
 export const Home: React.FC = () => {
   /* Dispatch */
   const dispatch = useDispatch();
+  /* Dex */
+  const prices = useSelector((state: RootState) => state.dex.prices);
+  const dexStatus = useSelector((state: RootState) => state.dex.status);
+  useEffect(() => {
+    dispatch(getPrices() as unknown as UnknownAction);
+  }, [dispatch]);
+  const exchangeRate = useMemo(() => {
+    if (!prices || dexStatus !== "succeeded") return 0;
+    const voiPrice = prices.find((p) => p.contractId === CTCINFO_LP_WVOI_VOI);
+    if (!voiPrice) return 0;
+    return voiPrice.rate;
+  }, [prices, dexStatus]);
   /* Tokens */
   const tokens = useSelector((state: any) => state.tokens.tokens);
   const tokenStatus = useSelector((state: any) => state.tokens.status);
@@ -293,31 +307,37 @@ export const Home: React.FC = () => {
     if (
       !sales ||
       !listings ||
+      !exchangeRate ||
       salesStatus !== "succeeded" ||
       collectionStatus !== "succeeded" ||
-      tokenStatus !== "succeeded"
+      tokenStatus !== "succeeded" ||
+      dexStatus !== "succeeded"
     )
       return new Map();
-    return getRankings(tokens, collections, sales, listings);
-  }, [sales, tokens, collections, listings]);
+    return getRankings(tokens, collections, sales, listings, exchangeRate);
+  }, [sales, tokens, collections, listings, exchangeRate]);
 
   const isLoading = useMemo(
     () =>
+      !exchangeRate ||
       !listings ||
       !listedNfts ||
       !listedCollections ||
       !rankings ||
       tokenStatus !== "succeeded" ||
       collectionStatus !== "succeeded" ||
-      salesStatus !== "succeeded",
+      salesStatus !== "succeeded" ||
+      dexStatus !== "succeeded",
     [
       listings,
       listedNfts,
       listedCollections,
       rankings,
+      exchangeRate,
       tokenStatus,
       collectionStatus,
       salesStatus,
+      dexStatus,
     ]
   );
 

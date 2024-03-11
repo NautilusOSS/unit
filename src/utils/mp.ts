@@ -141,16 +141,24 @@ export const getRankings = (
   tokens: Token[],
   collections: CollectionI[],
   sales: any,
-  listings: any
+  listings: any,
+  exchangeRate: number
 ) => {
   const scores = new Map();
   const saleCounts = new Map();
   for (const sale of sales) {
     if (scores.has(sale.collectionId)) {
-      scores.set(sale.collectionId, scores.get(sale.collectionId) + sale.price);
+      scores.set(
+        sale.collectionId,
+        scores.get(sale.collectionId) +
+          (sale.currency === 0 ? sale.price : sale.price * exchangeRate)
+      );
       saleCounts.set(sale.collectionId, saleCounts.get(sale.collectionId) + 1);
     } else {
-      scores.set(sale.collectionId, sale.price);
+      scores.set(
+        sale.collectionId,
+        sale.currency === 0 ? sale.price : sale.price * exchangeRate
+      );
       saleCounts.set(sale.collectionId, 1);
     }
   }
@@ -159,10 +167,16 @@ export const getRankings = (
     if (floors.has(listing.collectionId)) {
       floors.set(
         listing.collectionId,
-        Math.min(floors.get(listing.collectionId), listing.price)
+        Math.min(
+          floors.get(listing.collectionId),
+          listing.currency === 0 ? listing.price : listing.price * exchangeRate
+        )
       );
     } else {
-      floors.set(listing.collectionId, listing.price);
+      floors.set(
+        listing.collectionId,
+        listing.currency === 0 ? listing.price : listing.price * exchangeRate
+      );
     }
   }
   const rankings = Array.from(scores.entries()).map((kv: any) => {
@@ -195,6 +209,7 @@ export const getRankings = (
       owners: owners.size,
       items: collection?.totalSupply || 0,
       sales: saleCount,
+      exchangeRate,
     };
   });
   rankings.sort((a: RankingI, b: RankingI) => {

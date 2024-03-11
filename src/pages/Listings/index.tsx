@@ -29,6 +29,8 @@ import {
   TokenI,
 } from "../../types";
 import { getSales } from "../../store/saleSlice";
+import { getPrices } from "../../store/dexSlice";
+import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
 
 const SectionDescription = styled.div`
   flex: 1 0 0;
@@ -154,6 +156,18 @@ function shuffleArray<T>(array: T[]): T[] {
 export const Listings: React.FC = () => {
   /* Dispatch */
   const dispatch = useDispatch();
+  /* Dex */
+  const prices = useSelector((state: RootState) => state.dex.prices);
+  const dexStatus = useSelector((state: RootState) => state.dex.status);
+  useEffect(() => {
+    dispatch(getPrices() as unknown as UnknownAction);
+  }, [dispatch]);
+  const exchangeRate = useMemo(() => {
+    if (!prices || dexStatus !== "succeeded") return 0;
+    const voiPrice = prices.find((p) => p.contractId === CTCINFO_LP_WVOI_VOI);
+    if (!voiPrice) return 0;
+    return voiPrice.rate;
+  }, [prices, dexStatus]);
   /* Tokens */
   const tokens = useSelector((state: any) => state.tokens.tokens);
   const tokenStatus = useSelector((state: any) => state.tokens.status);
@@ -216,6 +230,17 @@ export const Listings: React.FC = () => {
     }
   }, []);
 
+  const normalListings = useMemo(() => {
+    if (!listings || !exchangeRate) return [];
+    return listings.map((listing: ListingI) => {
+      return {
+        ...listing,
+        normalPrice:
+          listing.currency === 0 ? listing.price : listing.price * exchangeRate,
+      };
+    });
+  }, [listings, exchangeRate]);
+
   const listedNfts = useMemo(() => {
     if (tokenStatus !== "succeeded") return [];
     const listedNfts: ListedToken[] =
@@ -235,7 +260,13 @@ export const Listings: React.FC = () => {
           );
           return {
             ...nft,
-            listing,
+            listing: {
+              ...listing,
+              normalPrice:
+                listing.currency === 0
+                  ? listing.price
+                  : listing.price * exchangeRate,
+            },
           };
         }) || [];
     listedNfts.sort(
@@ -278,7 +309,7 @@ export const Listings: React.FC = () => {
       tokenStatus !== "succeeded"
     )
       return new Map();
-    return getRankings(tokens, collections, sales, listings);
+    return getRankings(tokens, collections, sales, listings, exchangeRate);
   }, [sales, tokens, collections, listings]);
 
   const isLoading = useMemo(
@@ -314,7 +345,7 @@ export const Listings: React.FC = () => {
             </SectionDescription>
           </SectionHeading>
           <NFTListingTable
-            listings={listings}
+            listings={normalListings}
             tokens={tokens}
             collections={collections}
           />

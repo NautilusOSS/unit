@@ -10,7 +10,7 @@ import Paper from "@mui/material/Paper";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import styled from "styled-components";
-import { Box, Stack } from "@mui/material";
+import { Box, Stack, Tooltip } from "@mui/material";
 import {
   CollectionI,
   ListingI,
@@ -25,6 +25,8 @@ import { Link } from "react-router-dom";
 import SelectorIcon from "../../static/icon/icon-selector.svg";
 import UpIcon from "../../static/icon/icon-up.svg";
 import DownIcon from "../../static/icon/icon-down.svg";
+import InfoIcon from "@mui/icons-material/Info";
+import VoiIcon from "../../static/crypto-icons/voi/0.svg";
 
 const StyledImage = styled(Box)`
   width: 53px;
@@ -129,9 +131,9 @@ const NFTListingTable: React.FC<Props> = ({
     } else if (sortBy === "seller-dsc") {
       return b.seller.localeCompare(a.seller);
     } else if (sortBy === "price-asc") {
-      return a.price - b.price;
+      return (a?.normalPrice || a.price) - (b?.normalPrice || b.price);
     } else if (sortBy === "price-dsc") {
-      return b.price - a.price;
+      return (b?.normalPrice || b.price) - (a?.normalPrice || a.price);
     } else if (sortBy === "createTimestamp-asc") {
       return a.createTimestamp - b.createTimestamp;
     } else {
@@ -338,6 +340,12 @@ const NFTListingTable: React.FC<Props> = ({
                   <StyledTableCell>
                     {(listing.price / 1e6).toLocaleString()}{" "}
                     {listing.currency === 0 ? "VOI" : "VIA"}
+                    <br />
+                    {listing.price !== listing.normalPrice
+                      ? ` (~${Math.round(
+                          (listing?.normalPrice || 0) / 1e6
+                        ).toLocaleString()} VOI)`
+                      : null}
                   </StyledTableCell>
                 ) : null}
               </StyledTableRow>

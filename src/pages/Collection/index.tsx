@@ -23,6 +23,8 @@ import { getCollections } from "../../store/collectionSlice";
 import NFTListingTable from "../../components/NFTListingTable";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import GridViewIcon from "@mui/icons-material/GridView";
+import { getPrices } from "../../store/dexSlice";
+import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
 
 const StatContainer = styled(Stack)`
   display: flex;
@@ -89,6 +91,18 @@ const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
 export const Collection: React.FC = () => {
   const dispatch = useDispatch();
+  /* Dex */
+  const prices = useSelector((state: RootState) => state.dex.prices);
+  const dexStatus = useSelector((state: RootState) => state.dex.status);
+  useEffect(() => {
+    dispatch(getPrices() as unknown as UnknownAction);
+  }, [dispatch]);
+  const exchangeRate = useMemo(() => {
+    if (!prices || dexStatus !== "succeeded") return 0;
+    const voiPrice = prices.find((p) => p.contractId === CTCINFO_LP_WVOI_VOI);
+    if (!voiPrice) return 0;
+    return voiPrice.rate;
+  }, [prices, dexStatus]);
   /* Sales */
   const sales = useSelector((state: any) => state.sales.sales);
   const salesStatus = useSelector((state: any) => state.sales.status);
@@ -133,6 +147,17 @@ export const Collection: React.FC = () => {
       console.log(e);
     }
   }, []);
+
+  const normalListings = useMemo(() => {
+    if (!listings || !exchangeRate) return [];
+    return listings.map((listing: ListingI) => {
+      return {
+        ...listing,
+        normalPrice:
+          listing.currency === 0 ? listing.price : listing.price * exchangeRate,
+      };
+    });
+  }, [listings, exchangeRate]);
 
   /* NFT Navigator NFTs */
   const [nfts, setNfts] = React.useState<any>(null);
@@ -237,15 +262,23 @@ export const Collection: React.FC = () => {
   }, [sales]);
 
   const floor = useMemo(() => {
+    if (!listedNfts || !exchangeRate) return { listing: { price: 0 } };
     return listedNfts.length > 0
       ? listedNfts.reduce(
           (acc: any, nft: any) => {
-            return acc.listing.price > nft.listing.price ? nft : acc;
+            return (acc.listing.currency === 0
+              ? acc.listing.price
+              : acc.listing.price * exchangeRate) >
+              (acc.listing.currency === 0
+                ? nft.listing.price
+                : acc.listing.price * exchangeRate)
+              ? nft
+              : acc;
           },
           { listing: { price: Number.MAX_SAFE_INTEGER } }
         )
       : { listing: { price: 0 } };
-  }, [listedNfts]);
+  }, [listedNfts, exchangeRate]);
 
   const ceiling = useMemo(() => {
     return listedNfts.reduce(
@@ -259,7 +292,9 @@ export const Collection: React.FC = () => {
   const volume = useMemo(() => {
     return (
       collectionSales?.reduce((acc: any, sale: ListingI) => {
-        return acc + sale.price;
+        return (
+          acc + (sale.currency === 0 ? sale.price : sale.price * exchangeRate)
+        );
       }, 0) || 0
     );
   }, [collectionSales]);
@@ -400,7 +435,7 @@ export const Collection: React.FC = () => {
                 </Stack>
                 {viewMode === "list" ? (
                   <NFTListingTable
-                    listings={listings}
+                    listings={normalListings}
                     tokens={nfts}
                     collections={collections}
                   />

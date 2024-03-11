@@ -253,6 +253,7 @@ interface NFTInfoProps {
   collection: any;
   collectionInfo: any;
   loading: boolean;
+  exchangeRate: number;
 }
 
 export const NFTInfo: React.FC<NFTInfoProps> = ({
@@ -260,6 +261,7 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
   collection,
   collectionInfo,
   loading,
+  exchangeRate,
 }) => {
   /* Wallet */
   const { activeAccount, signTransactions, sendTransactions } = useWallet();
@@ -875,7 +877,18 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
                       ? "Not Available"
                       : `${(nft.listing.price / 1e6).toLocaleString()} ${
                           `${nft.listing.currency}` === "0" ? "VOI" : "VIA"
-                        }`}
+                        } `}
+                    {!nft.listing ||
+                    nft.approved ===
+                      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ" ? (
+                      "Not Available"
+                    ) : (
+                      <span>
+                        {`(~${Math.round(
+                          (nft.listing.price * exchangeRate) / 1e6
+                        ).toLocaleString()} VOI)`}
+                      </span>
+                    )}
                   </div>
                 </Stack>
               </PriceDisplay>
