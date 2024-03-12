@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Modal,
   Button,
@@ -9,7 +9,10 @@ import {
   Box,
   Grid,
 } from "@mui/material";
-import PaymentCurrencyRadio from "../../PaymentCurrencyRadio";
+import PaymentCurrencyRadio, {
+  defaultCurrencies,
+} from "../../PaymentCurrencyRadio";
+import { collections } from "../../../contants/games";
 
 interface ListSaleModalProps {
   open: boolean;
@@ -39,7 +42,20 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
 
   /* Payment currency */
 
-  const [currency, setCurrency] = useState<string>("VOI");
+  const isGameCollection = useMemo(
+    () =>
+      collections
+        .map((collection) => collection.applicationID)
+        .includes(nft.contractId),
+    [nft.contractId]
+  );
+
+  const [currency, setCurrency] = useState<string>(
+    isGameCollection ? "6779767" : "0"
+  );
+  const currencies = isGameCollection
+    ? defaultCurrencies.filter((el: any) => el.value !== "0")
+    : defaultCurrencies;
 
   const handleCurrencyChange = (newCurrency: string) => {
     setCurrency(newCurrency);
@@ -52,10 +68,16 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
     handleClose();
   };
 
+  const onClose = () => {
+    setPrice("");
+    setCurrency("");
+    handleClose();
+  };
+
   return (
     <Modal
       open={open}
-      onClose={handleClose}
+      onClose={onClose}
       aria-labelledby="address-modal-title"
       aria-describedby="address-modal-description"
     >
@@ -104,6 +126,7 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
                     <PaymentCurrencyRadio
                       selectedValue={currency}
                       onCurrencyChange={handleCurrencyChange}
+                      currencies={currencies}
                     />
                   </Box>
                 </Box>
@@ -120,7 +143,7 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
                     label="Proceeds"
                     variant="outlined"
                     value={(
-                      ((100 - ((nft?.royalties?.royaltyPercent || 100) + 5)) *
+                      ((100 - ((nft?.royalties?.royaltyPercent || 0) + 2.5)) *
                         Number(price)) /
                       100
                     ).toLocaleString()}

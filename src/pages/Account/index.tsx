@@ -17,7 +17,7 @@ import {
 import NFTCard from "../../components/NFTCard";
 import Section from "../../components/Section";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import axios from "axios";
 import { stringToColorCode } from "../../utils/string";
@@ -37,12 +37,15 @@ import { ListingBoxCost, ctcInfoMp206 } from "../../contants/mp";
 //import { MarketplaceContext } from "../../store/MarketplaceContext";
 import { decodeRoyalties } from "../../utils/hf";
 import NFTListingTable from "../../components/NFTListingTable";
-import { Token } from "../../types";
+import { ListingI, Token } from "../../types";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import GridViewIcon from "@mui/icons-material/GridView";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import { getPrices } from "../../store/dexSlice";
+import { UnknownAction } from "@reduxjs/toolkit";
+import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
 
 const { algodClient, indexerClient } = getAlgorandClients();
 
@@ -80,6 +83,20 @@ const AccountValue = styled.div`
 `;
 
 export const Account: React.FC = () => {
+  const dispatch = useDispatch();
+  /* Dex */
+  const prices = useSelector((state: RootState) => state.dex.prices);
+  const dexStatus = useSelector((state: RootState) => state.dex.status);
+  useEffect(() => {
+    dispatch(getPrices() as unknown as UnknownAction);
+  }, [dispatch]);
+  const exchangeRate = useMemo(() => {
+    if (!prices || dexStatus !== "succeeded") return 0;
+    const voiPrice = prices.find((p) => p.contractId === CTCINFO_LP_WVOI_VOI);
+    if (!voiPrice) return 0;
+    return voiPrice.rate;
+  }, [prices, dexStatus]);
+
   /* Router */
 
   const { id } = useParams();
@@ -140,6 +157,17 @@ export const Account: React.FC = () => {
     }
   }, []);
 
+  const normalListings = useMemo(() => {
+    if (!listings || !exchangeRate) return [];
+    return listings.map((listing: ListingI) => {
+      return {
+        ...listing,
+        normalPrice:
+          listing.currency === 0 ? listing.price : listing.price * exchangeRate,
+      };
+    });
+  }, [listings, exchangeRate]);
+
   /* NFT Navigator Collections */
   const [collections, setCollections] = React.useState<any>(null);
   React.useEffect(() => {
@@ -196,6 +224,7 @@ export const Account: React.FC = () => {
             royalties,
           });
         }
+        nfts.sort((a, b) => (a.contractId === 29105406 ? -1 : 1));
         setNfts(nfts);
       })();
     } catch (e) {
@@ -1230,6 +1259,7 @@ export const Account: React.FC = () => {
             {viewMode === "list" && nfts && listings && collections ? (
               <Box sx={{ mt: 4 }}>
                 <NFTListingTable
+                  enableSelect={idArr.includes(activeAccount?.address || "")}
                   onSelect={(x: string) => {
                     if (x === selected2) {
                       setSelected2("");
@@ -1239,7 +1269,7 @@ export const Account: React.FC = () => {
                   }}
                   selected={selected2}
                   tokens={nfts}
-                  listings={listings}
+                  listings={normalListings}
                   collections={collections}
                   columns={["image", "token", "price"]}
                 />

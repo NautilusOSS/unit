@@ -84,6 +84,8 @@ interface Props {
   columns?: string[];
   selected?: string;
   onSelect?: (index: string) => void;
+  exchangeRate?: number;
+  enableSelect?: boolean;
 }
 
 const NFTListingTable: React.FC<Props> = ({
@@ -93,6 +95,7 @@ const NFTListingTable: React.FC<Props> = ({
   limit = 0,
   columns = ["createTimestamp", "token", "image", "seller", "price"],
   selected,
+  enableSelect = false,
   onSelect = (x) => {},
 }) => {
   type SortOption =
@@ -293,10 +296,12 @@ const NFTListingTable: React.FC<Props> = ({
             if (!token || !collection) return null;
             return (
               <StyledTableRow
-                onClick={() =>
-                  onSelect(`${listing.mpContractId}-${listing.mpListingId}`)
-                }
-                selected={selected === pk}
+                onClick={() => {
+                  if (enableSelect) {
+                    onSelect(`${listing.mpContractId}-${listing.mpListingId}`);
+                  }
+                }}
+                selected={enableSelect && selected === pk}
                 hover={true}
                 key={index}
               >
@@ -341,11 +346,18 @@ const NFTListingTable: React.FC<Props> = ({
                     {(listing.price / 1e6).toLocaleString()}{" "}
                     {listing.currency === 0 ? "VOI" : "VIA"}
                     <br />
-                    {listing.price !== listing.normalPrice
-                      ? ` (~${Math.round(
-                          (listing?.normalPrice || 0) / 1e6
-                        ).toLocaleString()} VOI)`
-                      : null}
+                    <span
+                      style={{
+                        color: "#717579",
+                        fontSize: "12px",
+                      }}
+                    >
+                      {listing.price !== listing.normalPrice
+                        ? ` (~${Math.round(
+                            (listing?.normalPrice || 0) / 1e6
+                          ).toLocaleString()} VOI)`
+                        : null}
+                    </span>
                   </StyledTableCell>
                 ) : null}
               </StyledTableRow>

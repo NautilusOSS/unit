@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import Layout from "../../layouts/Default";
 import {
   Avatar,
+  Button,
   Container,
   Grid,
   Skeleton,
@@ -30,9 +31,9 @@ import { decodePrice, decodeTokenId } from "../../utils/mp";
 import NftCard from "../../components/NFTCard";
 import BuySaleModal from "../../components/modals/BuySaleModal";
 
-import { CONTRACT, arc72, arc200, mp } from "ulujs";
+import { CONTRACT, arc72, arc200, mp, abi } from "ulujs";
 import { getAlgorandClients } from "../../wallets";
-import { ctcInfoMp206 } from "../../contants/mp";
+import { ListingBoxCost, ctcInfoMp206 } from "../../contants/mp";
 
 import VoiIcon from "static/crypto-icons/voi/0.svg";
 import ViaIcon from "static/crypto-icons/voi/6779767.svg";
@@ -41,6 +42,7 @@ import XIcon from "static/icon/icon-x.svg";
 import DiscordIcon from "static/icon/icon-discord.svg";
 import LinkIcon from "static/icon/icon-link.svg";
 import NFTTabs from "../../components/NFTTabs";
+import ListSaleModal from "../modals/ListSaleModal";
 
 const CryptoIcon = styled.img`
   width: 16px;
@@ -268,6 +270,8 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
   /* Modal */
   const [openBuyModal, setOpenBuyModal] = React.useState(false);
   const [isBuying, setIsBuying] = React.useState(false);
+  const [openListSale, setOpenListSale] = React.useState(false);
+  const [isListing, setIsListing] = React.useState(false);
   /* Router */
   const { id, tid } = useParams();
   const navigate = useNavigate();
@@ -275,6 +279,512 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
   );
+
+  const handleDeleteListing = async (listingId: number) => {
+    try {
+      const ci = new CONTRACT(
+        ctcInfoMp206,
+        algodClient,
+        indexerClient,
+        {
+          name: "",
+          desc: "",
+          methods: [
+            {
+              name: "a_sale_deleteListing",
+              args: [
+                {
+                  type: "uint256",
+                  name: "listingId",
+                },
+              ],
+              returns: {
+                type: "void",
+              },
+            },
+          ],
+          events: [],
+        },
+        {
+          addr: activeAccount?.address || "",
+          sk: new Uint8Array(0),
+        }
+      );
+      ci.setFee(3000);
+      const a_sale_deleteListingR = await ci.a_sale_deleteListing(listingId);
+      if (!a_sale_deleteListingR.success) {
+        throw new Error("a_sale_deleteListing failed in simulate");
+      }
+      const txns = a_sale_deleteListingR.txns;
+      await signTransactions(
+        txns.map((txn: string) => new Uint8Array(Buffer.from(txn, "base64")))
+      ).then(sendTransactions);
+      toast.success("Unlist successful!");
+    } catch (e: any) {
+      console.log(e);
+      toast.error(e.message);
+    } finally {
+    }
+  };
+
+  const handleListSale = async (price: string, currency: string) => {
+    const listedNft = nft;
+    const priceN = Number(price);
+    const currencyN = Number(currency);
+    try {
+      if (isNaN(priceN)) {
+        throw new Error("Invalid price");
+      }
+      if (isNaN(currencyN)) {
+        throw new Error("Invalid currency");
+      }
+      if (!activeAccount) {
+        throw new Error("No active account");
+      }
+      setIsListing(true);
+
+      const contractId = nft?.contractId || 0;
+      const tokenId = nft?.tokenId || 0;
+
+      if (!contractId || !tokenId) {
+        throw new Error("Invalid contractId or tokenId");
+      }
+
+      const ciArc72 = new arc72(contractId, algodClient, indexerClient, {
+        acc: { addr: activeAccount?.address || "", sk: new Uint8Array(0) },
+      });
+      const arc72_ownerOfR = await ciArc72.arc72_ownerOf(tokenId);
+      if (!arc72_ownerOfR.success) {
+        throw new Error("arc72_ownerOf failed in simulate");
+      }
+      const arc72_ownerOf = arc72_ownerOfR.returnValue;
+
+      const builder = {
+        arc200: new CONTRACT(
+          currencyN,
+          algodClient,
+          indexerClient,
+          abi.arc200,
+          {
+            addr: activeAccount?.address || "",
+            sk: new Uint8Array(0),
+          },
+          true,
+          false,
+          true
+        ),
+        arc72: new CONTRACT(
+          contractId,
+          algodClient,
+          indexerClient,
+          abi.arc72,
+          {
+            addr: arc72_ownerOf,
+            sk: new Uint8Array(0),
+          },
+          true,
+          false,
+          true
+        ),
+        mp: new CONTRACT(
+          ctcInfoMp206,
+          algodClient,
+          indexerClient,
+          {
+            name: "mp",
+            desc: "mp",
+            methods: [
+              // a_sale_deleteListing(ListingId)
+              {
+                name: "a_sale_deleteListing",
+                args: [
+                  {
+                    type: "uint256",
+                    name: "listingId",
+                  },
+                ],
+                returns: {
+                  type: "void",
+                },
+              },
+              // a_sale_listNet(CollectionId, TokenId, ListPrice, EndTime, RoyaltyPoints, CreatePoints1, CreatorPoint2, CreatorPoint3, CreatorAddr1, CreatorAddr2, CreatorAddr3)ListId
+              {
+                name: "a_sale_listNet",
+                args: [
+                  {
+                    name: "collectionId",
+                    type: "uint64",
+                  },
+                  {
+                    name: "tokenId",
+                    type: "uint256",
+                  },
+                  {
+                    name: "listPrice",
+                    type: "uint64",
+                  },
+                  {
+                    name: "endTime",
+                    type: "uint64",
+                  },
+                  {
+                    name: "royalty",
+                    type: "uint64",
+                  },
+                  {
+                    name: "createPoints1",
+                    type: "uint64",
+                  },
+                  {
+                    name: "creatorPoint2",
+                    type: "uint64",
+                  },
+                  {
+                    name: "creatorPoint3",
+                    type: "uint64",
+                  },
+                  {
+                    name: "creatorAddr1",
+                    type: "address",
+                  },
+                  {
+                    name: "creatorAddr2",
+                    type: "address",
+                  },
+                  {
+                    name: "creatorAddr3",
+                    type: "address",
+                  },
+                ],
+                returns: {
+                  type: "uint256",
+                },
+              },
+              {
+                name: "a_sale_listSC",
+                args: [
+                  {
+                    name: "collectionId",
+                    type: "uint64",
+                  },
+                  {
+                    name: "tokenId",
+                    type: "uint256",
+                  },
+                  {
+                    name: "paymentTokenId",
+                    type: "uint64",
+                  },
+                  {
+                    name: "listPrice",
+                    type: "uint256",
+                  },
+                  {
+                    name: "endTime",
+                    type: "uint64",
+                  },
+                  {
+                    name: "royalty",
+                    type: "uint64",
+                  },
+                  {
+                    name: "createPoints1",
+                    type: "uint64",
+                  },
+                  {
+                    name: "creatorPoint2",
+                    type: "uint64",
+                  },
+                  {
+                    name: "creatorPoint3",
+                    type: "uint64",
+                  },
+                  {
+                    name: "creatorAddr1",
+                    type: "address",
+                  },
+                  {
+                    name: "creatorAddr2",
+                    type: "address",
+                  },
+                  {
+                    name: "creatorAddr3",
+                    type: "address",
+                  },
+                ],
+                returns: {
+                  type: "uint256",
+                },
+              },
+            ],
+            events: [],
+          },
+          {
+            addr: arc72_ownerOf,
+            sk: new Uint8Array(0),
+          },
+          true,
+          false,
+          true
+        ),
+      };
+      const ciArc200 = new arc200(currencyN, algodClient, indexerClient);
+      const ci = new CONTRACT(
+        ctcInfoMp206,
+        algodClient,
+        indexerClient,
+        {
+          name: "",
+          desc: "",
+          methods: [
+            {
+              name: "custom",
+              args: [],
+              returns: {
+                type: "void",
+              },
+            },
+          ],
+          events: [],
+        },
+        {
+          addr: arc72_ownerOf,
+          sk: new Uint8Array(0),
+        }
+      );
+      // VOI Sale
+      if (currencyN === 0) {
+        const customPaymentAmount = [ListingBoxCost];
+        const buildP = [
+          builder.mp.a_sale_listNet(
+            contractId, // CollectionId
+            tokenId, // TokenId
+            priceN * 1e6, // ListPrice
+            Number.MAX_SAFE_INTEGER, // EndTime
+            Math.min(nft?.royalties?.royaltyPoints || 0, 9500), // RoyaltyPoints
+            nft?.royalties?.creator1Points || 0, // CreatePoints1
+            nft?.royalties?.creator2Points || 0, // CreatePoints1
+            nft?.royalties?.creator3Points || 0, // CreatePoints1
+            nft?.royalties?.creator1Address ||
+              "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ", // CreatePoints1
+            nft?.royalties?.creator2Address ||
+              "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ", // CreatePoints1
+            nft?.royalties?.creator3Address ||
+              "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ" // CreatePoints1
+          ),
+          builder.arc72.arc72_approve(
+            algosdk.getApplicationAddress(ctcInfoMp206), // Address
+            tokenId // TokenId
+          ),
+        ];
+        if (listedNft.listing) {
+          buildP.push(
+            builder.mp.a_sale_deleteListing(listedNft.listing.mpListingId)
+          );
+        }
+        const customTxns = (await Promise.all(buildP)).map(({ obj }) => obj);
+        ci.setAccounts([
+          "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ", // mp206 D
+        ]);
+        ci.setFee(2000);
+        ci.setPaymentAmount(
+          customPaymentAmount.reduce((acc, val) => acc + val, 0)
+        );
+        ci.setExtraTxns(customTxns);
+        if (contractId === 29088600) {
+          ci.setOptins([29103397]);
+        }
+        const customR = await ci.custom();
+        if (!customR.success) {
+          throw new Error("failed in simulate");
+        }
+        await signTransactions(
+          customR.txns.map(
+            (txn: string) => new Uint8Array(Buffer.from(txn, "base64"))
+          )
+        ).then(sendTransactions);
+      }
+      // VIA Sale
+      else {
+        // ------------------------------------------d
+        // Setup recipient accounts
+        // ------------------------------------------d
+        do {
+          const ciMp = new CONTRACT(
+            ctcInfoMp206,
+            algodClient,
+            indexerClient,
+            {
+              name: "",
+              desc: "",
+              methods: [
+                {
+                  name: "manager",
+                  args: [],
+                  returns: {
+                    type: "address",
+                  },
+                },
+              ],
+              events: [],
+            },
+            {
+              addr: activeAccount?.address || "",
+              sk: new Uint8Array(0),
+            }
+          );
+          const ci = new CONTRACT(
+            currencyN,
+            algodClient,
+            indexerClient,
+            {
+              name: "",
+              desc: "",
+              methods: [
+                {
+                  name: "custom",
+                  args: [],
+                  returns: {
+                    type: "void",
+                  },
+                },
+              ],
+              events: [],
+            },
+            {
+              addr: arc72_ownerOf,
+              sk: new Uint8Array(0),
+            }
+          );
+          const managerR = await ciMp.manager();
+          if (!managerR.success) {
+            throw new Error("manager failed in simulate");
+          }
+          const manager = managerR.returnValue;
+          const candidates = [
+            manager,
+            activeAccount?.address || "",
+            nft?.royalties?.creator1Address,
+            nft?.royalties?.creator2Address,
+            nft?.royalties?.creator3Address,
+          ];
+          const addrs = [];
+          for (const addr of candidates) {
+            const hasBalanceR = await ciArc200.hasBalance(addr);
+            console.log({ addr, hasBalanceR });
+
+            if (!hasBalanceR.success) {
+              throw new Error("hasBalance failed in simulate");
+            }
+            const hasBalance = hasBalanceR.returnValue;
+            if (hasBalance === 0) {
+              addrs.push(addr);
+            }
+          }
+          const uniqAddrs = Array.from(new Set(addrs));
+          if (uniqAddrs.length === 0) {
+            break;
+          }
+          for (let i = 0; i < uniqAddrs.length; i++) {
+            const addr = uniqAddrs[i];
+            const buildP = [addr].map((addr) =>
+              builder.arc200.arc200_transfer(addr, 0)
+            );
+            const customTxns = (await Promise.all(buildP)).map(
+              ({ obj }) => obj
+            );
+            ci.setFee(1000);
+            ci.setPaymentAmount(28500);
+            ci.setExtraTxns(customTxns);
+            const customR = await ci.custom();
+            if (!customR.success) {
+              throw new Error("failed in simulate");
+            }
+            await toast.promise(
+              signTransactions(
+                customR.txns.map(
+                  (txn: string) => new Uint8Array(Buffer.from(txn, "base64"))
+                )
+              ).then(sendTransactions),
+              {
+                pending: `Transaction signature pending setup recipient account (${
+                  i + 1
+                }/${uniqAddrs.length})`,
+                success: "Recipient account setup successful",
+                error: "Recipient account setup failed",
+              }
+            );
+          }
+        } while (0);
+        // ------------------------------------------d
+
+        const customPaymentAmount = [ListingBoxCost];
+        const buildP = [
+          builder.mp.a_sale_listSC(
+            contractId,
+            tokenId,
+            currencyN,
+            priceN * 1e6,
+            Number.MAX_SAFE_INTEGER,
+            Math.min(nft?.royalties?.royaltyPoints || 0, 9500), // RoyaltyPoints
+            nft?.royalties?.creator1Points || 0, // CreatePoints1
+            nft?.royalties?.creator2Points || 0, // CreatePoints1
+            nft?.royalties?.creator3Points || 0, // CreatePoints1
+            nft?.royalties?.creator1Address ||
+              "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ", // CreatePoints1
+            nft?.royalties?.creator2Address ||
+              "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ", // CreatePoints1
+            nft?.royalties?.creator3Address ||
+              "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ" // CreatePoints1
+          ),
+          builder.arc72.arc72_approve(
+            algosdk.getApplicationAddress(ctcInfoMp206),
+            tokenId
+          ),
+        ];
+        if (listedNft.listing) {
+          buildP.push(
+            builder.mp.a_sale_deleteListing(listedNft.listing.mpListingId)
+          );
+        }
+        const customTxns = (await Promise.all(buildP)).map(({ obj }) => obj);
+        ci.setAccounts([
+          "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ",
+        ]);
+        ci.setFee(2000);
+        ci.setExtraTxns(customTxns);
+        if (contractId === 29088600) {
+          ci.setOptins([29103397]);
+        }
+        ci.setPaymentAmount(
+          customPaymentAmount.reduce((acc, val) => acc + val, 0)
+        );
+        const customR = await ci.custom();
+        if (!customR.success) {
+          throw new Error("failed in simulate");
+        }
+        await toast.promise(
+          signTransactions(
+            customR.txns.map(
+              (txn: string) => new Uint8Array(Buffer.from(txn, "base64"))
+            )
+          ).then(sendTransactions),
+          {
+            pending: `Transaction signature pending... ${((str) =>
+              str[0].toUpperCase() + str.slice(1))(
+              activeAccount.providerId
+            )} will prompt you to sign the transaction.`,
+            success: "List successful!",
+            error: "List failed",
+          }
+        );
+      }
+    } catch (e: any) {
+      console.log(e);
+      toast.error(e.message);
+    } finally {
+    }
+  };
 
   // handleBuy
   const handleBuy = async () => {
@@ -569,7 +1079,7 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
           const customTxn = (
             await Promise.all([
               builder.arc200.arc200_approve(
-                algosdk.getApplicationAddress(ctcInfoMp206),
+                algosdk.getApplicationAddress(nft.listing.mpContractId),
                 nft.listing.price
               ),
               builder.mp.a_sale_buySC(nft.listing.mpListingId),
@@ -880,13 +1390,20 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
                         } `}
                     {!nft.listing ||
                     nft.approved ===
-                      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ" ? (
-                      "Not Available"
-                    ) : (
-                      <span>
-                        {`(~${Math.round(
-                          (nft.listing.price * exchangeRate) / 1e6
-                        ).toLocaleString()} VOI)`}
+                      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ" ? null : (
+                      <span
+                        style={{
+                          fontSize: "16px",
+                          color: "#68727d",
+                        }}
+                      >
+                        {`${nft.listing.currency}` === "0"
+                          ? `(~${Math.round(
+                              nft.listing.price / exchangeRate / 1e6
+                            ).toLocaleString()} VIA)`
+                          : `(~${Math.round(
+                              (nft.listing.price * exchangeRate) / 1e6
+                            ).toLocaleString()} VOI)`}
                       </span>
                     )}
                   </div>
@@ -899,12 +1416,40 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ" ? (
               <>
                 <Stack direction="row" gap={2} sx={{ alignItems: "center" }}>
-                  {nft?.listing ? (
-                    <BuyButton
-                      src={ButtonBuy}
-                      alt="Buy Button"
-                      onClick={handleBuyButtonClick}
-                    />
+                  {nft?.listing || "" ? (
+                    nft.owner !== activeAccount?.address ? (
+                      <BuyButton
+                        src={ButtonBuy}
+                        alt="Buy Button"
+                        onClick={handleBuyButtonClick}
+                      />
+                    ) : (
+                      <>
+                        <Button
+                          variant="text"
+                          onClick={() => {
+                            setOpenListSale(true);
+                          }}
+                        >
+                          Update
+                        </Button>
+                        <Button
+                          variant="text"
+                          onClick={() => {
+                            handleDeleteListing(nft.listing.mpListingId);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    )
+                  ) : nft.owner === activeAccount?.address ? (
+                    <Button
+                      variant="text"
+                      onClick={() => setOpenListSale(true)}
+                    >
+                      List for Sale
+                    </Button>
                   ) : null}
                   {false && (
                     <OfferButton src={ButtonOffer} alt="Offer Button" />
@@ -950,6 +1495,14 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
           </Stack>
         </Grid>
       </Grid>
+      <ListSaleModal
+        title="List NFT for Sale"
+        loading={isListing}
+        open={openListSale}
+        handleClose={() => setOpenListSale(false)}
+        onSave={handleListSale}
+        nft={nft}
+      />
       {nft.listing ? (
         <BuySaleModal
           image={nft?.metadata?.image}

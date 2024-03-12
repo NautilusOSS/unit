@@ -269,9 +269,9 @@ export const Collection: React.FC = () => {
             return (acc.listing.currency === 0
               ? acc.listing.price
               : acc.listing.price * exchangeRate) >
-              (acc.listing.currency === 0
+              (nft.listing.currency === 0
                 ? nft.listing.price
-                : acc.listing.price * exchangeRate)
+                : nft.listing.price * exchangeRate)
               ? nft
               : acc;
           },
@@ -374,8 +374,11 @@ export const Collection: React.FC = () => {
 
                     {
                       name: "Floor Price",
-                      displayValue:
-                        formatter.format(floor.listing.price / 1e6) + " VOI",
+                      displayValue: `${formatter.format(
+                        floor.listing.currency === 0
+                          ? floor.listing.price / 1e6
+                          : (floor.listing.price * exchangeRate) / 1e6
+                      )} VOI`,
                       value: floor.listing.price,
                     },
                     {
@@ -391,8 +394,11 @@ export const Collection: React.FC = () => {
                     },
                     {
                       name: "Ceiling Price",
-                      displayValue:
-                        formatter.format(ceiling.listing.price / 1e6) + " VOI",
+                      displayValue: `${formatter.format(
+                        ceiling.listing.currency === 0
+                          ? ceiling.listing.price / 1e6
+                          : (ceiling.listing.price * exchangeRate) / 1e6
+                      )} VOI`,
                       value: ceiling.listing.price,
                     },
                   ].map((el, i) =>

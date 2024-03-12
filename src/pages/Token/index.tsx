@@ -46,6 +46,7 @@ import { NFTMore } from "../../components/NFTMore";
 import { getPrices } from "../../store/dexSlice";
 import { UnknownAction } from "@reduxjs/toolkit";
 import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
+import { decodeRoyalties } from "../../utils/hf";
 
 const CryptoIcon = styled.img`
   width: 16px;
@@ -304,6 +305,7 @@ const TokenSkeleton: React.FC = () => (
 );
 
 export const Token: React.FC = () => {
+  const { activeAccount } = useWallet();
   const dispatch = useDispatch();
   /* Dex */
   const prices = useSelector((state: RootState) => state.dex.prices);
@@ -398,18 +400,61 @@ export const Token: React.FC = () => {
   const [nft, setNft] = React.useState<any>(null);
   useEffect(() => {
     if (!collection || !tid || !listings) return;
-    const nft = collection.find((el: any) => el.tokenId === Number(tid));
-    const listing = [...listings]
-      .filter(
-        (l: any) =>
-          `${l.collectionId}` === `${id}` && `${l.tokenId}` === `${tid}`
-      )
-      .sort((a: any, b: any) => b.createTimestamp - a.createTimestamp)
-      .pop();
-    setNft({
-      ...nft,
-      listing,
-    });
+    (async () => {
+      const nft = collection.find((el: any) => el.tokenId === Number(tid));
+      const listing = [...listings]
+        .filter(
+          (l: any) =>
+            `${l.collectionId}` === `${id}` &&
+            `${l.tokenId}` === `${tid}` &&
+            `${l.seller}` === `${nft.owner}`
+        )
+        .sort((a: any, b: any) => b.createTimestamp - a.createTimestamp)
+        .pop();
+      // check listing
+      let validListing = false;
+      if (listing) {
+        const { algodClient, indexerClient } = getAlgorandClients();
+        const ci = new CONTRACT(
+          listing.mpContractId,
+          algodClient,
+          indexerClient,
+          {
+            name: "",
+            desc: "",
+            methods: [
+              {
+                name: "v_sale_listingByIndex",
+                args: [
+                  {
+                    type: "uint256",
+                  },
+                ],
+                readonly: true,
+                returns: {
+                  type: "(uint64,uint256,address,(byte,byte[40]),uint64,uint64,uint64,uint64,uint64,uint64,address,address,address)",
+                },
+              },
+            ],
+            events: [],
+          },
+          { addr: activeAccount?.address || "", sk: new Uint8Array(0) }
+        );
+        const v_sale_listingByIndexR = await ci.v_sale_listingByIndex(
+          listing.mpListingId
+        );
+        console.log({ listing, v_sale_listingByIndexR });
+        if (v_sale_listingByIndexR.success) {
+          validListing = true;
+        }
+      }
+      const royalties = decodeRoyalties(nft.metadata.royalties);
+      setNft({
+        ...nft,
+        listing: validListing ? listing : undefined,
+        royalties,
+      });
+    })();
   }, [id, tid, collection, listings]);
 
   const listedNfts = useMemo(() => {
