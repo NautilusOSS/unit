@@ -412,7 +412,7 @@ export const Token: React.FC = () => {
         .sort((a: any, b: any) => b.createTimestamp - a.createTimestamp)
         .pop();
       // check listing
-      let validListing = false;
+      let validListing = true;
       if (listing) {
         const { algodClient, indexerClient } = getAlgorandClients();
         const ci = new CONTRACT(
@@ -438,14 +438,18 @@ export const Token: React.FC = () => {
             ],
             events: [],
           },
-          { addr: activeAccount?.address || "", sk: new Uint8Array(0) }
+          {
+            addr:
+              activeAccount?.address ||
+              "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ",
+            sk: new Uint8Array(0),
+          }
         );
         const v_sale_listingByIndexR = await ci.v_sale_listingByIndex(
           listing.mpListingId
         );
-        console.log({ listing, v_sale_listingByIndexR });
-        if (v_sale_listingByIndexR.success) {
-          validListing = true;
+        if (!v_sale_listingByIndexR.success) {
+          validListing = false;
         }
       }
       const royalties = decodeRoyalties(nft.metadata.royalties);
@@ -455,7 +459,9 @@ export const Token: React.FC = () => {
         royalties,
       });
     })();
-  }, [id, tid, collection, listings]);
+  }, [id, tid, collection, listings, activeAccount]);
+
+  console.log({ nft });
 
   const listedNfts = useMemo(() => {
     const listedNfts =
