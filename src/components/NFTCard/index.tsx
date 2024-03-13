@@ -7,21 +7,26 @@ import ViaIcon from "../../static/crypto-icons/voi/6779767.svg";
 
 const NFTCardWrapper = styled.div`
   align-items: center;
+  /*
   background: linear-gradient(
     180deg,
     rgb(245, 211, 19) 0%,
     rgb(55, 19, 18) 100%
   );
-  //background-color: rgba(255, 255, 255, 1);
+  background-color: rgba(255, 255, 255, 1);
+  */
   border-radius: 20px;
   display: flex;
   flex-direction: column;
   position: relative;
   transition: all 0.1s ease;
-  //height: 481px;
-  //width: 305px;
+  height: 350px;
+  /*
+  width: 305px;
+  */
   overflow: hidden;
   cursor: pointer;
+  justify-content: flex-end;
   &:hover {
     transform: scale(1.05);
   }
@@ -38,7 +43,7 @@ const NFTCardWrapper = styled.div`
     align-items: flex-start;
     align-self: stretch;
     backdrop-filter: blur(200px) brightness(100%);
-    /*background-color: #20202066;*/
+    background-color: #20202040;
     border-radius: 0px 0px 16px 16px;
     display: flex;
     flex-direction: column;
@@ -47,7 +52,7 @@ const NFTCardWrapper = styled.div`
     padding: 20px 30px 25px;
     position: relative;
     width: 100%;
-    height: 150px;
+    height: 120px;
   }
 
   & .frame {
@@ -220,8 +225,17 @@ const NftCard: React.FC<NFTCardProps> = ({
   onClick,
 }) => {
   return (
-    <NFTCardWrapper onClick={onClick}>
-      <img className="image" alt="Image" src={image} />
+    <NFTCardWrapper
+      onClick={onClick}
+      style={{
+        background: `url(${image})`,
+        backgroundSize: "contain",
+        backgroundPositionX: "center",
+        backgroundPositionY: "top",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
+      {/*<img className="image" alt="Image" src={image} />*/}
       <div className="NFT-info">
         <div className="frame">
           <div className="artist-avatar-name-wrapper">

@@ -25,6 +25,7 @@ import ViewListIcon from "@mui/icons-material/ViewList";
 import GridViewIcon from "@mui/icons-material/GridView";
 import { getPrices } from "../../store/dexSlice";
 import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
+import NftCard from "../../components/NFTCard";
 
 const StatContainer = styled(Stack)`
   display: flex;
@@ -127,7 +128,7 @@ export const Collection: React.FC = () => {
     (state: RootState) => state.theme.isDarkTheme
   );
 
-  const [viewMode, setViewMode] = React.useState<"grid" | "list">("list");
+  const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid");
 
   /* NFT Navigator Listings */
   const [listings, setListings] = React.useState<any>(null);
@@ -193,14 +194,14 @@ export const Collection: React.FC = () => {
     const listedNfts =
       nfts
         ?.filter((nft: any) => {
-          return listings?.some(
+          return normalListings?.some(
             (listing: any) =>
               `${listing.collectionId}` === `${nft.contractId}` &&
               `${listing.tokenId}` === `${nft.tokenId}`
           );
         })
         ?.map((nft: any) => {
-          const listing = listings.find(
+          const listing = normalListings.find(
             (l: any) =>
               `${l.collectionId}` === `${nft.contractId}` &&
               `${l.tokenId}` === `${nft.tokenId}`
@@ -211,10 +212,10 @@ export const Collection: React.FC = () => {
           };
         }) || [];
     listedNfts.sort(
-      (a: any, b: any) => b.listing.createTimestamp - a.listing.createTimestamp
+      (a: any, b: any) => a.listing.normalPrice - b.listing.normalPrice
     );
     return listedNfts;
-  }, [nfts, listings]);
+  }, [nfts, normalListings]);
 
   const listedCollections = useMemo(() => {
     const listedCollections =
@@ -239,21 +240,6 @@ export const Collection: React.FC = () => {
     );
     return listedCollections;
   }, [collections, listedNfts]);
-
-  /*
-  const [sales, setSales] = React.useState<any>(null);
-  React.useEffect(() => {
-    axios
-      .get("https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/sales", {
-        params: {
-          collectionId: id,
-        },
-      })
-      .then(({ data }) => {
-        setSales(data.sales.reverse());
-      });
-  }, []);
-  */
 
   const collectionSales = useMemo(() => {
     return (
@@ -335,17 +321,19 @@ export const Collection: React.FC = () => {
               item
               sx={{ display: { xs: "none", sm: "block" } }}
               xs={12}
-              sm={3}
+              sm={12}
             >
               &nbsp;
             </Grid>
-            <Grid item xs={12} sm={9}>
+            <Grid item xs={12} sm={12}>
               <Stack sx={{ mt: 5 }} gap={2}>
                 <StatContainer
                   sx={{
-                    display: { xs: "none", md: "flex" },
+                    //display: { xs: "none", md: "flex" },
                     flexDirection: { xs: "column", md: "row" },
                     overflow: "hidden",
+                    justifyContent: "flex-end",
+                    gap: "40px",
                   }}
                 >
                   {[
@@ -403,7 +391,12 @@ export const Collection: React.FC = () => {
                     },
                   ].map((el, i) =>
                     el.value > 0 ? (
-                      <Stack key={i}>
+                      <Stack
+                        sx={{
+                          flexShrink: 0,
+                        }}
+                        key={i}
+                      >
                         <Typography sx={{ color: "#717579" }} variant="h6">
                           {el.name}
                         </Typography>
@@ -451,8 +444,29 @@ export const Collection: React.FC = () => {
                     <Grid container spacing={2}>
                       {listedNfts.map((el: any) => {
                         return (
-                          <Grid item xs={6} sm={4}>
-                            <img
+                          <Grid
+                            key={`${el.contractId}-${el.tokenId}`}
+                            item
+                            xs={6}
+                            sm={4}
+                            md={3}
+                            lg={2}
+                          >
+                            <NftCard
+                              nftName={el.metadata.name}
+                              image={el.metadata.image}
+                              owner={el.owner}
+                              price={(el.listing.price / 1e6).toLocaleString()}
+                              currency={
+                                `${el.listing.currency}` === "0" ? "VOI" : "VIA"
+                              }
+                              onClick={() => {
+                                navigate(
+                                  `/collection/${el.contractId}/token/${el.tokenId}`
+                                );
+                              }}
+                            />
+                            {/*<img
                               style={{
                                 width: "100%",
                                 cursor: "pointer",
@@ -465,7 +479,7 @@ export const Collection: React.FC = () => {
                                   `/collection/${el.contractId}/token/${el.tokenId}`
                                 )
                               }
-                            />
+                            />*/}
                           </Grid>
                         );
                       })}
