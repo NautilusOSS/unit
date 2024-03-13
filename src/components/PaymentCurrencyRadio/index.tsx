@@ -16,12 +16,14 @@ interface PaymentCurrencyRadioProps {
   selectedValue: string;
   onCurrencyChange: (newCurrency: string) => void;
   currencies?: { value: string; label: string }[];
+  disabled?: boolean;
 }
 
 const PaymentCurrencyRadio: React.FC<PaymentCurrencyRadioProps> = ({
   selectedValue,
   onCurrencyChange,
   currencies = defaultCurrencies,
+  disabled = false,
 }) => {
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     onCurrencyChange(event.target.value);
@@ -40,7 +42,7 @@ const PaymentCurrencyRadio: React.FC<PaymentCurrencyRadioProps> = ({
           <FormControlLabel
             key={currency.value}
             value={currency.value}
-            control={<Radio />}
+            control={<Radio disabled={disabled} />}
             label={currency.label}
           />
         ))}
