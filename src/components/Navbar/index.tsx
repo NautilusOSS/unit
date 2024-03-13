@@ -193,7 +193,7 @@ const Navbar = () => {
           <NavLinks>
             {[
               {
-                label: "Collection",
+                label: "Collections",
                 href: "/collection",
               },
               /*
