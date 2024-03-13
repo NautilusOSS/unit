@@ -1318,35 +1318,6 @@ export const Account: React.FC = () => {
             ) : null}
           </>
         ) : null}
-        {/*<Typography
-          sx={{ mt: 5, color: isDarkTheme ? "#fff" : "#000" }}
-          variant="h6"
-        >
-          External Links
-        </Typography>
-        <ExternalLinks
-          style={{
-            listStyle: "none",
-          }}
-        >
-          <li>
-            <StyledLink
-              target="_blank"
-              to={`https://nftnavigator.xyz/portfolio/${id}`}
-              style={{ color: isDarkTheme ? "#fff" : "#000" }}
-            >
-              <img
-                src="https://nftnavigator.xyz/_app/immutable/assets/android-chrome-192x192.44ed2806.png"
-                style={{
-                  height: "24px",
-                  width: "24px",
-                  borderRadius: "5px",
-                }}
-              />{" "}
-              NFT Navigator
-            </StyledLink>
-          </li>
-              </ExternalLinks>*/}
       </Container>
       <TransferModal
         title="Transfer NFT"

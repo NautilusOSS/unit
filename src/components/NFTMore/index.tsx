@@ -39,7 +39,7 @@ export const NFTMore: React.FC<NFTMoreProps> = ({ nfts, title, onClick }) => {
       <Grid container spacing={2}>
         {nfts.map((el: any) => {
           return (
-            <Grid item xs={6} sm={4} md={3}>
+            <Grid key={`${el.tokenId}`} item xs={6} sm={4} md={3}>
               <NftCard
                 nftName={el.metadata.name}
                 image={el.metadata.image}

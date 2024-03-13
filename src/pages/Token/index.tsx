@@ -527,6 +527,7 @@ export const Token: React.FC = () => {
                 );
                 setNft(nft);
                 navigate(`/collection/${nft.contractId}/token/${nft.tokenId}`);
+                window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
               }}
             />
           </Stack>

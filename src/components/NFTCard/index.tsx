@@ -37,13 +37,17 @@ const NFTCardWrapper = styled.div`
     width: 100%;
     height: 200px;
   }
-
+  &:hover .NFT-info {
+    height: 80px;
+    background-color: #202020a0;
+    transition: all 0.1s ease;
+  }
   & .NFT-info {
     -webkit-backdrop-filter: blur(200px) brightness(100%);
     align-items: flex-start;
     align-self: stretch;
     backdrop-filter: blur(200px) brightness(100%);
-    background-color: #20202040;
+    background-color: #40404060;
     border-radius: 0px 0px 16px 16px;
     display: flex;
     flex-direction: column;
@@ -237,7 +241,7 @@ const NftCard: React.FC<NFTCardProps> = ({
     >
       {/*<img className="image" alt="Image" src={image} />*/}
       <div className="NFT-info">
-        <div className="frame">
+        {/*<div className="frame">
           <div className="artist-avatar-name-wrapper">
             <div className="artist-avatar-name">
               <Avatar
@@ -252,7 +256,7 @@ const NftCard: React.FC<NFTCardProps> = ({
               <div className="text-wrapper">{owner.slice(0, 4)}</div>
             </div>
           </div>
-        </div>
+              </div>*/}
         <div className="artst-info">
           <div className="text-wrapper-2">{nftName}</div>
         </div>
