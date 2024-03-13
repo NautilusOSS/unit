@@ -464,22 +464,13 @@ export const Collection: React.FC = () => {
                                 navigate(
                                   `/collection/${el.contractId}/token/${el.tokenId}`
                                 );
+                                window.scrollTo({
+                                  top: 0,
+                                  left: 0,
+                                  behavior: "smooth",
+                                });
                               }}
                             />
-                            {/*<img
-                              style={{
-                                width: "100%",
-                                cursor: "pointer",
-                                borderRadius: 10,
-                              }}
-                              src={el.metadata.image}
-                              alt={el.metadata.name}
-                              onClick={() =>
-                                navigate(
-                                  `/collection/${el.contractId}/token/${el.tokenId}`
-                                )
-                              }
-                            />*/}
                           </Grid>
                         );
                       })}
