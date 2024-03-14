@@ -88,6 +88,8 @@ const StyledLink = styled(Link)`
   gap: 10px;
 `;
 
+const displayUnit = "VIA";
+
 const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
 export const Collection: React.FC = () => {
@@ -279,11 +281,11 @@ export const Collection: React.FC = () => {
     return (
       collectionSales?.reduce((acc: any, sale: ListingI) => {
         return (
-          acc + (sale.currency === 0 ? sale.price : sale.price * exchangeRate)
+          acc + (sale.currency === 0 ? sale.price / exchangeRate : sale.price)
         );
       }, 0) || 0
     );
-  }, [collectionSales]);
+  }, [collectionSales, exchangeRate]);
 
   const isLoading = useMemo(
     () =>
@@ -356,7 +358,8 @@ export const Collection: React.FC = () => {
                     },
                     {
                       name: "Volume",
-                      displayValue: formatter.format(volume / 1e6) + " VOI",
+                      displayValue:
+                        formatter.format(volume / 1e6) + ` ${displayUnit}`,
                       value: volume,
                     },
 
@@ -364,9 +367,9 @@ export const Collection: React.FC = () => {
                       name: "Floor Price",
                       displayValue: `${formatter.format(
                         floor.listing.currency === 0
-                          ? floor.listing.price / 1e6
-                          : (floor.listing.price * exchangeRate) / 1e6
-                      )} VOI`,
+                          ? floor.listing.price / exchangeRate / 1e6
+                          : floor.listing.price / 1e6
+                      )} ${displayUnit}`,
                       value: floor.listing.price,
                     },
                     {
@@ -374,7 +377,7 @@ export const Collection: React.FC = () => {
                       displayValue:
                         formatter.format(
                           volume / collectionSales.length / 1e6
-                        ) + " VOI",
+                        ) + ` ${displayUnit}`,
                       value:
                         volume > 0 && collectionSales.length > 0
                           ? volume / collectionSales.length
@@ -384,9 +387,9 @@ export const Collection: React.FC = () => {
                       name: "Ceiling Price",
                       displayValue: `${formatter.format(
                         ceiling.listing.currency === 0
-                          ? ceiling.listing.price / 1e6
-                          : (ceiling.listing.price * exchangeRate) / 1e6
-                      )} VOI`,
+                          ? ceiling.listing.price / exchangeRate / 1e6
+                          : ceiling.listing.price / 1e6
+                      )} ${displayUnit}`,
                       value: ceiling.listing.price,
                     },
                   ].map((el, i) =>
@@ -448,9 +451,8 @@ export const Collection: React.FC = () => {
                             key={`${el.contractId}-${el.tokenId}`}
                             item
                             xs={6}
-                            sm={4}
-                            md={3}
-                            lg={2}
+                            md={4}
+                            xl={2}
                           >
                             <NftCard
                               nftName={el.metadata.name}

@@ -151,13 +151,13 @@ export const getRankings = (
       scores.set(
         sale.collectionId,
         scores.get(sale.collectionId) +
-          (sale.currency === 0 ? sale.price : sale.price * exchangeRate)
+          (sale.currency === 0 ? sale.price / exchangeRate : sale.price)
       );
       saleCounts.set(sale.collectionId, saleCounts.get(sale.collectionId) + 1);
     } else {
       scores.set(
         sale.collectionId,
-        sale.currency === 0 ? sale.price : sale.price * exchangeRate
+        sale.currency === 0 ? sale.price / exchangeRate : sale.price
       );
       saleCounts.set(sale.collectionId, 1);
     }
@@ -169,13 +169,13 @@ export const getRankings = (
         listing.collectionId,
         Math.min(
           floors.get(listing.collectionId),
-          listing.currency === 0 ? listing.price : listing.price * exchangeRate
+          listing.currency === 0 ? listing.price / exchangeRate : listing.price
         )
       );
     } else {
       floors.set(
         listing.collectionId,
-        listing.currency === 0 ? listing.price : listing.price * exchangeRate
+        listing.currency === 0 ? listing.price / exchangeRate : listing.price
       );
     }
   }
@@ -205,7 +205,7 @@ export const getRankings = (
       name: `${token?.metadata?.name?.replace(/[0-9 #]*$/, "")}`,
       score: `${Math.round(volume / 1e6).toLocaleString()}`,
       rank: volume,
-      scoreUnit: "VOI",
+      scoreUnit: "VIA",
       owners: owners.size,
       items: collection?.totalSupply || 0,
       sales: saleCount,

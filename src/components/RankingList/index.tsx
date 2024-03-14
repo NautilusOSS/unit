@@ -218,7 +218,7 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                           >
                             {filteredRankings[index]?.floorPrice
                               ? filteredRankings[index].floorPrice !== 0
-                                ? (
+                                ? Math.round(
                                     filteredRankings[index].floorPrice / 1e6
                                   ).toLocaleString()
                                 : "-"
@@ -242,7 +242,7 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                         : 0}
                     </span>
                   </AccountMetricMaintext>
-                  <AccountMetricSubtext>VOI</AccountMetricSubtext>
+                  <AccountMetricSubtext>VIA</AccountMetricSubtext>
                 </VolumeContainer>
               </StyledGrid>
             ) : null
@@ -298,7 +298,7 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                           <span className={isDarkTheme ? "dark" : "light"}>
                             {filteredRankings[index]?.floorPrice
                               ? filteredRankings[index].floorPrice !== 0
-                                ? (
+                                ? Math.round(
                                     filteredRankings[index].floorPrice / 1e6
                                   ).toLocaleString()
                                 : "-"
@@ -322,7 +322,7 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                         : 0}
                     </span>
                   </AccountMetricMaintext>
-                  <AccountMetricSubtext>VOI</AccountMetricSubtext>
+                  <AccountMetricSubtext>VIA</AccountMetricSubtext>
                 </VolumeContainer>
               </StyledGrid>
             ) : null

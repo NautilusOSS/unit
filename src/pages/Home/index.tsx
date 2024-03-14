@@ -390,107 +390,6 @@ export const Home: React.FC = () => {
           ) : (
             "No NFTs available for sale."
           )}
-          {/*<Box sx={{ mt: 2 }}>
-            {listedNfts ? (
-              <div
-                style={{
-                  width: "100%",
-                  overflowX: "hidden",
-                }}
-              >
-                <Marquee direction="right">
-                  <Stack
-                    direction="row"
-                    spacing={2}
-                    sx={{ marginLeft: "16px" }}
-                  >
-                    {listedNfts
-                      .filter(
-                        (el: ListedToken) =>
-                          el.listing.price / 1e6 >= 50_000 &&
-                          el.listing.price / 1e6 <= 100_000
-                      )
-                      .slice(0, 12)
-                      .map((el: ListedToken) => {
-                        return (
-                          <CartNftCard
-                            key={el.listing.transactionId}
-                            listedNft={el}
-                          />
-                        );
-                      })}
-                  </Stack>
-                </Marquee>
-              </div>
-            ) : null}
-          </Box>
-          <Box sx={{ mt: 2 }}>
-            {listedNfts ? (
-              <div
-                style={{
-                  width: "100%",
-                  overflowX: "hidden",
-                }}
-              >
-                <Marquee direction="left">
-                  <Stack
-                    direction="row"
-                    spacing={2}
-                    sx={{ marginLeft: "16px" }}
-                  >
-                    {listedNfts
-                      .filter(
-                        (el: ListedToken) =>
-                          el.listing.price / 1e6 >= 100_000 &&
-                          el.listing.price / 1e6 <= 500_000
-                      )
-                      .slice(0, 12)
-                      .map((el: ListedToken) => {
-                        return (
-                          <CartNftCard
-                            key={el.listing.transactionId}
-                            listedNft={el}
-                          />
-                        );
-                      })}
-                  </Stack>
-                </Marquee>
-              </div>
-            ) : null}
-          </Box>
-          <Box sx={{ mt: 2 }}>
-            {listedNfts ? (
-              <div
-                style={{
-                  width: "100%",
-                  overflowX: "hidden",
-                }}
-              >
-                <Marquee direction="right">
-                  <Stack
-                    direction="row"
-                    spacing={2}
-                    sx={{ marginLeft: "16px" }}
-                  >
-                    {listedNfts
-                      .filter(
-                        (el: ListedToken) => el.listing.price / 1e6 >= 500_000
-                      )
-                      .slice(0, 12)
-                      .map((el: ListedToken) => {
-                        return (
-                          <CartNftCard
-                            key={el.listing.transactionId}
-                            listedNft={el}
-                          />
-                        );
-                      })}
-                  </Stack>
-                </Marquee>
-              </div>
-            ) : null}
-          </Box>
-                    */}
 
           {/* Top Collections */}
           <SectionHeading>
@@ -498,10 +397,6 @@ export const Home: React.FC = () => {
               Top Collections
             </SectionTitle>
             <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-              {/*<ToggleButtons
-                selectedOption={selectedOption}
-                handleOptionChange={handleOptionChange}
-              />*/}
               <SectionMoreButtonContainer>
                 <SectionMoreButton
                   className={isDarkTheme ? "button-dark" : "button-light"}
