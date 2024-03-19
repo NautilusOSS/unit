@@ -2,7 +2,8 @@ import React from "react";
 import { WalletProvider, useInitializeProviders } from "@txnlab/use-wallet";
 import { HashRouter as Router, Route, Routes } from "react-router-dom";
 import { Provider, useSelector } from "react-redux";
-import store, { RootState } from "./store/store";
+import { store, persistor, RootState } from "./store/store";
+import { PersistGate } from "redux-persist/integration/react";
 import Navbar from "./components/Navbar";
 import { routes } from "./routes";
 import { getProviderInit } from "./wallets";
@@ -48,16 +49,18 @@ const App: React.FC = () => {
   return (
     <WalletProvider value={providers}>
       <Provider store={store}>
-        <AppContainer>
-          <Router>
-            <Navbar />
-            <Routes>
-              {routes.map((el) => (
-                <Route path={el.path} Component={el.Component} />
-              ))}
-            </Routes>
-          </Router>
-        </AppContainer>
+        <PersistGate loading={null} persistor={persistor}>
+          <AppContainer>
+            <Router>
+              <Navbar />
+              <Routes>
+                {routes.map((el) => (
+                  <Route path={el.path} Component={el.Component} />
+                ))}
+              </Routes>
+            </Router>
+          </AppContainer>
+        </PersistGate>
       </Provider>
       <ToastContainer />
     </WalletProvider>
