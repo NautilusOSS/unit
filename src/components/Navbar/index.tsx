@@ -583,6 +583,9 @@ const Navbar = () => {
             </Stack>
           )}
           <Popper
+            sx={{
+              zIndex: 2000,
+            }}
             id={id}
             open={open}
             anchorEl={anchorEl}
