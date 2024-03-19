@@ -45,7 +45,7 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
   /* Payment currency */
 
   // only VIA sales are allowed for the time being
-  // TODO add as a something that can be switch on and off by manager later  
+  // TODO add as a something that can be switch on and off by manager later
   // const isGameCollection = useMemo(
   //   () =>
   //     collections
@@ -59,14 +59,13 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
     "6779767"
   );
   const currencies = //isGameCollection
-    //? 
-    defaultCurrencies.filter((el: any) => el.value !== "0")
-    //: defaultCurrencies;
+    //?
+    defaultCurrencies.filter((el: any) => el.value !== "0");
+  //: defaultCurrencies;
 
-
-  const handleCurrencyChange = (newCurrency: string) => {
-    setCurrency(newCurrency);
-  };
+  // const handleCurrencyChange = (newCurrency: string) => {
+  //   setCurrency(newCurrency);
+  // };
 
   /* Modal */
 
@@ -77,7 +76,7 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
 
   const onClose = () => {
     setPrice("");
-    setCurrency("");
+    setCurrency("6779767"); // reset to default VIA
     handleClose();
   };
 
@@ -132,7 +131,8 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
                   <Box sx={{ mt: 2 }}>
                     <PaymentCurrencyRadio
                       selectedValue={currency}
-                      onCurrencyChange={handleCurrencyChange}
+                      // onCurrencyChange={handleCurrencyChange}
+                      onCurrencyChange={() => {}}
                       currencies={currencies}
                       disabled={true}
                     />
