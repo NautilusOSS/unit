@@ -15,3 +15,11 @@ body {
   position: relative; /* You might not need this if it's already relative by default */
   z-index: 1; /* Set a higher z-index to ensure it appears above the background layers */
 }
+
+input {
+  background: none;
+  border: 0px;
+}
+input:focus-visible {
+  outline: none;
+}

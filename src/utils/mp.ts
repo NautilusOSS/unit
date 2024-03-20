@@ -199,7 +199,13 @@ export const getRankings = (
     const volume = kv[1];
     return {
       collectionId: kv[0],
-      image: token?.metadata?.image,
+      image:
+        "https://prod.cdn.highforge.io/i/" +
+        encodeURIComponent(token.metadataURI) +
+        "?w=240",
+      //`https://prod.cdn.highforge.io/i/${encodeURIComponent(
+      //  token?.metadataURI
+      //)}?w=400)`,
       floorPrice,
       volume,
       name: `${token?.metadata?.name?.replace(/[0-9 #]*$/, "")}`,

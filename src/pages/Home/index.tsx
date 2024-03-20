@@ -33,6 +33,7 @@ import Marquee from "react-fast-marquee";
 import CartNftCard from "../../components/CartNFTCard";
 import { getPrices } from "../../store/dexSlice";
 import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
+import { getListings } from "../../store/listingSlice";
 
 const CollectionName = styled.div`
   color: var(--White, #fff);
@@ -179,6 +180,12 @@ export const Home: React.FC = () => {
     if (!voiPrice) return 0;
     return voiPrice.rate;
   }, [prices, dexStatus]);
+  /* Listings */
+  const listings = useSelector((state: any) => state.listings.listings);
+  const listingsStatus = useSelector((state: any) => state.listings.status);
+  useEffect(() => {
+    dispatch(getListings() as unknown as UnknownAction);
+  }, [dispatch]);
   /* Tokens */
   const tokens = useSelector((state: any) => state.tokens.tokens);
   const tokenStatus = useSelector((state: any) => state.tokens.status);
@@ -223,22 +230,22 @@ export const Home: React.FC = () => {
   };
 
   /* NFT Navigator Listings */
-  const [listings, setListings] = React.useState<any>(null);
-  React.useEffect(() => {
-    try {
-      const res = axios
-        .get("https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/listings", {
-          params: {
-            active: true,
-          },
-        })
-        .then(({ data }) => {
-          setListings(data.listings);
-        });
-    } catch (e) {
-      console.log(e);
-    }
-  }, []);
+  // const [listings, setListings] = React.useState<any>(null);
+  // React.useEffect(() => {
+  //   try {
+  //     const res = axios
+  //       .get("https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/listings", {
+  //         params: {
+  //           active: true,
+  //         },
+  //       })
+  //       .then(({ data }) => {
+  //         setListings(data.listings);
+  //       });
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // }, []);
 
   const listedNfts = useMemo(() => {
     if (tokenStatus !== "succeeded") return [];
@@ -263,7 +270,7 @@ export const Home: React.FC = () => {
           };
         }) || [];
     listedNfts.sort(
-      (a: any, b: any) => b.listing.createTimestamp - a.listing.createTimestamp
+      (a: any, b: any) => b.listing.timestamp - a.listing.timestamp
     );
     // remove duplicates listings by collection
     const seen: any = {};
@@ -324,6 +331,7 @@ export const Home: React.FC = () => {
       !listedNfts ||
       !listedCollections ||
       !rankings ||
+      listingsStatus !== "succeeded" ||
       tokenStatus !== "succeeded" ||
       collectionStatus !== "succeeded" ||
       salesStatus !== "succeeded" ||

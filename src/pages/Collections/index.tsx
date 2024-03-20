@@ -144,8 +144,6 @@ export const Collections: React.FC = () => {
     return getRankings(tokens, collections, sales, listings, exchangeRate);
   }, [sales, tokens, collections, listings]);
 
-  console.log({ rankings, sales, tokens, collections, listings });
-
   const isLoading = useMemo(
     () =>
       !listings ||

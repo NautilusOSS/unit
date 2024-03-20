@@ -4,12 +4,11 @@ import Dexie from "dexie";
 const mpDb = new Dexie("mpDatabase");
 
 mpDb.version(1).stores({
-  sales: "pk, mpContractId, mpListingId, tokenId, seller, buyer, currency, price, round, timestamp, collectionId",
+  sales:
+    "pk, mpContractId, mpListingId, tokenId, seller, buyer, currency, price, round, timestamp, collectionId",
   collections: "pk, contractId, totalSupply, isBlacklisted, mintRound",
-  tokens: "pk, owner, approved, tokenId, contractId, mintRound, metadataURI, metadata",
-  // ListId, CollectionId, TokenId, ListAddr, ListPrice, EndTime, Royalties
-  //listings:
-  //  "pk, mp, txId, round, timestamp, lId, cId, tId, lAddr, lPrc, endT, roy",
+  tokens:
+    "pk, owner, approved, tokenId, contractId, mintRound, metadataURI, metadata",
   // BuyEvent: [UInt256, Address], // ListId BuyAddr
   //sales: "pk, mp, txId, round, timestamp, lId, cId, tId, lAddr, lPrc, bAddr",
   //sales: "pk, mp, txId, round, timestamp, lId",
@@ -36,6 +35,10 @@ mpDb.version(1).stores({
   // ], // ListId, CollectionId, TokenId, ListAddr, ListPrice, FloorPrice, EndTime
   //reverseListings:
   //  "pk, mp, txId, round, timestamp, lId, cId, tId, lAddr, lPrc, fPrc, endTime",
+});
+mpDb.version(2).stores({
+  listings:
+    "pk, mpContractId, mpListingId, tokenId, seller, currency, price, round, timestamp, collectionId, endTimestamp, royalty, transactionId",
 });
 
 export default mpDb;

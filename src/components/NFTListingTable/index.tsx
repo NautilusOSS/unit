@@ -93,7 +93,7 @@ const NFTListingTable: React.FC<Props> = ({
   collections,
   listings,
   limit = 0,
-  columns = ["createTimestamp", "token", "image", "seller", "price"],
+  columns = ["timestamp", "token", "image", "seller", "price"],
   selected,
   enableSelect = false,
   onSelect = (x) => {},
@@ -101,13 +101,13 @@ const NFTListingTable: React.FC<Props> = ({
   type SortOption =
     | "price-asc"
     | "price-dsc"
-    | "createTimestamp-asc"
-    | "createTimestamp-dsc"
+    | "timestamp-asc"
+    | "timestamp-dsc"
     | "token-asc"
     | "token-dsc"
     | "seller-asc"
     | "seller-dsc";
-  const [sortBy, setSortBy] = useState<SortOption>("createTimestamp-dsc");
+  const [sortBy, setSortBy] = useState<SortOption>("timestamp-dsc");
 
   const isLoading = !listings || !collections || !tokens;
 
@@ -137,10 +137,10 @@ const NFTListingTable: React.FC<Props> = ({
       return (a?.normalPrice || a.price) - (b?.normalPrice || b.price);
     } else if (sortBy === "price-dsc") {
       return (b?.normalPrice || b.price) - (a?.normalPrice || a.price);
-    } else if (sortBy === "createTimestamp-asc") {
-      return a.createTimestamp - b.createTimestamp;
+    } else if (sortBy === "timestamp-asc") {
+      return a.timestamp - b.timestamp;
     } else {
-      return b.createTimestamp - a.createTimestamp;
+      return b.timestamp - a.timestamp;
     }
   };
   const sortedListings = useMemo(() => {
@@ -154,7 +154,7 @@ const NFTListingTable: React.FC<Props> = ({
       <Table aria-label="rankings table">
         <TableHead>
           <StyledTableRow>
-            {columns.includes("createTimestamp") ? (
+            {columns.includes("timestamp") ? (
               <StyledTableCell
                 sx={{ display: { xs: "none", md: "table-cell" } }}
               >
@@ -165,23 +165,19 @@ const NFTListingTable: React.FC<Props> = ({
                 >
                   <img
                     src={
-                      ["createTimestamp-asc", "createTimestamp-dsc"].includes(
-                        sortBy
-                      )
-                        ? sortBy === "createTimestamp-asc"
+                      ["timestamp-asc", "timestamp-dsc"].includes(sortBy)
+                        ? sortBy === "timestamp-asc"
                           ? UpIcon
                           : DownIcon
                         : SelectorIcon
                     }
                     alt="selector"
                     onClick={
-                      ["createTimestamp-asc", "createTimestamp-dsc"].includes(
-                        sortBy
-                      )
-                        ? sortBy === "createTimestamp-asc"
-                          ? () => setSortBy("createTimestamp-dsc")
-                          : () => setSortBy("createTimestamp-asc")
-                        : () => setSortBy("createTimestamp-dsc")
+                      ["timestamp-asc", "timestamp-dsc"].includes(sortBy)
+                        ? sortBy === "timestamp-asc"
+                          ? () => setSortBy("timestamp-dsc")
+                          : () => setSortBy("timestamp-asc")
+                        : () => setSortBy("timestamp-dsc")
                     }
                   />
                 </Stack>
@@ -305,11 +301,11 @@ const NFTListingTable: React.FC<Props> = ({
                 hover={true}
                 key={index}
               >
-                {columns.includes("createTimestamp") ? (
+                {columns.includes("timestamp") ? (
                   <StyledTableCell
                     sx={{ display: { xs: "none", md: "table-cell" } }}
                   >
-                    {moment.unix(listing.createTimestamp).fromNow()}
+                    {moment.unix(listing.timestamp).fromNow()}
                   </StyledTableCell>
                 ) : null}
                 {columns.includes("image") ? (
@@ -319,7 +315,7 @@ const NFTListingTable: React.FC<Props> = ({
                     >
                       <StyledImage
                         sx={{
-                          backgroundImage: `url(${token.metadata?.image})`,
+                          backgroundImage: `url(https://prod.cdn.highforge.io/i/${token.metadataURI}?w=240)`,
                         }}
                       />
                     </Link>

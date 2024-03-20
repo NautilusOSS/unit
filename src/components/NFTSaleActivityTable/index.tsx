@@ -147,7 +147,9 @@ const NFTCollectionTable: React.FC<Props> = ({
                   >
                     <StyledImage
                       sx={{
-                        backgroundImage: `url(${token?.metadata?.image || ""})`,
+                        backgroundImage: `url(https://prod.cdn.highforge.io/i/${encodeURIComponent(
+                          token.metadataURI
+                        )}?w=240)`,
                       }}
                     />
                   </Link>

@@ -19,6 +19,7 @@ import ButtonBuy from "static/button-buy.svg";
 import ButtonOffer from "static/button-offer.svg";
 import ButtonBid from "static/button-bid.svg";
 import { stringToColorCode } from "../../utils/string";
+import RowingIcon from "@mui/icons-material/Rowing";
 
 import { useCopyToClipboard } from "usehooks-ts";
 import { toast } from "react-toastify";
@@ -797,7 +798,9 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
       // -----------------------------------------
       // check if collection might need a payment to transfer
       // -----------------------------------------
-      const collectionAddr = algosdk.getApplicationAddress(nft.contractId);
+      const collectionAddr = algosdk.getApplicationAddress(
+        nft?.contractId || 0
+      );
       const collectionAccountInfo = await algodClient
         .accountInformation(collectionAddr)
         .do();
@@ -1079,7 +1082,7 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
           const customTxn = (
             await Promise.all([
               builder.arc200.arc200_approve(
-                algosdk.getApplicationAddress(nft.listing.mpContractId),
+                algosdk.getApplicationAddress(nft.listing?.mpContractId || 0),
                 nft.listing.price
               ),
               builder.mp.a_sale_buySC(nft.listing.mpListingId),
@@ -1238,7 +1241,7 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
         <Grid item xs={12} md={6}>
           {!loading ? (
             <img
-              src={nft.metadata.image}
+              src={nft.metadata?.image}
               style={{ width: "100%", borderRadius: "16px" }}
             />
           ) : (
@@ -1283,13 +1286,14 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
                     }}
                   >
                     {collectionInfo?.project?.title ||
-                      nft.metadata.name.replace(/[#0123456789 ]*$/, "")}
+                      nft.metadata?.name?.replace(/[#0123456789 ]*$/, "") ||
+                      ""}
                   </span>
                 </AvatarWithName>
-              ))(algosdk.getApplicationAddress(nft.contractId))}
+              ))(algosdk.getApplicationAddress(nft?.contractId || 0))}
 
               <NFTName style={{ color: isDarkTheme ? "#FFFFFF" : undefined }}>
-                {nft.metadata.name}
+                {nft.metadata?.name || ""}
               </NFTName>
               {nft.owner ? (
                 <AvatarWithOwnerName direction="row" style={{ gap: "6px" }}>
@@ -1348,6 +1352,31 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
                     <ProjectIcon src={LinkIcon} alt="Link Icon" />
                   </Link>
                 ) : null}
+                <Link
+                  target="_blank"
+                  to={`https://nftnavigator.xyz/collection/${nft.contractId}`}
+                >
+                  <Avatar
+                    style={{
+                      height: "32px",
+                      width: "32px",
+                      background: "black",
+                    }}
+                  >
+                    <RowingIcon sx={{ color: "white" }} />
+                  </Avatar>
+                  {/*<ProjectIcon
+                    height="25"
+                    width="25"
+                    style={{
+                      borderRadius: "50%",
+                    }}
+                    src={
+                      "https://nftnavigator.xyz/_app/immutable/assets/android-chrome-192x192.BJQGzsFc.png"
+                    }
+                    alt="Navigator Icon"
+                  />*/}
+                </Link>
               </ProjectLinkContainer>
             </Stack>
             {!loading ? (

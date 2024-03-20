@@ -27,7 +27,6 @@ export const getCollections = createAsyncThunk<
             )
           )
         : 0;
-    console.log({ lastRound });
     const response = await axios.get(
       "https://arc72-idx.voirewards.com/nft-indexer/v1/collections",
       {

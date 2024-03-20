@@ -28,7 +28,9 @@ const NFTCardWrapper = styled.div`
   cursor: pointer;
   justify-content: flex-end;
   &:hover {
+    /*
     transform: scale(1.05);
+    */
   }
   & .image {
     align-self: stretch;
@@ -38,7 +40,7 @@ const NFTCardWrapper = styled.div`
     height: 200px;
   }
   &:hover .NFT-info {
-    height: 80px;
+    height: 100px;
     background-color: #202020a0;
     transition: all 0.1s ease;
   }
@@ -211,7 +213,7 @@ const NFTCardWrapper = styled.div`
   }
 `;
 
-interface NFTCardProps {
+export interface NFTCardProps {
   nftName: string;
   image: string;
   owner: string;
@@ -261,41 +263,43 @@ const NftCard: React.FC<NFTCardProps> = ({
           <div className="text-wrapper-2">{nftName}</div>
         </div>
         <div className="additional-info">
-          <div className="price">
-            <div className="text-wrapper-3">Price</div>
-            <div className="text-wrapper-4">
-              <div style={{ display: "inline-block" }}>
-                {currency === "VOI" ? (
-                  <Tooltip placement="top" title="VOI">
-                    <img
-                      src={VoiIcon}
-                      alt="VOI"
-                      style={{
-                        height: "20px",
-                        width: "20px",
-                        position: "relative",
-                      }}
-                    />
-                  </Tooltip>
-                ) : null}
-                {currency === "VIA" ? (
-                  <Tooltip placement="top" title="VIA">
-                    <img
-                      src={ViaIcon}
-                      alt="VIA"
-                      style={{
-                        height: "20px",
-                        width: "20px",
-                        position: "relative",
-                      }}
-                    />
-                  </Tooltip>
-                ) : null}
+          {price && currency ? (
+            <div className="price">
+              <div className="text-wrapper-3">Price</div>
+              <div className="text-wrapper-4">
+                <div style={{ display: "inline-block" }}>
+                  {currency === "VOI" ? (
+                    <Tooltip placement="top" title="VOI">
+                      <img
+                        src={VoiIcon}
+                        alt="VOI"
+                        style={{
+                          height: "20px",
+                          width: "20px",
+                          position: "relative",
+                        }}
+                      />
+                    </Tooltip>
+                  ) : null}
+                  {currency === "VIA" ? (
+                    <Tooltip placement="top" title="VIA">
+                      <img
+                        src={ViaIcon}
+                        alt="VIA"
+                        style={{
+                          height: "20px",
+                          width: "20px",
+                          position: "relative",
+                        }}
+                      />
+                    </Tooltip>
+                  ) : null}
+                </div>
+                <div style={{ display: "inline-block" }}>{price}</div>
+                <div style={{ display: "inline-block" }}>{currency}</div>
               </div>
-              <div style={{ display: "inline-block" }}>{price}</div>
-              <div style={{ display: "inline-block" }}>{currency}</div>
             </div>
-          </div>
+          ) : null}
         </div>
       </div>
     </NFTCardWrapper>

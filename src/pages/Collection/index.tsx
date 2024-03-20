@@ -26,6 +26,8 @@ import GridViewIcon from "@mui/icons-material/GridView";
 import { getPrices } from "../../store/dexSlice";
 import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
 import NftCard from "../../components/NFTCard";
+import { getListings } from "../../store/listingSlice";
+import { getTokens } from "../../store/tokenSlice";
 
 const StatContainer = styled(Stack)`
   display: flex;
@@ -94,6 +96,18 @@ const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
 export const Collection: React.FC = () => {
   const dispatch = useDispatch();
+  /* Listings */
+  const listings = useSelector((state: any) => state.listings.listings);
+  const listingsStatus = useSelector((state: any) => state.listings.status);
+  useEffect(() => {
+    dispatch(getListings() as unknown as UnknownAction);
+  }, [dispatch]);
+  /* Tokens */
+  const tokens = useSelector((state: any) => state.tokens.tokens);
+  const tokenStatus = useSelector((state: any) => state.tokens.status);
+  useEffect(() => {
+    dispatch(getTokens() as unknown as UnknownAction);
+  }, [dispatch]);
   /* Dex */
   const prices = useSelector((state: RootState) => state.dex.prices);
   const dexStatus = useSelector((state: RootState) => state.dex.status);
@@ -133,23 +147,23 @@ export const Collection: React.FC = () => {
   const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid");
 
   /* NFT Navigator Listings */
-  const [listings, setListings] = React.useState<any>(null);
-  React.useEffect(() => {
-    try {
-      const res = axios
-        .get("https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/listings", {
-          params: {
-            active: true,
-            collectionId: id,
-          },
-        })
-        .then(({ data }) => {
-          setListings(data.listings);
-        });
-    } catch (e) {
-      console.log(e);
-    }
-  }, []);
+  // const [listings, setListings] = React.useState<any>(null);
+  // React.useEffect(() => {
+  //   try {
+  //     const res = axios
+  //       .get("https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/listings", {
+  //         params: {
+  //           active: true,
+  //           collectionId: id,
+  //         },
+  //       })
+  //       .then(({ data }) => {
+  //         setListings(data.listings);
+  //       });
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // }, []);
 
   const normalListings = useMemo(() => {
     if (!listings || !exchangeRate) return [];
@@ -163,34 +177,38 @@ export const Collection: React.FC = () => {
   }, [listings, exchangeRate]);
 
   /* NFT Navigator NFTs */
-  const [nfts, setNfts] = React.useState<any>(null);
-  React.useEffect(() => {
-    try {
-      (async () => {
-        const {
-          data: { tokens: res },
-        } = await axios.get(
-          `https://arc72-idx.voirewards.com/nft-indexer/v1/tokens`,
-          {
-            params: {
-              contractId: id,
-            },
-          }
-        );
-        const nfts = [];
-        for (const t of res) {
-          const tm = JSON.parse(t.metadata);
-          nfts.push({
-            ...t,
-            metadata: tm,
-          });
-        }
-        setNfts(nfts);
-      })();
-    } catch (e) {
-      console.log(e);
-    }
-  }, []);
+  // const [nfts, setNfts] = React.useState<any>(null);
+  // React.useEffect(() => {
+  //   try {
+  //     (async () => {
+  //       const {
+  //         data: { tokens: res },
+  //       } = await axios.get(
+  //         `https://arc72-idx.voirewards.com/nft-indexer/v1/tokens`,
+  //         {
+  //           params: {
+  //             contractId: id,
+  //           },
+  //         }
+  //       );
+  //       const nfts = [];
+  //       for (const t of res) {
+  //         const tm = JSON.parse(t.metadata);
+  //         nfts.push({
+  //           ...t,
+  //           metadata: tm,
+  //         });
+  //       }
+  //       setNfts(nfts);
+  //     })();
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // }, []);
+
+  const nfts = useMemo(() => {
+    return tokens?.filter((token: any) => `${token.contractId}` === `${id}`);
+  }, [tokens]);
 
   const listedNfts = useMemo(() => {
     const listedNfts =
@@ -289,8 +307,11 @@ export const Collection: React.FC = () => {
 
   const isLoading = useMemo(
     () =>
+      tokenStatus !== "succeeded" ||
+      listingsStatus !== "succeeded" ||
       salesStatus !== "succeeded" ||
       collectionStatus !== "succeeded" ||
+      !tokens ||
       !collectionSales ||
       !collections ||
       !nfts ||
@@ -413,7 +434,7 @@ export const Collection: React.FC = () => {
                     ) : null
                   )}
                 </StatContainer>
-                <Stack
+                {/*<Stack
                   direction="row"
                   spacing={2}
                   sx={{ justifyContent: "end" }}
@@ -434,14 +455,14 @@ export const Collection: React.FC = () => {
                       <GridViewIcon />
                     </ToggleButton>
                   </ToggleButtonGroup>
-                </Stack>
-                {viewMode === "list" ? (
+                  </Stack>*/}
+                {/*viewMode === "list" ? (
                   <NFTListingTable
                     listings={normalListings}
                     tokens={nfts}
                     collections={collections}
                   />
-                ) : null}
+                ) : null*/}
                 {viewMode === "grid" ? (
                   listedNfts.length > 0 ? (
                     <Grid container spacing={2}>
@@ -456,7 +477,11 @@ export const Collection: React.FC = () => {
                           >
                             <NftCard
                               nftName={el.metadata.name}
-                              image={el.metadata.image}
+                              image={
+                                "https://prod.cdn.highforge.io/i/" +
+                                encodeURIComponent(el.metadataURI) +
+                                "?w=240"
+                              }
                               owner={el.owner}
                               price={(el.listing.price / 1e6).toLocaleString()}
                               currency={

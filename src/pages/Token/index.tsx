@@ -1,52 +1,26 @@
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import Layout from "../../layouts/Default";
-import {
-  Avatar,
-  Container,
-  Grid,
-  Skeleton,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Container, Grid, Skeleton, Stack } from "@mui/material";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import axios from "axios";
 import styled from "styled-components";
-import IconAlarm from "static/icon-alarm.svg";
-import ButtonBuy from "static/button-buy.svg";
-import ButtonOffer from "static/button-offer.svg";
-import ButtonBid from "static/button-bid.svg";
-import { stringToColorCode } from "../../utils/string";
-
 import { useCopyToClipboard } from "usehooks-ts";
 import { toast } from "react-toastify";
-
 import { useWallet } from "@txnlab/use-wallet";
-
-import algosdk from "algosdk";
-//import { MarketplaceContext } from "../../store/MarketplaceContext";
-import { decodePrice, decodeTokenId } from "../../utils/mp";
-import NftCard from "../../components/NFTCard";
-import BuySaleModal from "../../components/modals/BuySaleModal";
-
-import { CONTRACT, arc72, arc200 } from "ulujs";
+import { CONTRACT, arc72 } from "ulujs";
 import { getAlgorandClients } from "../../wallets";
-import { ctcInfoMp206 } from "../../contants/mp";
-
-import VoiIcon from "static/crypto-icons/voi/0.svg";
-import ViaIcon from "static/crypto-icons/voi/6779767.svg";
-
-import XIcon from "static/icon/icon-x.svg";
-import DiscordIcon from "static/icon/icon-discord.svg";
-import LinkIcon from "static/icon/icon-link.svg";
 import NFTTabs from "../../components/NFTTabs";
 import { NFTInfo } from "../../components/NFTInfo";
-import { NFTMore } from "../../components/NFTMore";
 import { getPrices } from "../../store/dexSlice";
 import { UnknownAction } from "@reduxjs/toolkit";
 import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
 import { decodeRoyalties } from "../../utils/hf";
+import NFTCard2 from "../../components/NFTCard2";
+import { getListings } from "../../store/listingSlice";
+import { getTokens } from "../../store/tokenSlice";
+import { getSales } from "../../store/saleSlice";
 
 const CryptoIcon = styled.img`
   width: 16px;
@@ -140,14 +114,6 @@ const AvatarWithOwnerName = styled(AvatarWithName)`
   & .owner-value-light {
     color: #000;
   }
-`;
-
-const StyledLink = styled(Link)`
-  text-decoration: none;
-  color: inherit;
-  display: flex;
-  align-items: center;
-  gap: 10px;
 `;
 
 const NFTName = styled.div`
@@ -252,8 +218,73 @@ const MoreFrom = styled.h3`
   margin-top: 48px;
 `;
 
+const NFTCards = styled.div`
+  display: flex;
+  /*
+  width: 1280px;
+  */
+  align-items: flex-start;
+  gap: var(--Main-System-20px, 20px);
+  align-self: stretch;
+  overflow: hidden;
+`;
+
+const HeadingContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  align-self: stretch;
+`;
+
+const HeadingText = styled.div`
+  text-align: center;
+  leading-trim: both;
+  text-edge: cap;
+  font-feature-settings: "clig" off, "liga" off;
+  font-family: "Advent Pro";
+  font-size: 36px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 40px; /* 111.111% */
+  color: #161717;
+  &.light {
+    color: #161717;
+  }
+  &.dark {
+    color: #fff;
+  }
+`;
+
+const SecondaryButton = styled.div`
+  display: flex;
+  padding: 20px;
+  justify-content: center;
+  align-items: center;
+  gap: 3px;
+  border-radius: 100px;
+  border: 1px solid #93f;
+`;
+
+const ButtonLabel = styled.div`
+  color: #93f;
+  text-align: center;
+  leading-trim: both;
+  text-edge: cap;
+  font-feature-settings: "clig" off, "liga" off;
+  font-family: Nohemi;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 20px; /* 125% */
+`;
+
+const StyledLink = styled(Link)`
+  text-decoration: none;
+  color: inherit;
+`;
+
 const TokenSkeleton: React.FC = () => (
-  <Container sx={{ mt: 5 }}>
+  <Container sx={{ mt: 5 }} maxWidth="lg">
     <Grid
       sx={{
         border: "1px",
@@ -307,6 +338,24 @@ const TokenSkeleton: React.FC = () => (
 export const Token: React.FC = () => {
   const { activeAccount } = useWallet();
   const dispatch = useDispatch();
+  /* Sales */
+  const sales = useSelector((state: any) => state.sales.sales);
+  const salesStatus = useSelector((state: any) => state.sales.status);
+  useEffect(() => {
+    dispatch(getSales() as unknown as UnknownAction);
+  }, [dispatch]);
+  /* Tokens */
+  const tokens = useSelector((state: any) => state.tokens.tokens);
+  const tokenStatus = useSelector((state: any) => state.tokens.status);
+  useEffect(() => {
+    dispatch(getTokens() as unknown as UnknownAction);
+  }, [dispatch]);
+  /* Listings */
+  const listings = useSelector((state: any) => state.listings.listings);
+  const listingsStatus = useSelector((state: any) => state.listings.status);
+  useEffect(() => {
+    dispatch(getListings() as unknown as UnknownAction);
+  }, [dispatch]);
   /* Dex */
   const prices = useSelector((state: RootState) => state.dex.prices);
   const dexStatus = useSelector((state: RootState) => state.dex.status);
@@ -338,52 +387,72 @@ export const Token: React.FC = () => {
     (state: RootState) => state.theme.isDarkTheme
   );
 
-  const [collection, setCollection] = React.useState<any>(null);
-  React.useEffect(() => {
-    try {
-      (async () => {
-        const {
-          data: { tokens: res },
-        } = await axios.get(
-          `https://arc72-idx.voirewards.com/nft-indexer/v1/tokens?contractId=${id}`
-        );
-        const nfts = [];
-        for (const t of res) {
-          const tm = JSON.parse(t.metadata);
-          nfts.push({
-            ...t,
-            metadata: tm,
-          });
-        }
-        setCollection(nfts);
-      })();
-    } catch (e) {
-      console.log(e);
+  /* Carousel */
+  const listingsRef = useRef<HTMLDivElement>(null);
+  const [offset, setOffset] = React.useState<number>(0);
+  const handleClick = () => {
+    const width = listingsRef?.current?.children?.length || 0;
+    if (-(offset - 500) > width * 250) {
+      setOffset(0);
+    } else {
+      setOffset(offset - 500);
     }
-  }, [id]);
+  };
 
-  const [listings, setListings] = React.useState<any>(null);
-  useEffect(() => {
-    try {
-      (async () => {
-        const {
-          data: { listings: res },
-        } = await axios.get(
-          `https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/listings`,
-          {
-            params: {
-              collectionId: id,
-              //tokenId: tid,
-              active: true,
-            },
-          }
-        );
-        setListings(res);
-      })();
-    } catch (e) {
-      console.log(e);
-    }
-  }, [id]);
+  // const [collection, setCollection] = React.useState<any>(null);
+  // React.useEffect(() => {
+  //   try {
+  //     (async () => {
+  //       const {
+  //         data: { tokens: res },
+  //       } = await axios.get(
+  //         `https://arc72-idx.voirewards.com/nft-indexer/v1/tokens?contractId=${id}`
+  //       );
+  //       const nfts = [];
+  //       for (const t of res) {
+  //         const tm = JSON.parse(t.metadata);
+  //         nfts.push({
+  //           ...t,
+  //           metadata: tm,
+  //         });
+  //       }
+  //       setCollection(nfts);
+  //     })();
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // }, [id]);
+  const collection = useMemo(() => {
+    const collectionTokens =
+      tokens?.filter((t: any) => `${t.contractId}` === `${id}`) || [];
+    return collectionTokens;
+  }, [tokens, id]);
+
+  // const [listings, setListings] = React.useState<any>(null);
+  // useEffect(() => {
+  //   try {
+  //     (async () => {
+  //       const {
+  //         data: { listings: res },
+  //       } = await axios.get(
+  //         `https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/listings`,
+  //         {
+  //           params: {
+  //             collectionId: id,
+  //             //tokenId: tid,
+  //             active: true,
+  //           },
+  //         }
+  //       );
+  //       setListings(res);
+  //     })();
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // }, [id]);
+  const collectionListings = useMemo(() => {
+    return listings?.filter((l: any) => `${l.collectionId}` === `${id}`) || [];
+  }, [listings, id]);
 
   const [collectionInfo, setCollectionInfo] = React.useState<any>(null);
   useEffect(() => {
@@ -399,22 +468,38 @@ export const Token: React.FC = () => {
 
   const [nft, setNft] = React.useState<any>(null);
   useEffect(() => {
-    if (!collection || !tid || !listings) return;
+    if (!collection || !tid || !collectionListings || !listings) return;
     (async () => {
+      const { algodClient, indexerClient } = getAlgorandClients();
+      const ciARC72 = new arc72(Number(id), algodClient, indexerClient, {
+        acc: {
+          addr: "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ",
+          sk: new Uint8Array(0),
+        },
+      });
+      const arc72_ownerOfR = await ciARC72.arc72_ownerOf(Number(tid));
+      const arc72_getApprovedR = await ciARC72.arc72_getApproved(Number(tid));
+      if (!arc72_ownerOfR.success) throw new Error("Failed to get owner");
+      if (!arc72_getApprovedR.success)
+        throw new Error("Failed to get approved");
+      const arc72_ownerOf = arc72_ownerOfR.returnValue;
+      const arc72_getApproved = arc72_getApprovedR.returnValue;
+
       const nft = collection.find((el: any) => el.tokenId === Number(tid));
-      const listing = [...listings]
+
+      const listing = [...collectionListings]
         .filter(
           (l: any) =>
             `${l.collectionId}` === `${id}` &&
             `${l.tokenId}` === `${tid}` &&
-            `${l.seller}` === `${nft.owner}`
+            `${l.seller}` === `${arc72_ownerOf}`
         )
-        .sort((a: any, b: any) => b.createTimestamp - a.createTimestamp)
+        .sort((a: any, b: any) => b.timestamp - a.timestamp)
         .pop();
+
       // check listing
       let validListing = true;
       if (listing) {
-        const { algodClient, indexerClient } = getAlgorandClients();
         const ci = new CONTRACT(
           listing.mpContractId,
           algodClient,
@@ -452,16 +537,22 @@ export const Token: React.FC = () => {
           validListing = false;
         }
       }
-      const royalties = decodeRoyalties(nft.metadata.royalties);
-      setNft({
+      const royalties = nft?.metadata?.royalties
+        ? decodeRoyalties(nft?.metadata?.royalties || "")
+        : {};
+      const displayNft = {
         ...nft,
-        listing: validListing ? listing : undefined,
         royalties,
-      });
-    })();
-  }, [id, tid, collection, listings, activeAccount]);
-
-  console.log({ nft });
+        approved: arc72_getApproved,
+        owner: arc72_ownerOf,
+        listing: validListing ? listing : undefined,
+      };
+      setNft(displayNft);
+    })().catch((e) => {
+      console.log(e);
+      toast.error(e.message);
+    });
+  }, [id, tid, collection, collectionListings, activeAccount]);
 
   const listedNfts = useMemo(() => {
     const listedNfts =
@@ -485,7 +576,7 @@ export const Token: React.FC = () => {
           };
         }) || [];
     listedNfts.sort(
-      (a: any, b: any) => b.listing.createTimestamp - a.listing.createTimestamp
+      (a: any, b: any) => b.listing.timestamp - a.listing.timestamp
     );
     return listedNfts;
   }, [collection, listings]);
@@ -496,14 +587,25 @@ export const Token: React.FC = () => {
   }, [nft, listedNfts]);
 
   const isLoading = React.useMemo(
-    () => !nft || !listings || !collectionInfo,
-    [nft, listings, collectionInfo]
+    () =>
+      salesStatus !== "succeeded" ||
+      tokenStatus !== "succeeded" ||
+      listingsStatus !== "succeeded" ||
+      dexStatus !== "succeeded" ||
+      !sales ||
+      !prices ||
+      !nft ||
+      !listings ||
+      !collectionInfo ||
+      !tokens ||
+      !collection,
+    [nft, listings, collectionInfo, tokens, collection]
   );
 
   return (
     <Layout>
       {!isLoading ? (
-        <Container sx={{ pt: 5 }}>
+        <Container sx={{ pt: 5 }} maxWidth="xl">
           <Stack style={{ gap: "64px" }}>
             <NFTInfo
               nft={nft}
@@ -512,24 +614,135 @@ export const Token: React.FC = () => {
               loading={isLoading}
               exchangeRate={exchangeRate}
             />
-            <NFTTabs nft={nft} loading={isLoading} />
-            <NFTMore
-              title={`More from ${
-                collectionInfo?.project?.title ||
-                nft.metadata.name.replace(/[#0123456789 ]*$/, "")
-              }`}
-              nfts={moreNfts}
-              onClick={(el) => {
-                const nft = listedNfts.find(
-                  (el2: any) =>
-                    el2.contractId === el.contractId &&
-                    el2.tokenId === el.tokenId
-                );
-                setNft(nft);
-                navigate(`/collection/${nft.contractId}/token/${nft.tokenId}`);
-                window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-              }}
+            <NFTTabs
+              exchangeRate={exchangeRate}
+              nft={nft}
+              loading={isLoading}
             />
+
+            <HeadingContainer>
+              <HeadingText
+                className={isDarkTheme ? "dark" : "light"}
+              >{`More from ${
+                collectionInfo?.project?.title ||
+                nft?.metadata?.name.replace(/[#0123456789 ]*$/, "")
+              }`}</HeadingText>
+              <StyledLink to={`/collection/${nft.contractId}`}>
+                <SecondaryButton>
+                  <ButtonLabel>View Collection</ButtonLabel>
+                </SecondaryButton>
+              </StyledLink>
+            </HeadingContainer>
+            <NFTCards ref={listingsRef}>
+              <div
+                style={{
+                  position: "absolute",
+                  right: 20,
+                  transform: "translate(-50%, -50%)",
+                  zIndex: 1,
+                  cursor: "pointer",
+                }}
+                onClick={handleClick}
+              >
+                <div
+                  style={{
+                    position: "relative",
+                    top: 215,
+                    right: -15,
+                  }}
+                >
+                  <svg
+                    width="98"
+                    height="98"
+                    viewBox="0 0 98 98"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <g filter="url(#filter0_d_494_13335)">
+                      <rect
+                        x="25"
+                        y="25"
+                        width="48"
+                        height="48"
+                        rx="24"
+                        fill="#99FF33"
+                        shape-rendering="crispEdges"
+                      />
+                      <path
+                        d="M39.6667 49H58.3334M58.3334 49L49 39.6667M58.3334 49L49 58.3334"
+                        stroke="#161717"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </g>
+                    <defs>
+                      <filter
+                        id="filter0_d_494_13335"
+                        x="0"
+                        y="0"
+                        width="98"
+                        height="98"
+                        filterUnits="userSpaceOnUse"
+                        color-interpolation-filters="sRGB"
+                      >
+                        <feFlood
+                          flood-opacity="0"
+                          result="BackgroundImageFix"
+                        />
+                        <feColorMatrix
+                          in="SourceAlpha"
+                          type="matrix"
+                          values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+                          result="hardAlpha"
+                        />
+                        <feOffset />
+                        <feGaussianBlur stdDeviation="12.5" />
+                        <feComposite in2="hardAlpha" operator="out" />
+                        <feColorMatrix
+                          type="matrix"
+                          values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"
+                        />
+                        <feBlend
+                          mode="normal"
+                          in2="BackgroundImageFix"
+                          result="effect1_dropShadow_494_13335"
+                        />
+                        <feBlend
+                          mode="normal"
+                          in="SourceGraphic"
+                          in2="effect1_dropShadow_494_13335"
+                          result="shape"
+                        />
+                      </filter>
+                    </defs>
+                  </svg>
+                </div>
+              </div>
+              {moreNfts.map((el: any) => (
+                <NFTCard2
+                  style={{
+                    position: "relative",
+                    left: offset,
+                    transition: "left 1s",
+                  }}
+                  nftName={el?.metadata?.name}
+                  image={
+                    "https://prod.cdn.highforge.io/i/" +
+                    encodeURIComponent(el.metadataURI) +
+                    "?w=400"
+                  }
+                  price={(el.listing.price / 1e6).toLocaleString()}
+                  currency={"VIA"}
+                  onClick={() => {
+                    navigate(
+                      `/collection/${el.contractId}/token/${el.tokenId}`
+                    );
+                    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+                  }}
+                />
+              ))}
+            </NFTCards>
           </Stack>
         </Container>
       ) : (
