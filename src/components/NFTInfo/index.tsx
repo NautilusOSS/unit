@@ -592,9 +592,16 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
           customPaymentAmount.reduce((acc, val) => acc + val, 0)
         );
         ci.setExtraTxns(customTxns);
+        // -----------------------------------------
+        // eat auto optins
         if (contractId === 29088600) {
+          // Cassette
           ci.setOptins([29103397]);
+        } else if (contractId === 29085927) {
+          // Treehouse
+          ci.setOptins([33611293]);
         }
+        // -----------------------------------------
         const customR = await ci.custom();
         if (!customR.success) {
           throw new Error("failed in simulate");
@@ -754,9 +761,16 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
         ]);
         ci.setFee(2000);
         ci.setExtraTxns(customTxns);
+        // -----------------------------------------
+        // eat auto optins
         if (contractId === 29088600) {
+          // Cassette
           ci.setOptins([29103397]);
+        } else if (contractId === 29085927) {
+          // Treehouse
+          ci.setOptins([33611293]);
         }
+        // -----------------------------------------
         ci.setPaymentAmount(
           customPaymentAmount.reduce((acc, val) => acc + val, 0)
         );
@@ -892,6 +906,18 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
               sk: new Uint8Array(0),
             }
           );
+
+          // -----------------------------------------
+          // eat auto optins
+          // if (nft.listing.collectionId === 29088600) {
+          //   // Cassette
+          //   ci.setOptins([29103397]);
+          // } else 
+          if (nft.listing.collectionId === 29085927) {
+            // Treehouse
+            ci.setOptins([33611293]);
+          }
+          // -----------------------------------------
           ci.setExtraTxns(customTxn);
           ci.setFee(10000);
           ci.setPaymentAmount(nft.listing.price);
@@ -1088,7 +1114,17 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
               builder.mp.a_sale_buySC(nft.listing.mpListingId),
             ])
           ).map(({ obj }) => obj);
-
+          // -----------------------------------------
+          // eat auto optins
+          // if (nft.listing.collectionId === 29088600) {
+          //   // Cassette
+          //   ci.setOptins([29103397]);
+          // } else 
+          if (nft.listing.collectionId === 29085927) {
+            // Treehouse
+            ci.setOptins([33611293]);
+          }
+          // -----------------------------------------
           ci.setPaymentAmount(28500);
           ci.setAccounts([
             "VIAGCPULN6FUTHUNPQZDRQIHBT7IUVT264B3XDXLZNX7OZCJP6MEF7JFQU", // tokenAddr

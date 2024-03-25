@@ -587,8 +587,11 @@ export const Account: React.FC = () => {
           customPaymentAmount.reduce((acc, val) => acc + val, 0)
         );
         ci.setExtraTxns(customTxns);
-        if (contractId === 29088600) {
+        // eat auto optins
+        if (contractId === 29088600) { // Cassette
           ci.setOptins([29103397]);
+        } else if (contractId === 29085927) { // Treehouse
+          ci.setOptins([33611293]);
         }
         const customR = await ci.custom();
         if (!customR.success) {
