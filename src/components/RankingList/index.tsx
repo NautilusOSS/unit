@@ -14,6 +14,7 @@ import Stack from "@mui/material/Stack";
 import styled from "styled-components";
 import { collections } from "../../contants/games";
 import { Link, useNavigate } from "react-router-dom";
+import { Style } from "@mui/icons-material";
 
 export interface Player {
   collectionId: number;
@@ -31,18 +32,24 @@ interface Props {
 
 const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
-const StyledGrid = mstyled(Grid)(({ theme }) => {
-  const isDarkTheme = useSelector(
-    (state: RootState) => state.theme.isDarkTheme
-  );
-  return {
-    display: "flex",
-    //width: "630px",
-    padding: "0px 24px",
-    justifyContent: "space-between",
-    alignItems: "center",
-  };
-});
+const StyledGrid = styled(Grid)`
+  display: flex;
+  padding: 0px 72px 0px 24px;
+  justify-content: space-between;
+  align-items: center;
+  @media (max-width: 600px) {
+    padding: 0px 24px 0px 24px;
+  }
+`;
+
+const StyledGrid2 = styled(StyledGrid)`
+  justify-content: flex-end;
+  padding-right: 120px;
+  color: #000;
+  @media (max-width: 600px) {
+    padding-right: 72px;
+  }
+`;
 
 const AccountContainer = styled.div`
   display: flex;
@@ -162,6 +169,17 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
     <Grid container spacing={5}>
       <Grid item xs={12} lg={6}>
         <Grid container gap={1}>
+          <StyledGrid2 item xs={12}>
+            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+              <VolumeContainer>
+                <AccountMetricMaintext
+                  className={isDarkTheme ? "dark" : "light"}
+                >
+                  Volume
+                </AccountMetricMaintext>
+              </VolumeContainer>
+            </Stack>
+          </StyledGrid2>
           {[0, 1, 2, 3, 4].map((index) =>
             filteredRankings[index] ? (
               <StyledGrid
@@ -171,7 +189,7 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                 sx={{ cursor: "pointer" }}
                 onClick={() => {
                   navigate(
-                    `/collection/${filteredRankings[index]?.collectionId}`
+                    `/collection/${filteredRankings[index].collectionId}`
                   );
                   window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
                 }}
@@ -251,6 +269,17 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
       </Grid>
       <Grid item xs={12} lg={6} sx={{ display: { xs: "none", lg: "block" } }}>
         <Grid container spacing={1}>
+          <StyledGrid2 item xs={12}>
+            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+              <VolumeContainer>
+                <AccountMetricMaintext
+                  className={isDarkTheme ? "dark" : "light"}
+                >
+                  Volume
+                </AccountMetricMaintext>
+              </VolumeContainer>
+            </Stack>
+          </StyledGrid2>
           {[5, 6, 7, 8, 9].map((index) =>
             filteredRankings[index] ? (
               <StyledGrid
