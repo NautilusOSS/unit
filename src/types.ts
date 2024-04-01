@@ -86,6 +86,7 @@ export interface ListingI {
   mpListingId: number;
   tokenId: number;
   seller: string;
+  buyer?: string;
   currency: number;
   price: number;
   normalPrice?: number;
@@ -97,6 +98,10 @@ export interface ListingI {
   // nftindexerlistingi
   transactionId: string;
   createTimestamp: number;
+}
+
+export interface ListingActivityI extends ListingI {
+  activity: "listing";
 }
 
 export interface ListedToken extends Token {
@@ -117,6 +122,10 @@ export interface SaleI {
   round: number;
   timestamp: number;
   collectionId: number;
+}
+
+export interface SaleActivityI extends SaleI {
+  activity: "sale";
 }
 
 export interface NFTIndexerSaleI extends SaleI {
@@ -149,4 +158,15 @@ export interface RankingI {
   owners: number;
   items: number;
   sales: number;
+}
+
+/* Activity */
+
+export interface ActivityI {
+  image: string;
+  tokenName: string;
+  activity: string;
+  seller: string;
+  buyer: string;
+  price: number;
 }

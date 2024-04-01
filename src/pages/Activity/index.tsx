@@ -1,35 +1,66 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Layout from "../../layouts/Default";
-import Section from "../../components/Section";
-import { Grid, Skeleton } from "@mui/material";
-import { Link, useNavigate } from "react-router-dom";
+import { Grid, Skeleton, Stack } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import axios from "axios";
-//import { MarketplaceContext } from "../../store/MarketplaceContext";
-import NftCard from "../../components/NFTCard";
-import { decodePrice, decodeTokenId, getRankings } from "../../utils/mp";
+import { getRankings } from "../../utils/mp";
 import styled from "styled-components";
-import NFTCollectionTable from "../../components/NFTCollectionTable";
-import NFTSalesTable from "../../components/NFTSalesTable";
 import NFTSaleActivityTable from "../../components/NFTSaleActivityTable";
-import RankingList from "../../components/RankingList";
-import ToggleButtons from "../../components/RankingFilterToggleButtons";
-import { Stack } from "@mui/material";
-import { getTokens, updateToken } from "../../store/tokenSlice";
-import { UnknownAction } from "@reduxjs/toolkit";
-import { getCollections } from "../../store/collectionSlice";
-import {
-  CollectionI,
-  ListedToken,
-  ListingI,
-  RankingI,
-  Token,
-  TokenI,
-} from "../../types";
+import { ListedToken, ListingI, TokenI } from "../../types";
 import { getSales } from "../../store/saleSlice";
 import { getPrices } from "../../store/dexSlice";
 import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
+import { UnknownAction } from "@reduxjs/toolkit";
+import { getTokens } from "../../store/tokenSlice";
+import { getListings } from "../../store/listingSlice";
+import { getCollections } from "../../store/collectionSlice";
+
+const ActivityFilterContainer = styled.div`
+  display: flex;
+  align-items: flex-start;
+  align-content: flex-start;
+  gap: 10px var(--Main-System-10px, 10px);
+  align-self: stretch;
+  flex-wrap: wrap;
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const Button = styled.div`
+  cursor: pointer;
+`;
+
+const Filter = styled(Button)`
+  display: flex;
+  padding: 6px 12px;
+  justify-content: center;
+  align-items: center;
+  gap: var(--Main-System-10px, 10px);
+  border-radius: 100px;
+  border: 1px solid #717579;
+`;
+
+const ActiveFilter = styled(Filter)`
+  border-color: #93f;
+  background: rgba(153, 51, 255, 0.2);
+`;
+
+const FilterLabel = styled.div`
+  color: #717579;
+  font-feature-settings: "clig" off, "liga" off;
+  font-family: Inter;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+`;
+
+const ActiveFilterLabel = styled(FilterLabel)`
+  color: #93f;
+`;
 
 const SectionHeading = styled.div`
   display: flex;
@@ -141,6 +172,19 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 export const Activity: React.FC = () => {
+  const [activeFilter, setActiveFilter] = useState<string[]>(["all"]);
+  const handleFilterClick = (value: string) => {
+    if (value === "all") return setActiveFilter(["all"]);
+    if (activeFilter.length === 1 && activeFilter.includes("all"))
+      return setActiveFilter([value]);
+    if (activeFilter.includes(value)) {
+      const newActiveFilter = activeFilter.filter((filter) => filter !== value);
+      if (newActiveFilter.length === 0) return setActiveFilter(["all"]);
+      setActiveFilter(activeFilter.filter((filter) => filter !== value));
+    } else {
+      setActiveFilter([...activeFilter, value]);
+    }
+  };
   /* Dispatch */
   const dispatch = useDispatch();
   /* Dex */
@@ -178,6 +222,12 @@ export const Activity: React.FC = () => {
   useEffect(() => {
     dispatch(getSales() as unknown as UnknownAction);
   }, [dispatch]);
+  /* Listings */
+  const listings = useSelector((state: any) => state.listings.listings);
+  const listingsStatus = useSelector((state: any) => state.listings.status);
+  useEffect(() => {
+    dispatch(getListings() as unknown as UnknownAction);
+  }, [dispatch]);
 
   /* Theme */
   const isDarkTheme = useSelector(
@@ -199,123 +249,76 @@ export const Activity: React.FC = () => {
     }
   };
 
-  /* NFT Navigator Listings */
-  const [listings, setListings] = React.useState<any>(null);
-  React.useEffect(() => {
-    try {
-      const res = axios
-        .get("https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/listings", {
-          params: {
-            active: true,
-          },
-        })
-        .then(({ data }) => {
-          setListings(data.listings);
-        });
-    } catch (e) {
-      console.log(e);
-    }
-  }, []);
-
-  const listedNfts = useMemo(() => {
-    if (tokenStatus !== "succeeded") return [];
-    const listedNfts: ListedToken[] =
-      tokens
-        ?.filter((nft: TokenI) => {
-          return listings?.some(
-            (listing: ListingI) =>
-              `${listing.collectionId}` === `${nft.contractId}` &&
-              `${listing.tokenId}` === `${nft.tokenId}`
-          );
-        })
-        ?.map((nft: TokenI) => {
-          const listing = listings.find(
-            (l: ListingI) =>
-              `${l.collectionId}` === `${nft.contractId}` &&
-              `${l.tokenId}` === `${nft.tokenId}`
-          );
-          return {
-            ...nft,
-            listing,
-          };
-        }) || [];
-    listedNfts.sort(
-      (a: any, b: any) => b.listing.createTimestamp - a.listing.createTimestamp
-    );
-    return listedNfts;
-  }, [tokenStatus, tokens, listings]);
-
-  const listedCollections = useMemo(() => {
-    if (collectionStatus !== "succeeded") return [];
-    const listedCollections =
-      collections
-        ?.filter((c: any) => {
-          return listedNfts?.some(
-            (nft: any) => `${nft.contractId}` === `${c.contractId}`
-          );
-        })
-        .map((c: any) => {
-          return {
-            ...c,
-            tokens: listedNfts?.filter(
-              (nft: any) => `${nft.contractId}` === `${c.contractId}`
-            ),
-          };
-        }) || [];
-    listedCollections.sort(
-      (a: any, b: any) =>
-        b.tokens[0].listing.createTimestamp -
-        a.tokens[0].listing.createTimestamp
-    );
-    return listedCollections;
-  }, [collectionStatus, collections, listedNfts]);
-
-  const rankings: any = useMemo(() => {
-    if (
-      !sales ||
-      !listings ||
-      salesStatus !== "succeeded" ||
-      collectionStatus !== "succeeded" ||
-      tokenStatus !== "succeeded"
-    )
-      return new Map();
-    return getRankings(tokens, collections, sales, listings, exchangeRate);
-  }, [sales, tokens, collections, listings]);
-
   const isLoading = useMemo(
     () =>
       !listings ||
-      !listedNfts ||
-      !listedCollections ||
-      !rankings ||
+      // //!listedNfts ||
+      //!listedCollections ||
+      //!rankings ||
       tokenStatus !== "succeeded" ||
       collectionStatus !== "succeeded" ||
-      salesStatus !== "succeeded",
+      salesStatus !== "succeeded" ||
+      listingsStatus !== "succeeded",
     [
       listings,
-      listedNfts,
-      listedCollections,
-      rankings,
+      //listedNfts,
+      //listedCollections,
+      //rankings,
       tokenStatus,
       collectionStatus,
       salesStatus,
+      listingsStatus,
     ]
   );
-
   return (
     <Layout>
       {!isLoading ? (
         <div>
           {/* Activity */}
           <SectionHeading>
-            <SectionTitle className={isDarkTheme ? "dark" : "light"}>
-              Activity
-            </SectionTitle>
+            <Stack direction="row" spacing={2}>
+              <SectionTitle className={isDarkTheme ? "dark" : "light"}>
+                Activity
+              </SectionTitle>
+              <ActivityFilterContainer>
+                {[
+                  {
+                    label: "All",
+                    value: "all",
+                  },
+                  {
+                    label: "Listing",
+                    value: "listing",
+                  },
+                  {
+                    label: "Sale",
+                    value: "sale",
+                  },
+                ].map((filter) => {
+                  if (activeFilter.includes(filter.value)) {
+                    return (
+                      <ActiveFilter
+                        onClick={() => handleFilterClick(filter.value)}
+                      >
+                        <ActiveFilterLabel>{filter.label}</ActiveFilterLabel>
+                      </ActiveFilter>
+                    );
+                  }
+                  return (
+                    <Filter onClick={() => handleFilterClick(filter.value)}>
+                      <FilterLabel>{filter.label}</FilterLabel>
+                    </Filter>
+                  );
+                })}
+              </ActivityFilterContainer>
+            </Stack>
           </SectionHeading>
           <NFTSaleActivityTable
             sales={sales}
             tokens={tokens}
             collections={collections}
+            listings={listings}
+            activeFilter={activeFilter}
           />
         </div>
       ) : (

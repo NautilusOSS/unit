@@ -1,59 +1,68 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Layout from "../../layouts/Default";
-import Section from "../../components/Section";
-import { Box, Grid, Skeleton } from "@mui/material";
+import { Grid, Skeleton } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/store";
-import axios from "axios";
-//import { MarketplaceContext } from "../../store/MarketplaceContext";
-import NftCard from "../../components/NFTCard";
-import { decodePrice, decodeTokenId, getRankings } from "../../utils/mp";
 import styled from "styled-components";
-import NFTCollectionTable from "../../components/NFTCollectionTable";
-import NFTSalesTable from "../../components/NFTSalesTable";
 import NFTSaleActivityTable from "../../components/NFTSaleActivityTable";
-import NFTListingTable from "../../components/NFTListingTable";
 import RankingList from "../../components/RankingList";
-import ToggleButtons from "../../components/RankingFilterToggleButtons";
 import { Stack } from "@mui/material";
-import { getTokens, updateToken } from "../../store/tokenSlice";
+import { getTokens } from "../../store/tokenSlice";
 import { UnknownAction } from "@reduxjs/toolkit";
 import { getCollections } from "../../store/collectionSlice";
-import {
-  CollectionI,
-  ListedToken,
-  ListingI,
-  RankingI,
-  Token,
-  TokenI,
-} from "../../types";
+import { ListedToken, ListingI, TokenI } from "../../types";
 import { getSales } from "../../store/saleSlice";
 import Marquee from "react-fast-marquee";
 import CartNftCard from "../../components/CartNFTCard";
 import { getPrices } from "../../store/dexSlice";
 import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
 import { getListings } from "../../store/listingSlice";
+import { getRankings } from "../../utils/mp";
 
-const CollectionName = styled.div`
-  color: var(--White, #fff);
-  leading-trim: both;
-  text-edge: cap;
-  font-feature-settings: "clig" off, "liga" off;
-  font-family: Inter;
-  font-size: 20px;
-  font-style: normal;
-  font-weight: 800;
-  line-height: 24px; /* 120% */
+const ActivityFilterContainer = styled.div`
+  display: flex;
+  align-items: flex-start;
+  align-content: flex-start;
+  gap: 10px var(--Main-System-10px, 10px);
+  align-self: stretch;
+  flex-wrap: wrap;
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
-const CollectionVolume = styled.div`
-  color: var(--White, #fff);
+const Button = styled.div`
+  cursor: pointer;
+`;
+
+const Filter = styled(Button)`
+  display: flex;
+  padding: 6px 12px;
+  justify-content: center;
+  align-items: center;
+  gap: var(--Main-System-10px, 10px);
+  border-radius: 100px;
+  border: 1px solid #717579;
+`;
+
+const ActiveFilter = styled(Filter)`
+  border-color: #93f;
+  background: rgba(153, 51, 255, 0.2);
+`;
+
+const FilterLabel = styled.div`
+  color: #717579;
+  font-feature-settings: "clig" off, "liga" off;
   font-family: Inter;
-  font-size: 16px;
+  font-size: 15px;
   font-style: normal;
-  font-weight: 600;
-  line-height: 140%; /* 22.4px */
+  font-weight: 500;
+  line-height: normal;
+`;
+
+const ActiveFilterLabel = styled(FilterLabel)`
+  color: #93f;
 `;
 
 const SectionHeading = styled.div`
@@ -166,6 +175,20 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 export const Home: React.FC = () => {
+  const [activeFilter, setActiveFilter] = useState<string[]>(["all"]);
+  const handleFilterClick = (value: string) => {
+    if (value === "all") return setActiveFilter(["all"]);
+    if (activeFilter.length === 1 && activeFilter.includes("all"))
+      return setActiveFilter([value]);
+    if (activeFilter.includes(value)) {
+      const newActiveFilter = activeFilter.filter((filter) => filter !== value);
+      if (newActiveFilter.length === 0) return setActiveFilter(["all"]);
+      setActiveFilter(activeFilter.filter((filter) => filter !== value));
+    } else {
+      setActiveFilter([...activeFilter, value]);
+    }
+  };
+
   /* Dispatch */
   const dispatch = useDispatch();
   /* Dex */
@@ -228,24 +251,6 @@ export const Home: React.FC = () => {
       setSelectedOption(newOption);
     }
   };
-
-  /* NFT Navigator Listings */
-  // const [listings, setListings] = React.useState<any>(null);
-  // React.useEffect(() => {
-  //   try {
-  //     const res = axios
-  //       .get("https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/listings", {
-  //         params: {
-  //           active: true,
-  //         },
-  //       })
-  //       .then(({ data }) => {
-  //         setListings(data.listings);
-  //       });
-  //   } catch (e) {
-  //     console.log(e);
-  //   }
-  // }, []);
 
   const listedNfts = useMemo(() => {
     if (tokenStatus !== "succeeded") return [];
@@ -425,9 +430,42 @@ export const Home: React.FC = () => {
           <RankingList rankings={rankings} selectedOption={selectedOption} />
           {/* Activity */}
           <SectionHeading>
-            <SectionTitle className={isDarkTheme ? "dark" : "light"}>
-              Activity
-            </SectionTitle>
+            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+              <SectionTitle className={isDarkTheme ? "dark" : "light"}>
+                Activity
+              </SectionTitle>
+              <ActivityFilterContainer>
+                {[
+                  {
+                    label: "All",
+                    value: "all",
+                  },
+                  {
+                    label: "Listing",
+                    value: "listing",
+                  },
+                  {
+                    label: "Sale",
+                    value: "sale",
+                  },
+                ].map((filter) => {
+                  if (activeFilter.includes(filter.value)) {
+                    return (
+                      <ActiveFilter
+                        onClick={() => handleFilterClick(filter.value)}
+                      >
+                        <ActiveFilterLabel>{filter.label}</ActiveFilterLabel>
+                      </ActiveFilter>
+                    );
+                  }
+                  return (
+                    <Filter onClick={() => handleFilterClick(filter.value)}>
+                      <FilterLabel>{filter.label}</FilterLabel>
+                    </Filter>
+                  );
+                })}
+              </ActivityFilterContainer>
+            </Stack>
             <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
               <SectionMoreButtonContainer>
                 <SectionMoreButton
@@ -450,6 +488,8 @@ export const Home: React.FC = () => {
             sales={sales}
             tokens={tokens}
             collections={collections}
+            listings={listings}
+            activeFilter={activeFilter}
             limit={10}
           />
 
