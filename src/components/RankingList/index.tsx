@@ -45,7 +45,12 @@ const StyledGrid = styled(Grid)`
 const StyledGrid2 = styled(StyledGrid)`
   justify-content: flex-end;
   padding-right: 120px;
-  color: #000;
+  &.light {
+    color: #000;
+  }
+  &.dark {
+    color: #fff;
+  }
   @media (max-width: 600px) {
     padding-right: 72px;
   }
@@ -81,7 +86,7 @@ const AccountName = styled.div`
 const AccountMetric = styled(Box)`
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
 `;
 
 const AccountMetricSubtext = styled.span`
@@ -126,7 +131,7 @@ const RankText = styled.div`
 const VolumeContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
 `;
 
 const AccountInfo = styled.div`
@@ -169,7 +174,7 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
     <Grid container spacing={5}>
       <Grid item xs={12} lg={6}>
         <Grid container gap={1}>
-          <StyledGrid2 item xs={12}>
+          <StyledGrid2 item xs={12} className={isDarkTheme ? "dark" : "light"}>
             <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
               <VolumeContainer>
                 <AccountMetricMaintext
@@ -228,7 +233,10 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                       </Link>
                       {filteredRankings[index]?.floorPrice > 0 ? (
                         <AccountMetric
-                          sx={{ display: { xs: "none", sm: "block" } }}
+                          sx={{
+                            display: { xs: "none", sm: "flex" },
+                            gap: "6px",
+                          }}
                         >
                           <AccountMetricSubtext>Floor</AccountMetricSubtext>
                           <AccountMetricMaintext
