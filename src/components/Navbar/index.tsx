@@ -47,6 +47,11 @@ const AccountIcon = () => {
   );
 };
 
+const StyledLink = styled(Link)`
+  text-decoration: none;
+  color: inherit;
+`;
+
 const AccountContainer = styled.div`
   display: flex;
   align-items: center;
@@ -351,50 +356,52 @@ const Navbar = () => {
         </li>*/}
           </ul>
           {activeAccount && accInfo ? (
-            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-              <div
-                style={{
-                  color: isDarkTheme ? "#717579" : undefined,
-                }}
-              >
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  sx={{
-                    display: { xs: "none", sm: "flex" },
+            <StyledLink to={`/account/${activeAccount?.address}`}>
+              <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+                <div
+                  style={{
+                    color: isDarkTheme ? "#717579" : undefined,
                   }}
                 >
                   <Stack
                     direction="row"
-                    spacing={0.5}
+                    spacing={1}
                     sx={{
-                      alignItems: "center",
-                      justifyContent: "space-between",
+                      display: { xs: "none", sm: "flex" },
                     }}
                   >
-                    <img src={VOIIcon} style={{ height: "12px" }} />
-                    <div>
-                      {(
-                        (accInfo.amount - accInfo["min-balance"]) /
-                        1e6
-                      ).toLocaleString()}{" "}
-                      VOI
-                    </div>
+                    <Stack
+                      direction="row"
+                      spacing={0.5}
+                      sx={{
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <img src={VOIIcon} style={{ height: "12px" }} />
+                      <div>
+                        {(
+                          (accInfo.amount - accInfo["min-balance"]) /
+                          1e6
+                        ).toLocaleString()}{" "}
+                        VOI
+                      </div>
+                    </Stack>
+                    <Stack
+                      direction="row"
+                      spacing={0.5}
+                      sx={{
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <img src={VIAIcon} style={{ height: "12px" }} />
+                      <div>{(balance / 1e6).toLocaleString()} VIA</div>
+                    </Stack>
                   </Stack>
-                  <Stack
-                    direction="row"
-                    spacing={0.5}
-                    sx={{
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <img src={VIAIcon} style={{ height: "12px" }} />
-                    <div>{(balance / 1e6).toLocaleString()} VIA</div>
-                  </Stack>
-                </Stack>
-              </div>
-            </Stack>
+                </div>
+              </Stack>
+            </StyledLink>
           ) : null}
           <AccountContainer>
             {activeAccount ? (
