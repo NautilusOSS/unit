@@ -15,7 +15,6 @@ import {
   Typography,
 } from "@mui/material";
 import NFTCard from "../../components/NFTCard";
-import Section from "../../components/Section";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/store";
@@ -32,9 +31,9 @@ import { getAlgorandClients } from "../../wallets";
 import { arc72, CONTRACT, abi, arc200 } from "ulujs";
 import TransferModal from "../../components/modals/TransferModal";
 import ListSaleModal from "../../components/modals/ListSaleModal";
+import ListAuctionModal from "../../components/modals/ListAuctionModal";
 import algosdk from "algosdk";
 import { ListingBoxCost, ctcInfoMp206 } from "../../contants/mp";
-//import { MarketplaceContext } from "../../store/MarketplaceContext";
 import { decodeRoyalties } from "../../utils/hf";
 import NFTListingTable from "../../components/NFTListingTable";
 import { ListingI, Token } from "../../types";
@@ -47,14 +46,9 @@ import { getPrices } from "../../store/dexSlice";
 import { UnknownAction } from "@reduxjs/toolkit";
 import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
 import StorefrontIcon from "@mui/icons-material/Storefront";
+import GavelIcon from "@mui/icons-material/Gavel";
 
 const { algodClient, indexerClient } = getAlgorandClients();
-
-const ExternalLinks = styled.ul`
-  & li {
-    Number(margin-top: 10px;
-  }
-`;
 
 const StyledLink = styled(Link)`
   text-decoration: none;
@@ -302,6 +296,7 @@ export const Account: React.FC = () => {
   const [open, setOpen] = React.useState(false);
   const [isTransferring, setIsTransferring] = React.useState(false);
   const [openListSale, setOpenListSale] = React.useState(false);
+  const [openListAuction, setOpenListAuction] = React.useState(false);
   const [isListing, setIsListing] = React.useState(false);
 
   const [activeTab, setActiveTab] = React.useState(0);
@@ -316,6 +311,8 @@ export const Account: React.FC = () => {
       royalties,
     });
   }, [nfts, selected]);
+
+  const handleListAuction = async (price: string, currency: string) => {};
 
   const handleListSale = async (price: string, currency: string) => {
     const listedNft = nft?.listing
@@ -587,12 +584,16 @@ export const Account: React.FC = () => {
           customPaymentAmount.reduce((acc, val) => acc + val, 0)
         );
         ci.setExtraTxns(customTxns);
+        // ------------------------------------------
         // eat auto optins
-        if (contractId === 29088600) { // Cassette
+        if (contractId === 29088600) {
+          // Cassette
           ci.setOptins([29103397]);
-        } else if (contractId === 29085927) { // Treehouse
+        } else if (contractId === 29085927) {
+          // Treehouse
           ci.setOptins([33611293]);
         }
+        // ------------------------------------------
         const customR = await ci.custom();
         if (!customR.success) {
           throw new Error("failed in simulate");
@@ -757,6 +758,16 @@ export const Account: React.FC = () => {
         ci.setPaymentAmount(
           customPaymentAmount.reduce((acc, val) => acc + val, 0)
         );
+        // ------------------------------------------
+        // eat auto optins
+        if (contractId === 29088600) {
+          // Cassette
+          ci.setOptins([29103397]);
+        } else if (contractId === 29085927) {
+          // Treehouse
+          ci.setOptins([33611293]);
+        }
+        // ------------------------------------------
         const customR = await ci.custom();
         if (!customR.success) {
           throw new Error("failed in simulate");
@@ -1016,84 +1027,6 @@ export const Account: React.FC = () => {
             <Typography variant="h4" sx={{ mt: 3 }}>
               Collected <small>{nfts?.length}</small>
             </Typography>
-            {/*<Stack
-              sx={{
-                mt: 3,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-              spacing={2}
-              direction="row"
-            >
-              {selected >= 0 ? (
-                <>
-                  <ButtonGroup
-                    sx={{
-                      position: "absolute",
-                      top: "10px",
-                      right: "10px",
-                      background: isDarkTheme ? "#000000e0" : "#ffffffe0",
-                      backdropFilter: "blur(200px) brightness(100%)",
-                    }}
-                  >
-                    <Button
-                      onClick={() => {
-                        navigate(
-                          `/collection/${nfts[selected].contractId}/token/${nfts[selected].tokenId}`
-                        );
-                      }}
-                    >
-                      View
-                    </Button>
-                    <Button
-                      size="large"
-                      variant="outlined"
-                      onClick={async () => {
-                        try {
-                          // get account available balance
-                          const accInfo = await algodClient
-                            .accountInformation(activeAccount?.address || "")
-                            .do();
-                          const availableBalance =
-                            accInfo.amount - accInfo["min-balance"];
-                          // check that available balance is greater than or equal to 0.1235
-                          if (availableBalance < 123500) {
-                            throw new Error(
-                              `Insufficient balance (${
-                                (availableBalance - 123500) / 1e6
-                              } VOI). Please fund your account.`
-                            );
-                          }
-
-                          setOpenListSale(true);
-                        } catch (e: any) {
-                          console.log(e);
-                          toast.error(e.message);
-                        }
-                      }}
-                    >
-                      <StorefrontIcon />
-                    </Button>
-                    <Button
-                      size="large"
-                      variant="outlined"
-                      onClick={() => {
-                        setOpen(true);
-                      }}
-                    >
-                      Transfer
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setSelected(-1);
-                      }}
-                    >
-                      Clear
-                    </Button>
-                  </ButtonGroup>
-                </>
-              ) : null}
-            </Stack>*/}
             {nfts ? (
               <Grid container spacing={2} sx={{ mt: 1 }}>
                 {nfts?.map((nft: any, index: number) => {
@@ -1110,8 +1043,8 @@ export const Account: React.FC = () => {
                           <ButtonGroup
                             sx={{
                               position: "absolute",
-                              top: "10px",
-                              right: "10px",
+                              top: "-50px",
+                              right: "-10px",
                               background: isDarkTheme
                                 ? "#000000e0"
                                 : "#ffffffe0",
@@ -1131,6 +1064,19 @@ export const Account: React.FC = () => {
                             >
                               <VisibilityIcon />
                             </Button>
+                            {/*<Button
+                              onClick={async () => {
+                                try {
+                                  //throw new Error("Not implemented");
+                                  setOpenListAuction(true);
+                                } catch (e: any) {
+                                  console.log(e);
+                                  toast.error(e.message);
+                                }
+                              }}
+                            >
+                              <GavelIcon />
+                            </Button>*/}
                             <Button
                               size="large"
                               variant="outlined"
@@ -1251,90 +1197,6 @@ export const Account: React.FC = () => {
               <Typography variant="h4" sx={{ mt: 3 }}>
                 Listed <small>{listedNfts.length}</small>
               </Typography>
-              {/*
-              <Stack
-                sx={{
-                  mt: 3,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-                spacing={2}
-                direction="row"
-              >
-                {selected2 !== "" ? (
-                  <>
-                    <ButtonGroup>
-                      {viewMode === "grid" ? (
-                        <Button
-                          onClick={() => {
-                            const nft = listedNfts.find(
-                              (el: any) =>
-                                `${el.listing.mpContractId}-${el.listing.mpListingId}` ===
-                                selected2
-                            );
-                            navigate(
-                              `/collection/${nft.contractId}/token/${nft.tokenId}`
-                            );
-                          }}
-                        >
-                          <VisibilityIcon />
-                        </Button>
-                      ) : null}
-                      <Button
-                        onClick={async () => {
-                          try {
-                            // get account available balance
-                            const accInfo = await algodClient
-                              .accountInformation(activeAccount?.address || "")
-                              .do();
-                            const availableBalance =
-                              accInfo.amount - accInfo["min-balance"];
-                            // check that available balance is greater than or equal to 0.1235
-                            if (availableBalance < 123500) {
-                              throw new Error(
-                                `Insufficient balance (${
-                                  (availableBalance - 123500) / 1e6
-                                } VOI). Please fund your account.`
-                              );
-                            }
-                            const nft = listedNfts.find(
-                              (el: any) =>
-                                `${el.listing.mpContractId}-${el.listing.mpListingId}` ===
-                                selected2
-                            );
-                            const royalties = decodeRoyalties(
-                              nft.metadata.royalties
-                            );
-                            console.log({ ...nft, royalties });
-                            setNft({
-                              ...nft,
-                              royalties,
-                            });
-                            setOpenListSale(true);
-                          } catch (e: any) {
-                            console.log(e);
-                            toast.error(e.message);
-                          }
-                        }}
-                      >
-                        <EditIcon />
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          const nft = listedNfts.find(
-                            (el: any) =>
-                              `${el.listing.mpContractId}-${el.listing.mpListingId}` ===
-                              selected2
-                          );
-                          handleDeleteListing(nft.listing.mpListingId);
-                        }}
-                      >
-                        <DeleteIcon />
-                      </Button>
-                    </ButtonGroup>
-                  </>
-                ) : null}
-              </Stack>*/}
               <ToggleButtonGroup
                 sx={{ display: { xs: "none", sm: "flex" } }}
                 color="primary"
@@ -1416,6 +1278,18 @@ export const Account: React.FC = () => {
                                 <VisibilityIcon />
                               </Button>
                             ) : null}
+                            <Button
+                              onClick={async () => {
+                                try {
+                                  throw new Error("Not implemented");
+                                } catch (e: any) {
+                                  console.log(e);
+                                  toast.error(e.message);
+                                }
+                              }}
+                            >
+                              <GavelIcon />
+                            </Button>
                             <Button
                               onClick={async () => {
                                 try {
@@ -1582,6 +1456,16 @@ export const Account: React.FC = () => {
           open={openListSale}
           handleClose={() => setOpenListSale(false)}
           onSave={handleListSale}
+          nft={nft}
+        />
+      ) : null}
+      {nft ? (
+        <ListAuctionModal
+          title="List NFT for Auction"
+          loading={isListing}
+          open={openListAuction}
+          handleClose={() => setOpenListAuction(false)}
+          onSave={handleListAuction}
           nft={nft}
         />
       ) : null}
