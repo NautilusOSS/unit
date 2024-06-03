@@ -489,24 +489,6 @@ export const Listings: React.FC = () => {
     }
   };
 
-  /* NFT Navigator Listings */
-  // const [listings, setListings] = React.useState<any>(null);
-  // React.useEffect(() => {
-  //   try {
-  //     const res = axios
-  //       .get("https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/listings", {
-  //         params: {
-  //           active: true,
-  //         },
-  //       })
-  //       .then(({ data }) => {
-  //         setListings(data.listings);
-  //       });
-  //   } catch (e) {
-  //     console.log(e);
-  //   }
-  // }, []);
-
   const [search, setSearch] = useState<string>("");
   const [min, setMin] = useState<string>("");
   const [max, setMax] = useState<string>("");
@@ -849,6 +831,12 @@ export const Listings: React.FC = () => {
                   (t: TokenI) =>
                     t.contractId === el.collectionId && t.tokenId === el.tokenId
                 );
+                const collectionsMissingImage = [35720076];
+                const url = !collectionsMissingImage.includes(nft.contractId)
+                  ? `https://prod.cdn.highforge.io/i/${encodeURIComponent(
+                      nft.metadataURI
+                    )}?w=400`
+                  : nft.metadata.image;
                 return (
                   <Suspense fallback={<div>Loading...</div>}>
                     <NFTCard
@@ -861,11 +849,7 @@ export const Listings: React.FC = () => {
                       }
                       price={(el.price / 1e6).toLocaleString()}
                       currency={el.currency === 0 ? "VOI" : "VIA"}
-                      image={
-                        "https://prod.cdn.highforge.io/i/" +
-                        encodeURIComponent(nft?.metadataURI || "") +
-                        "?w=400"
-                      }
+                      image={url}
                       onClick={() => {
                         navigate(
                           `/collection/${el.collectionId}/token/${el.tokenId}`

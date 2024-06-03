@@ -146,25 +146,6 @@ export const Collection: React.FC = () => {
 
   const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid");
 
-  /* NFT Navigator Listings */
-  // const [listings, setListings] = React.useState<any>(null);
-  // React.useEffect(() => {
-  //   try {
-  //     const res = axios
-  //       .get("https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/listings", {
-  //         params: {
-  //           active: true,
-  //           collectionId: id,
-  //         },
-  //       })
-  //       .then(({ data }) => {
-  //         setListings(data.listings);
-  //       });
-  //   } catch (e) {
-  //     console.log(e);
-  //   }
-  // }, []);
-
   const normalListings = useMemo(() => {
     if (!listings || !exchangeRate) return [];
     return listings.map((listing: ListingI) => {
@@ -175,36 +156,6 @@ export const Collection: React.FC = () => {
       };
     });
   }, [listings, exchangeRate]);
-
-  /* NFT Navigator NFTs */
-  // const [nfts, setNfts] = React.useState<any>(null);
-  // React.useEffect(() => {
-  //   try {
-  //     (async () => {
-  //       const {
-  //         data: { tokens: res },
-  //       } = await axios.get(
-  //         `https://arc72-idx.voirewards.com/nft-indexer/v1/tokens`,
-  //         {
-  //           params: {
-  //             contractId: id,
-  //           },
-  //         }
-  //       );
-  //       const nfts = [];
-  //       for (const t of res) {
-  //         const tm = JSON.parse(t.metadata);
-  //         nfts.push({
-  //           ...t,
-  //           metadata: tm,
-  //         });
-  //       }
-  //       setNfts(nfts);
-  //     })();
-  //   } catch (e) {
-  //     console.log(e);
-  //   }
-  // }, []);
 
   const nfts = useMemo(() => {
     return tokens?.filter((token: any) => `${token.contractId}` === `${id}`);

@@ -76,15 +76,17 @@ export const NFTMore: React.FC<NFTMoreProps> = ({ nfts, title, onClick }) => {
       </div>
       <Grid container spacing={2}>
         {nfts.slice(0, 4).map((el: any) => {
+          const collectionsMissingImage = [35720076];
+          const url = !collectionsMissingImage.includes(el.contractId)
+            ? `https://prod.cdn.highforge.io/i/${encodeURIComponent(
+                el.metadataURI
+              )}?w=400`
+            : el.metadata.image;
           return (
             <Grid key={`${el.tokenId}`} item xs={6} sm={4} md={3}>
               <NftCard
                 nftName={el.metadata.name}
-                image={
-                  "https://prod.cdn.highforge.io/i/" +
-                  encodeURIComponent(el.metadataURI) +
-                  "?w=400"
-                }
+                image={url}
                 price={(el.listing.price / 1e6).toLocaleString()}
                 currency={`${el.listing.currency}` === "0" ? "VOI" : "VIA"}
                 owner={el.owner}

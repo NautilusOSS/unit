@@ -54,14 +54,9 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
   //   [nft.contractId]
   // );
 
-  const [currency, setCurrency] = useState<string>(
-    //isGameCollection ? "6779767" : "0"
-    "6779767"
-  );
-  const currencies = //isGameCollection
-    //?
-    defaultCurrencies.filter((el: any) => el.value !== "0");
-  //: defaultCurrencies;
+  const defaultCurrency: string = "0";
+  const [currency, setCurrency] = useState<string>(defaultCurrency);
+  const currencies = defaultCurrencies;
 
   // const handleCurrencyChange = (newCurrency: string) => {
   //   setCurrency(newCurrency);
@@ -76,7 +71,7 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
 
   const onClose = () => {
     setPrice("");
-    setCurrency("6779767"); // reset to default VIA
+    setCurrency(defaultCurrency); // reset to default VIA
     handleClose();
   };
 

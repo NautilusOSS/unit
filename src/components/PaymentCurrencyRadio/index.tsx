@@ -7,10 +7,7 @@ import {
   Radio,
 } from "@mui/material";
 
-export const defaultCurrencies = [
-  { value: "0", label: "VOI" },
-  { value: "6779767", label: "VIA" },
-];
+export const defaultCurrencies = [{ value: "0", label: "VOI" }];
 
 interface PaymentCurrencyRadioProps {
   selectedValue: string;

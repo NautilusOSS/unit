@@ -6,6 +6,13 @@ import { Box } from "@mui/material";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import {
+  QUEST_ACTION,
+  QUEST_API,
+  getActions,
+  submitAction,
+} from "../../config/quest";
 
 const WalletIcon2 = () => {
   return (
@@ -26,7 +33,6 @@ const WalletIcon2 = () => {
     </svg>
   );
 };
-
 
 const WalletIconContainer = styled.div`
   display: flex;
@@ -453,6 +459,24 @@ function BasicMenu() {
   const handleClose = () => {
     setAnchorEl(null);
   };
+  // ---------------------------------------------
+  // QUEST
+  // ---------------------------------------------
+  React.useEffect(() => {
+    if (activeAccount) {
+      const action = QUEST_ACTION.CONNECT_WALLET;
+      const address = activeAccount.address;
+      const key = `${action}:${address}`;
+      getActions(address).then(({ data: { results } }) => {
+        const action = results.find((el: any) => el.key === key);
+        if (!action) {
+          submitAction(QUEST_ACTION.CONNECT_WALLET, address);
+          // alert here
+        }
+      });
+    }
+  }, [activeAccount]);
+  // ---------------------------------------------
   /* Theme */
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme

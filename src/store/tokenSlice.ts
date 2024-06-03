@@ -5,6 +5,7 @@ import db from "../db";
 import { RootState } from "./store";
 import { NFTIndexerToken, Token } from "../types";
 import { decodeRoyalties } from "../utils/hf";
+import { ARC72_INDEXER_API } from "../config/arc72-idx";
 
 export interface TokensState {
   tokens: Token[];
@@ -25,7 +26,7 @@ export const getTokens = createAsyncThunk<
         ? Math.max(...tokens.map((token) => token.mintRound))
         : 0;
     const response = await axios.get(
-      "https://arc72-idx.voirewards.com/nft-indexer/v1/tokens",
+      `${ARC72_INDEXER_API}/nft-indexer/v1/tokens`,
       {
         params: {
           "mint-min-round": lastRound,

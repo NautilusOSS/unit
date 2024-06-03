@@ -30,8 +30,6 @@ interface Props {
   selectedOption: string | null;
 }
 
-const formatter = Intl.NumberFormat("en", { notation: "compact" });
-
 const StyledGrid = styled(Grid)`
   display: flex;
   padding: 0px 72px 0px 24px;
@@ -268,7 +266,7 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                         : 0}
                     </span>
                   </AccountMetricMaintext>
-                  <AccountMetricSubtext>VIA</AccountMetricSubtext>
+                  <AccountMetricSubtext>VOI</AccountMetricSubtext>
                 </VolumeContainer>
               </StyledGrid>
             ) : null
@@ -329,25 +327,27 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                           ? filteredRankings[index].name
                           : "Collection Name"}
                       </AccountName>
-                      <AccountMetric>
-                        <AccountMetricSubtext>Floor</AccountMetricSubtext>
-                        <AccountMetricMaintext>
-                          <span className={isDarkTheme ? "dark" : "light"}>
-                            {filteredRankings[index]?.floorPrice
-                              ? filteredRankings[index].floorPrice !== 0
-                                ? Math.round(
-                                    filteredRankings[index].floorPrice / 1e6
-                                  ).toLocaleString()
-                                : "-"
-                              : "-"}
-                          </span>
-                        </AccountMetricMaintext>
-                        <AccountMetricSubtext>
-                          {filteredRankings[index]?.scoreUnit
-                            ? filteredRankings[index].scoreUnit
-                            : "Score Unit"}
-                        </AccountMetricSubtext>
-                      </AccountMetric>
+                      {filteredRankings[index]?.floorPrice > 0 ? (
+                        <AccountMetric>
+                          <AccountMetricSubtext>Floor</AccountMetricSubtext>
+                          <AccountMetricMaintext>
+                            <span className={isDarkTheme ? "dark" : "light"}>
+                              {filteredRankings[index]?.floorPrice
+                                ? filteredRankings[index].floorPrice !== 0
+                                  ? Math.round(
+                                      filteredRankings[index].floorPrice / 1e6
+                                    ).toLocaleString()
+                                  : "-"
+                                : "-"}
+                            </span>
+                          </AccountMetricMaintext>
+                          <AccountMetricSubtext>
+                            {filteredRankings[index]?.scoreUnit
+                              ? filteredRankings[index].scoreUnit
+                              : "Score Unit"}
+                          </AccountMetricSubtext>
+                        </AccountMetric>
+                      ) : null}
                     </AccountInfo>
                   </AccountContainer>
                 </Stack>
@@ -359,7 +359,7 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                         : 0}
                     </span>
                   </AccountMetricMaintext>
-                  <AccountMetricSubtext>VIA</AccountMetricSubtext>
+                  <AccountMetricSubtext>VOI</AccountMetricSubtext>
                 </VolumeContainer>
               </StyledGrid>
             ) : null

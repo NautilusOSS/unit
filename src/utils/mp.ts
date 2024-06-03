@@ -197,15 +197,15 @@ export const getRankings = (
     }
     const floorPrice = floors.get(kv[0]) || 0;
     const volume = kv[1];
+    const collectionsMissingImage = [35720076];
+    const url = !collectionsMissingImage.includes(token.contractId)
+      ? `https://prod.cdn.highforge.io/i/${encodeURIComponent(
+          token.metadataURI
+        )}?w=240`
+      : token.metadata.image;
     return {
       collectionId: kv[0],
-      image:
-        "https://prod.cdn.highforge.io/i/" +
-        encodeURIComponent(token.metadataURI) +
-        "?w=240",
-      //`https://prod.cdn.highforge.io/i/${encodeURIComponent(
-      //  token?.metadataURI
-      //)}?w=400)`,
+      image: url,
       floorPrice,
       volume,
       name: `${token?.metadata?.name?.replace(/[0-9 #]*$/, "")}`,

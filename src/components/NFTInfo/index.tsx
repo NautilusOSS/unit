@@ -44,6 +44,7 @@ import DiscordIcon from "static/icon/icon-discord.svg";
 import LinkIcon from "static/icon/icon-link.svg";
 import NFTTabs from "../../components/NFTTabs";
 import ListSaleModal from "../modals/ListSaleModal";
+import { QUEST_ACTION, getActions, submitAction } from "../../config/quest";
 
 const CryptoIcon = styled.img`
   width: 16px;
@@ -611,6 +612,33 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
             (txn: string) => new Uint8Array(Buffer.from(txn, "base64"))
           )
         ).then(sendTransactions);
+        // ---------------------------------------
+        // QUEST HERE list voi
+        // ---------------------------------------
+        do {
+          const address = activeAccount.address;
+          const actions: string[] = [
+            QUEST_ACTION.SALE_LIST_ONCE,
+            QUEST_ACTION.TIMED_SALE_LIST_15MINUTES,
+            QUEST_ACTION.TIMED_SALE_LIST_1HOUR,
+          ];
+          const {
+            data: { results },
+          } = await getActions(address);
+          for (const action of actions) {
+            const address = activeAccount.address;
+            const key = `${action}:${address}`;
+            const completedAction = results.find((el: any) => el.key === key);
+            if (!completedAction) {
+              await submitAction(action, address, {
+                contractId,
+                tokenId,
+              });
+            }
+            // TODO notify quest completion here
+          }
+        } while (0);
+        // ---------------------------------------
       }
       // VIA Sale
       else {
@@ -793,6 +821,9 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
             error: "List failed",
           }
         );
+        // ---------------------------------------
+        // QUEST HERE list via
+        // ---------------------------------------
       }
     } catch (e: any) {
       console.log(e);
@@ -912,7 +943,7 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
           // if (nft.listing.collectionId === 29088600) {
           //   // Cassette
           //   ci.setOptins([29103397]);
-          // } else 
+          // } else
           if (nft.listing.collectionId === 29085927) {
             // Treehouse
             ci.setOptins([33611293]);
@@ -943,9 +974,33 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
               error: "Transaction failed",
             }
           );
-
+          // -------------------------------------
+          // QUEST HERE buy voi
+          // -------------------------------------
+          do {
+            const address = activeAccount.address;
+            const actions: string[] = [QUEST_ACTION.SALE_BUY_ONCE];
+            const {
+              data: { results },
+            } = await getActions(address);
+            for (const action of actions) {
+              const address = activeAccount.address;
+              const key = `${action}:${address}`;
+              const completedAction = results.find((el: any) => el.key === key);
+              if (!completedAction) {
+                const { collectionId: contractId, tokenId } = nft.listing;
+                await submitAction(action, address, {
+                  contractId,
+                  tokenId,
+                });
+              }
+              // TODO notify quest completion here
+            }
+          } while (0);
+          // -------------------------------------
           break;
         }
+        // via sale
         default: {
           // -----------------------------------------
           // conditional approval to mp addr
@@ -1011,7 +1066,6 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
                 error: "Transaction failed",
               }
             );
-
             // -----------------------------------------
           }
 
@@ -1119,7 +1173,7 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
           // if (nft.listing.collectionId === 29088600) {
           //   // Cassette
           //   ci.setOptins([29103397]);
-          // } else 
+          // } else
           if (nft.listing.collectionId === 29085927) {
             // Treehouse
             ci.setOptins([33611293]);
@@ -1153,7 +1207,31 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
               error: "Transaction failed",
             }
           );
-
+          // -------------------------------------
+          // QUEST HERE buy via
+          // -------------------------------------
+          await new Promise((res) => setTimeout(res, 4000));
+          do {
+            const address = activeAccount.address;
+            const actions: string[] = [QUEST_ACTION.SALE_BUY_ONCE];
+            const {
+              data: { results },
+            } = await getActions(address);
+            for (const action of actions) {
+              const address = activeAccount.address;
+              const key = `${action}:${address}`;
+              const completedAction = results.find((el: any) => el.key === key);
+              if (!completedAction) {
+                const { collectionId: contractId, tokenId } = nft.listing;
+                await submitAction(action, address, {
+                  contractId,
+                  tokenId,
+                });
+              }
+              // TODO notify quest completion here
+            }
+          } while (0);
+          // -------------------------------------
           break;
         }
       }

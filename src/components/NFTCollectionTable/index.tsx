@@ -6,7 +6,6 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import Paper from "@mui/material/Paper";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import styled from "styled-components";
@@ -80,13 +79,11 @@ const NFTCollectionTable: React.FC<Props> = ({ rankings }) => {
                   ? "-"
                   : (Number(player.floorPrice) / 1e6).toLocaleString() + " VOI"}
               </StyledTableCell>
-              {/*<StyledTableCell>-</StyledTableCell>*/}
               <StyledTableCell>
                 {player.volume === 0
                   ? "-"
                   : (Number(player.volume) / 1e6).toLocaleString() + " VOI"}
               </StyledTableCell>
-              {/*<StyledTableCell>-</StyledTableCell>*/}
               <StyledTableCell>
                 {player.items === 0 ? "-" : player.items}
               </StyledTableCell>

@@ -188,20 +188,20 @@ const Navbar = () => {
     }
   }, [activeAccount, providers]);
 
-  // EFFECT: get voi balance
-  useEffect(() => {
-    if (activeAccount && providers && providers.length >= 3) {
-      const { algodClient, indexerClient } = getAlgorandClients();
-      const ci = new arc200(TOKEN_VIA, algodClient, indexerClient);
-      ci.arc200_balanceOf(activeAccount.address).then(
-        (arc200_balanceOfR: any) => {
-          if (arc200_balanceOfR.success) {
-            setBalance(Number(arc200_balanceOfR.returnValue));
-          }
-        }
-      );
-    }
-  }, [activeAccount, providers]);
+  // EFFECT: get via balance
+  // useEffect(() => {
+  //   if (activeAccount && providers && providers.length >= 3) {
+  //     const { algodClient, indexerClient } = getAlgorandClients();
+  //     const ci = new arc200(TOKEN_VIA, algodClient, indexerClient);
+  //     ci.arc200_balanceOf(activeAccount.address).then(
+  //       (arc200_balanceOfR: any) => {
+  //         if (arc200_balanceOfR.success) {
+  //           setBalance(Number(arc200_balanceOfR.returnValue));
+  //         }
+  //       }
+  //     );
+  //   }
+  // }, [activeAccount, providers]);
 
   /* Theme */
 
@@ -387,7 +387,7 @@ const Navbar = () => {
                         VOI
                       </div>
                     </Stack>
-                    <Stack
+                    {/*<Stack
                       direction="row"
                       spacing={0.5}
                       sx={{
@@ -397,7 +397,7 @@ const Navbar = () => {
                     >
                       <img src={VIAIcon} style={{ height: "12px" }} />
                       <div>{(balance / 1e6).toLocaleString()} VIA</div>
-                    </Stack>
+                    </Stack>*/}
                   </Stack>
                 </div>
               </Stack>

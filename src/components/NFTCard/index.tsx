@@ -160,6 +160,8 @@ const NFTCardWrapper = styled.div`
     line-height: 24px;
     letter-spacing: 0em;
     text-align: left;
+    word-wrap: break-word;
+    width: 204px;
   }
 
   & .additional-info {
@@ -241,29 +243,12 @@ const NftCard: React.FC<NFTCardProps> = ({
         backgroundRepeat: "no-repeat",
       }}
     >
-      {/*<img className="image" alt="Image" src={image} />*/}
       <div className="NFT-info">
-        {/*<div className="frame">
-          <div className="artist-avatar-name-wrapper">
-            <div className="artist-avatar-name">
-              <Avatar
-                sx={{
-                  height: "24px",
-                  width: "24px",
-                  background: stringToColorCode(owner),
-                }}
-              >
-                {owner.slice(0, 1)}
-              </Avatar>
-              <div className="text-wrapper">{owner.slice(0, 4)}</div>
-            </div>
-          </div>
-              </div>*/}
         <div className="artst-info">
           <div className="text-wrapper-2">{nftName}</div>
         </div>
         <div className="additional-info">
-          {price && currency ? (
+          {price ? (
             <div className="price">
               <div className="text-wrapper-3">Price</div>
               <div className="text-wrapper-4">

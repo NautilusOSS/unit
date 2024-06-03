@@ -399,57 +399,12 @@ export const Token: React.FC = () => {
     }
   };
 
-  // const [collection, setCollection] = React.useState<any>(null);
-  // React.useEffect(() => {
-  //   try {
-  //     (async () => {
-  //       const {
-  //         data: { tokens: res },
-  //       } = await axios.get(
-  //         `https://arc72-idx.voirewards.com/nft-indexer/v1/tokens?contractId=${id}`
-  //       );
-  //       const nfts = [];
-  //       for (const t of res) {
-  //         const tm = JSON.parse(t.metadata);
-  //         nfts.push({
-  //           ...t,
-  //           metadata: tm,
-  //         });
-  //       }
-  //       setCollection(nfts);
-  //     })();
-  //   } catch (e) {
-  //     console.log(e);
-  //   }
-  // }, [id]);
   const collection = useMemo(() => {
     const collectionTokens =
       tokens?.filter((t: any) => `${t.contractId}` === `${id}`) || [];
     return collectionTokens;
   }, [tokens, id]);
 
-  // const [listings, setListings] = React.useState<any>(null);
-  // useEffect(() => {
-  //   try {
-  //     (async () => {
-  //       const {
-  //         data: { listings: res },
-  //       } = await axios.get(
-  //         `https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/listings`,
-  //         {
-  //           params: {
-  //             collectionId: id,
-  //             //tokenId: tid,
-  //             active: true,
-  //           },
-  //         }
-  //       );
-  //       setListings(res);
-  //     })();
-  //   } catch (e) {
-  //     console.log(e);
-  //   }
-  // }, [id]);
   const collectionListings = useMemo(() => {
     return listings?.filter((l: any) => `${l.collectionId}` === `${id}`) || [];
   }, [listings, id]);
@@ -719,29 +674,33 @@ export const Token: React.FC = () => {
                   </svg>
                 </div>
               </div>
-              {moreNfts.map((el: any) => (
-                <NFTCard2
-                  style={{
-                    position: "relative",
-                    left: offset,
-                    transition: "left 1s",
-                  }}
-                  nftName={el?.metadata?.name}
-                  image={
-                    "https://prod.cdn.highforge.io/i/" +
-                    encodeURIComponent(el.metadataURI) +
-                    "?w=400"
-                  }
-                  price={(el.listing.price / 1e6).toLocaleString()}
-                  currency={"VIA"}
-                  onClick={() => {
-                    navigate(
-                      `/collection/${el.contractId}/token/${el.tokenId}`
-                    );
-                    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-                  }}
-                />
-              ))}
+              {moreNfts.map((el: any) => {
+                const collectionsMissingImage = [35720076];
+                const url = !collectionsMissingImage.includes(el.contractId)
+                  ? `https://prod.cdn.highforge.io/i/${encodeURIComponent(
+                      el.metadataURI
+                    )}?w=400`
+                  : el.metadata.image;
+                return (
+                  <NFTCard2
+                    style={{
+                      position: "relative",
+                      left: offset,
+                      transition: "left 1s",
+                    }}
+                    nftName={el?.metadata?.name}
+                    image={url}
+                    price={(el.listing.price / 1e6).toLocaleString()}
+                    currency={"VIA"}
+                    onClick={() => {
+                      navigate(
+                        `/collection/${el.contractId}/token/${el.tokenId}`
+                      );
+                      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+                    }}
+                  />
+                );
+              })}
             </NFTCards>
           </Stack>
         </Container>

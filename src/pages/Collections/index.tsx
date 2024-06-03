@@ -1,9 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import Layout from "../../layouts/Default";
 import { Container, Grid, Stack, Typography } from "@mui/material";
-import NFTCard from "../../components/NFTCard";
-import Section from "../../components/Section";
-import { nfts } from "../../static/json/nfts";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/store";
@@ -17,6 +14,7 @@ import { getRankings } from "../../utils/mp";
 import NFTCollectionTable from "../../components/NFTCollectionTable";
 import { getPrices } from "../../store/dexSlice";
 import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
+import { ARC72_INDEXER_API } from "../../config/arc72-idx";
 
 const SectionHeading = styled.div`
   display: flex;
@@ -118,7 +116,7 @@ export const Collections: React.FC = () => {
   React.useEffect(() => {
     try {
       const res = axios
-        .get("https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/listings", {
+        .get(`${ARC72_INDEXER_API}/nft-indexer/v1/mp/listings`, {
           params: {
             active: true,
           },

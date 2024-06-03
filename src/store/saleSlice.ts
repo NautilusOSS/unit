@@ -4,6 +4,7 @@ import axios from "axios";
 import db from "../db";
 import { RootState } from "./store";
 import { SaleI, NFTIndexerSaleI } from "../types";
+import { ARC72_INDEXER_API } from "../config/arc72-idx";
 
 export interface SalesState {
   sales: SaleI[];
@@ -24,7 +25,7 @@ export const getSales = createAsyncThunk<
         ? Math.max(...sales.map((sale: SaleI) => sale.round))
         : 0;
     const response = await axios.get(
-      "https://arc72-idx.voirewards.com/nft-indexer/v1/mp/sales",
+      `${ARC72_INDEXER_API}/nft-indexer/v1/mp/sales`,
       {
         params: {
           "min-round": lastRound,

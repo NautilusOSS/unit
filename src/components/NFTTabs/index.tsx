@@ -61,19 +61,6 @@ const NFTTabs: React.FC<NFTTabsProps> = ({ nft, loading, exchangeRate }) => {
     setValue(newValue);
   };
 
-  // const [sales, setSales] = React.useState<any>(null);
-  // React.useEffect(() => {
-  //   axios
-  //     .get("https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/sales", {
-  //       params: {
-  //         collectionId: nft.contractId,
-  //         tokenId: nft.tokenId,
-  //       },
-  //     })
-  //     .then(({ data }) => {
-  //       setSales(data.sales.reverse());
-  //     });
-  // }, [nft]);
   const tokenSales = React.useMemo(() => {
     const tokenSales = sales.filter(
       (sale: any) =>

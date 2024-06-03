@@ -4,6 +4,7 @@ import axios from "axios";
 import db from "../db";
 import { RootState } from "./store";
 import { CollectionI, NFTIndexerCollectionI } from "../types";
+import { ARC72_INDEXER_API } from "../config/arc72-idx";
 
 export interface CollectionsState {
   collections: CollectionI[];
@@ -28,7 +29,7 @@ export const getCollections = createAsyncThunk<
           )
         : 0;
     const response = await axios.get(
-      "https://arc72-idx.voirewards.com/nft-indexer/v1/collections",
+      `${ARC72_INDEXER_API}/nft-indexer/v1/collections`,
       {
         params: {
           "mint-min-round": lastRound,

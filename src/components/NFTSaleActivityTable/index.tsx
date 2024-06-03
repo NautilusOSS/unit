@@ -140,6 +140,13 @@ const NFTCollectionTable: React.FC<Props> = ({
               collections.find(
                 (collection) => collection.contractId === sale.collectionId
               ) || ({} as CollectionI);
+
+            const collectionsMissingImage = [35720076];
+            const url = !collectionsMissingImage.includes(sale.collectionId)
+              ? `https://prod.cdn.highforge.io/i/${encodeURIComponent(
+                  token.metadataURI
+                )}?w=240`
+              : token.metadata.image;
             return (
               <StyledTableRow hover={true} key={index}>
                 <StyledTableCell
@@ -153,9 +160,7 @@ const NFTCollectionTable: React.FC<Props> = ({
                   >
                     <StyledImage
                       sx={{
-                        backgroundImage: `url(https://prod.cdn.highforge.io/i/${encodeURIComponent(
-                          token.metadataURI
-                        )}?w=240)`,
+                        backgroundImage: `url(${url})`,
                       }}
                     />
                   </Link>

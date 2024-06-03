@@ -4,6 +4,7 @@ import axios from "axios";
 import db from "../db";
 import { RootState } from "./store";
 import { ListingI, NFTIndexerListingI } from "../types";
+import { ARC72_INDEXER_API } from "../config/arc72-idx";
 
 export interface ListingsState {
   listings: ListingI[];
@@ -24,7 +25,7 @@ export const getListings = createAsyncThunk<
         ? Math.max(...listings.map((listing: ListingI) => listing.round))
         : 0;
     const response = await axios.get(
-      "https://arc72-idx.voirewards.com/nft-indexer/v1/mp/listings",
+      `${ARC72_INDEXER_API}/nft-indexer/v1/mp/listings`,
       {
         params: {
           "min-round": lastRound,
@@ -33,7 +34,7 @@ export const getListings = createAsyncThunk<
       }
     );
     const response2 = await axios.get(
-      "https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/deletes",
+      `${ARC72_INDEXER_API}/nft-indexer/v1/mp/deletes`,
       {
         params: {
           "min-round": lastRound,
@@ -41,7 +42,7 @@ export const getListings = createAsyncThunk<
       }
     );
     const response3 = await axios.get(
-      "https://arc72-idx.voirewards.com/nft-indexer/v1/mp/sales",
+      `${ARC72_INDEXER_API}/nft-indexer/v1/mp/sales`,
       {
         params: {
           "min-round": lastRound,

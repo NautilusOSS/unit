@@ -682,6 +682,12 @@ const CartNftCard: React.FC<NFTCardProps> = ({ listedNft: el }) => {
       toast.info(e.message);
     }
   };
+  const collectionsMissingImage = [35720076];
+  const url = !collectionsMissingImage.includes(el.contractId)
+    ? `https://prod.cdn.highforge.io/i/${encodeURIComponent(
+        el.metadataURI
+      )}?w=400`
+    : el.metadata.image;
   return (
     <>
       <Box
@@ -691,9 +697,7 @@ const CartNftCard: React.FC<NFTCardProps> = ({ listedNft: el }) => {
           height: "384px",
           flexShrink: 0,
           borderRadius: "20px",
-          background: `linear-gradient(0deg, rgba(0, 0, 0, 0.50) 10.68%, rgba(0, 0, 0, 0.00) 46.61%), url(https://prod.cdn.highforge.io/i/${encodeURIComponent(
-            el.metadataURI
-          )}?w=400), lightgray 50% / cover no-repeat`,
+          background: `linear-gradient(0deg, rgba(0, 0, 0, 0.50) 10.68%, rgba(0, 0, 0, 0.00) 46.61%), url(${url}), lightgray 50% / cover no-repeat`,
           backgroundSize: "cover",
           display: "flex",
           alignItems: "flex-end",
