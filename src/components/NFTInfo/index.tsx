@@ -619,6 +619,7 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
           const address = activeAccount.address;
           const actions: string[] = [
             QUEST_ACTION.SALE_LIST_ONCE,
+            QUEST_ACTION.TIMED_SALE_LIST_1MINUTE,
             QUEST_ACTION.TIMED_SALE_LIST_15MINUTES,
             QUEST_ACTION.TIMED_SALE_LIST_1HOUR,
           ];
