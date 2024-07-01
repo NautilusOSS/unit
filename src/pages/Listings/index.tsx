@@ -445,12 +445,14 @@ export const Listings: React.FC = () => {
     if (!voiPrice) return 0;
     return voiPrice.rate;
   }, [prices, dexStatus]);
+
   /* Tokens */
   const tokens = useSelector((state: any) => state.tokens.tokens);
   const tokenStatus = useSelector((state: any) => state.tokens.status);
   useEffect(() => {
     dispatch(getTokens() as unknown as UnknownAction);
   }, [dispatch]);
+  console.log({ tokens });
 
   /* Collections */
   const collections = useSelector(
@@ -831,12 +833,14 @@ export const Listings: React.FC = () => {
                   (t: TokenI) =>
                     t.contractId === el.collectionId && t.tokenId === el.tokenId
                 );
+                console.log({ nft, filteredListings, el, tokens });
+                console.log(nft?.metadataURI);
                 const collectionsMissingImage = [35720076];
-                const url = !collectionsMissingImage.includes(nft.contractId)
+                const url = !collectionsMissingImage.includes(nft?.contractId)
                   ? `https://prod.cdn.highforge.io/i/${encodeURIComponent(
-                      nft.metadataURI
+                      nft?.metadataURI
                     )}?w=400`
-                  : nft.metadata.image;
+                  : nft?.metadata?.image;
                 return (
                   <Suspense fallback={<div>Loading...</div>}>
                     <NFTCard

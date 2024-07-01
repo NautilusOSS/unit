@@ -45,21 +45,24 @@ export const getTokens = createAsyncThunk<
           tokenId: token.tokenId,
           contractId: token.contractId,
           mintRound: token["mint-round"],
-          metadataURI: token.metadataURI,
-          metadata: token.metadata,
+          metadataURI: token?.metadataURI || "",
+          metadata: token?.metadata,
         };
       })
     );
     return [...tokens, ...newTokens].map((token: any) => {
-      const metadata = JSON.parse(token.metadata);
-      const royalties = decodeRoyalties(metadata.royalties);
+      const metadata = JSON.parse(token?.metadata || "{}");
+      const royalties = metadata?.royalties
+        ? decodeRoyalties(metadata?.royalties || "")
+        : null;
       return {
         ...token,
-        metadata: JSON.parse(token.metadata),
+        metadata: JSON.parse(token?.metadata || "{}"),
         royalties,
       };
     }) as Token[];
   } catch (error: any) {
+    console.log(error);
     return rejectWithValue(error.message);
   }
 });
