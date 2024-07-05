@@ -141,16 +141,24 @@ export const getRankings = (
   tokens: Token[],
   collections: CollectionI[],
   sales: any,
-  listings: any
+  listings: any,
+  exchangeRate: number
 ) => {
   const scores = new Map();
   const saleCounts = new Map();
   for (const sale of sales) {
     if (scores.has(sale.collectionId)) {
-      scores.set(sale.collectionId, scores.get(sale.collectionId) + sale.price);
+      scores.set(
+        sale.collectionId,
+        scores.get(sale.collectionId) +
+          (sale.currency === 0 ? sale.price / exchangeRate : sale.price)
+      );
       saleCounts.set(sale.collectionId, saleCounts.get(sale.collectionId) + 1);
     } else {
-      scores.set(sale.collectionId, sale.price);
+      scores.set(
+        sale.collectionId,
+        sale.currency === 0 ? sale.price / exchangeRate : sale.price
+      );
       saleCounts.set(sale.collectionId, 1);
     }
   }
@@ -159,10 +167,16 @@ export const getRankings = (
     if (floors.has(listing.collectionId)) {
       floors.set(
         listing.collectionId,
-        Math.min(floors.get(listing.collectionId), listing.price)
+        Math.min(
+          floors.get(listing.collectionId),
+          listing.currency === 0 ? listing.price / exchangeRate : listing.price
+        )
       );
     } else {
-      floors.set(listing.collectionId, listing.price);
+      floors.set(
+        listing.collectionId,
+        listing.currency === 0 ? listing.price / exchangeRate : listing.price
+      );
     }
   }
   const rankings = Array.from(scores.entries()).map((kv: any) => {
@@ -183,18 +197,25 @@ export const getRankings = (
     }
     const floorPrice = floors.get(kv[0]) || 0;
     const volume = kv[1];
+    const collectionsMissingImage = [35720076];
+    const url = !collectionsMissingImage.includes(token.contractId)
+      ? `https://prod.cdn.highforge.io/i/${encodeURIComponent(
+          token.metadataURI
+        )}?w=240`
+      : token.metadata.image;
     return {
       collectionId: kv[0],
-      image: token?.metadata?.image,
+      image: url,
       floorPrice,
       volume,
-      name: `${token?.metadata?.name?.replace(/[0-9]*$/, " ")}`,
-      score: `${(volume / 1e6).toLocaleString()}`,
+      name: `${token?.metadata?.name?.replace(/[0-9 #]*$/, "")}`,
+      score: `${Math.round(volume / 1e6).toLocaleString()}`,
       rank: volume,
-      scoreUnit: "VOI",
+      scoreUnit: "VIA",
       owners: owners.size,
       items: collection?.totalSupply || 0,
       sales: saleCount,
+      exchangeRate,
     };
   });
   rankings.sort((a: RankingI, b: RankingI) => {

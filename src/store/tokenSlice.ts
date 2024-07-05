@@ -5,6 +5,7 @@ import db from "../db";
 import { RootState } from "./store";
 import { NFTIndexerToken, Token } from "../types";
 import { decodeRoyalties } from "../utils/hf";
+import { ARC72_INDEXER_API } from "../config/arc72-idx";
 
 export interface TokensState {
   tokens: Token[];
@@ -25,7 +26,7 @@ export const getTokens = createAsyncThunk<
         ? Math.max(...tokens.map((token) => token.mintRound))
         : 0;
     const response = await axios.get(
-      "https://arc72-idx.voirewards.com/nft-indexer/v1/tokens",
+      `${ARC72_INDEXER_API}/nft-indexer/v1/tokens`,
       {
         params: {
           "mint-min-round": lastRound,
@@ -44,21 +45,24 @@ export const getTokens = createAsyncThunk<
           tokenId: token.tokenId,
           contractId: token.contractId,
           mintRound: token["mint-round"],
-          metadataURI: token.metadataURI,
-          metadata: token.metadata,
+          metadataURI: token?.metadataURI || "",
+          metadata: token?.metadata,
         };
       })
     );
     return [...tokens, ...newTokens].map((token: any) => {
-      const metadata = JSON.parse(token.metadata);
-      const royalties = decodeRoyalties(metadata.royalties);
+      const metadata = JSON.parse(token?.metadata || "{}");
+      const royalties = metadata?.royalties
+        ? decodeRoyalties(metadata?.royalties || "")
+        : null;
       return {
         ...token,
-        metadata: JSON.parse(token.metadata),
+        metadata: JSON.parse(token?.metadata || "{}"),
         royalties,
       };
     }) as Token[];
   } catch (error: any) {
+    console.log(error);
     return rejectWithValue(error.message);
   }
 });

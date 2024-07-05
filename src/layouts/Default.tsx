@@ -5,8 +5,8 @@ import { useSelector } from "react-redux";
 import { RootState } from "../store/store";
 
 const LayoutRoot = styled.div`
-  padding: 0px 80px;
-  padding-bottom: 80px;
+  padding: 0px 40px;
+  padding-bottom: 40px;
   @media (max-width: 600px) {
     padding: 0px 10px;
     padding-bottom: 80px;

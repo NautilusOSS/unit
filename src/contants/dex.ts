@@ -1,0 +1,1 @@
+export const CTCINFO_LP_WVOI_VOI = 24590736; // wVOI/VIA

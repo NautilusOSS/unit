@@ -1,11 +1,11 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
 
 export interface ThemeState {
   isDarkTheme: boolean;
 }
 
 const initialState: ThemeState = {
-  isDarkTheme: false,
+  isDarkTheme: true
 };
 
 const themeSlice = createSlice({

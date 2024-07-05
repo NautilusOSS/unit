@@ -1,6 +1,6 @@
 import styled from "@emotion/styled";
 import React, { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import LightLogo from "static/logo-light.svg";
 import DarkLogo from "static/logo-dark.svg";
 import { RootState } from "../../store/store";
@@ -15,6 +15,7 @@ import { Chip, Divider, Stack } from "@mui/material";
 
 import { useCopyToClipboard } from "usehooks-ts";
 import { toast } from "react-toastify";
+import ConnectWallet from "../ConnectWallet";
 
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
@@ -25,6 +26,55 @@ import { getAlgorandClients } from "../../wallets";
 import { arc200_balanceOf } from "ulujs/types/arc200";
 import VOIIcon from "static/crypto-icons/voi/0.svg";
 import VIAIcon from "static/crypto-icons/voi/6779767.svg";
+
+const AccountIcon = () => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="33"
+      height="32"
+      viewBox="0 0 33 32"
+      fill="none"
+    >
+      <path
+        d="M27.5 28C27.5 26.1392 27.5 25.2089 27.2632 24.4518C26.7299 22.7473 25.3544 21.4134 23.5966 20.8963C22.8159 20.6667 21.8564 20.6667 19.9375 20.6667H13.0625C11.1436 20.6667 10.1841 20.6667 9.40343 20.8963C7.64563 21.4134 6.27006 22.7473 5.73683 24.4518C5.5 25.2089 5.5 26.1392 5.5 28M22.6875 10C22.6875 13.3137 19.9173 16 16.5 16C13.0827 16 10.3125 13.3137 10.3125 10C10.3125 6.68629 13.0827 4 16.5 4C19.9173 4 22.6875 6.68629 22.6875 10Z"
+        stroke="#9933FF"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  );
+};
+
+const StyledLink = styled(Link)`
+  text-decoration: none;
+  color: inherit;
+`;
+
+const AccountContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 13px;
+`;
+
+const Button = styled.div`
+  cursor: pointer;
+`;
+
+const AccountIconContainer = styled(Button)`
+  display: flex;
+  width: 45px;
+  height: 45px;
+  /*
+  padding: var(--Main-System-8px, 8px);
+  */
+  justify-content: center;
+  align-items: center;
+  gap: var(--Main-System-10px, 10px);
+  border-radius: 100px;
+  border: 1px solid #93f;
+`;
 
 const NavRoot = styled.nav`
   color: black;
@@ -100,7 +150,14 @@ const ConnectButton = styled.svg`
   cursor: pointer;
 `;
 
+const linkLabels: any = {
+  "/collection": "Collections",
+  "/listing": "Buy",
+};
+
 const Navbar = () => {
+  const location = useLocation();
+
   /* Copy to clipboard */
 
   const [copiedText, copy] = useCopyToClipboard();
@@ -131,22 +188,20 @@ const Navbar = () => {
     }
   }, [activeAccount, providers]);
 
-  // EFFECT: get voi balance
-  useEffect(() => {
-    if (activeAccount && providers && providers.length >= 3) {
-      const { algodClient, indexerClient } = getAlgorandClients();
-      const ci = new arc200(TOKEN_VIA, algodClient, indexerClient);
-      ci.arc200_balanceOf(activeAccount.address).then(
-        (arc200_balanceOfR: any) => {
-          if (arc200_balanceOfR.success) {
-            setBalance(Number(arc200_balanceOfR.returnValue));
-          }
-        }
-      );
-    }
-  }, [activeAccount, providers]);
-
-  console.log({ accInfo, balance });
+  // EFFECT: get via balance
+  // useEffect(() => {
+  //   if (activeAccount && providers && providers.length >= 3) {
+  //     const { algodClient, indexerClient } = getAlgorandClients();
+  //     const ci = new arc200(TOKEN_VIA, algodClient, indexerClient);
+  //     ci.arc200_balanceOf(activeAccount.address).then(
+  //       (arc200_balanceOfR: any) => {
+  //         if (arc200_balanceOfR.success) {
+  //           setBalance(Number(arc200_balanceOfR.returnValue));
+  //         }
+  //       }
+  //     );
+  //   }
+  // }, [activeAccount, providers]);
 
   /* Theme */
 
@@ -157,7 +212,9 @@ const Navbar = () => {
   /* Navigation */
 
   const navigate = useNavigate();
+  /*
   const [active, setActive] = React.useState("");
+  */
 
   /* Popper */
 
@@ -193,34 +250,18 @@ const Navbar = () => {
           <NavLinks>
             {[
               {
-                label: "Collection",
+                label: "Buy",
+                href: "/listing",
+              },
+              {
+                label: "Collections",
                 href: "/collection",
               },
-              /*
-              {
-                label: "Auction",
-                href: "/auctions",
-              },
-              {
-                label: "Buy",
-
-                href: "/listings",
-              },
-              {
-                label: "Sell",
-                href: "/profile",
-              },
-              {
-                label: "Activity",
-                href: "/activity",
-              },
-              */
             ].map((item) =>
-              active === item.label ? (
+              linkLabels[location.pathname] === item.label ? (
                 <ActiveNavLink
                   onClick={() => {
                     navigate(item.href);
-                    setActive(item.label);
                   }}
                 >
                   {item.label}
@@ -230,7 +271,6 @@ const Navbar = () => {
                   style={{ color: isDarkTheme ? "#717579" : undefined }}
                   onClick={() => {
                     navigate(item.href);
-                    setActive(item.label);
                   }}
                 >
                   {item.label}
@@ -294,6 +334,7 @@ const Navbar = () => {
                 )}
               </ThemeSelector>
             </li>
+            {/* cart icon */}
             {/*<li style={{ color: isDarkTheme ? "#717579" : undefined }}>
               <LgIconLink>
                 <svg
@@ -314,380 +355,64 @@ const Navbar = () => {
               </LgIconLink>
         </li>*/}
           </ul>
-          {activeAccount ? (
-            <AccountCircleOutlinedIcon
-              sx={{
-                color: isDarkTheme ? "rgb(113, 117, 121)" : undefined,
-                cursor: "pointer",
-                display: { xs: "none", md: "block" },
-              }}
-              onClick={() => {
-                const addrs = Array.from(
-                  new Set(connectedAccounts.map((a) => a.address))
-                );
-                navigate(`/account/${addrs.join(",")}`);
-              }}
-            />
-          ) : null}
-          {!activeAccount ? (
-            <div onClick={handleClick}>
-              {isDarkTheme ? (
-                <svg
-                  width="159"
-                  height="50"
-                  viewBox="0 0 159 50"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+          {activeAccount && accInfo ? (
+            <StyledLink to={`/account/${activeAccount?.address}`}>
+              <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+                <div
+                  style={{
+                    color: isDarkTheme ? "#717579" : undefined,
+                  }}
                 >
-                  <g filter="url(#filter0_d_423_14448)">
-                    <rect
-                      x="3"
-                      y="2"
-                      width="153"
-                      height="44"
-                      rx="22"
-                      fill="#9933FF"
-                    />
-                    <rect
-                      x="3"
-                      y="2"
-                      width="153"
-                      height="44"
-                      rx="22"
-                      stroke="#9933FF"
-                    />
-                    <path
-                      d="M25.976 22.28C25.976 24.724 27.072 26.072 28.992 26.072C30.524 26.072 31.464 25.172 31.768 23.4H34.28C33.848 26.412 31.856 28.24 28.988 28.24C25.728 28.24 23.432 25.872 23.432 22.28C23.432 18.688 25.728 16.32 28.988 16.32C31.856 16.32 33.848 18.148 34.28 21.16H31.768C31.464 19.384 30.524 18.488 28.992 18.488C27.072 18.488 25.976 19.836 25.976 22.28ZM35.0624 23.588C35.0624 20.772 36.8984 18.94 39.5344 18.94C42.1704 18.94 44.0064 20.772 44.0064 23.588C44.0064 26.404 42.1704 28.24 39.5344 28.24C36.8984 28.24 35.0624 26.404 35.0624 23.588ZM37.4744 23.588C37.4744 25.22 38.2384 26.152 39.5344 26.152C40.8344 26.152 41.5944 25.224 41.5944 23.588C41.5944 21.952 40.8344 21.028 39.5344 21.028C38.2384 21.028 37.4744 21.956 37.4744 23.588ZM47.2361 23.372V28H44.8401V19.18H47.2361V21.832C47.6081 19.964 48.7001 18.94 50.3361 18.94C52.2361 18.94 53.2641 20.328 53.2641 22.876V28H50.8681V23.276C50.8681 21.772 50.3041 21.028 49.1561 21.028C47.9321 21.028 47.2361 21.856 47.2361 23.372ZM56.6424 23.372V28H54.2464V19.18H56.6424V21.832C57.0144 19.964 58.1064 18.94 59.7424 18.94C61.6424 18.94 62.6704 20.328 62.6704 22.876V28H60.2744V23.276C60.2744 21.772 59.7104 21.028 58.5624 21.028C57.3384 21.028 56.6424 21.856 56.6424 23.372ZM69.9046 25.012H72.1566C71.6766 27.02 70.0686 28.24 67.9246 28.24C65.2646 28.24 63.4686 26.36 63.4686 23.58C63.4686 20.808 65.2446 18.94 67.8766 18.94C70.4846 18.94 72.1966 20.772 72.1966 23.568C72.1966 23.78 72.1886 23.996 72.1646 24.22H65.7806C65.9366 25.54 66.7446 26.324 67.9926 26.324C68.9246 26.324 69.5566 25.884 69.9046 25.012ZM65.8086 22.74H69.8966C69.6966 21.48 69.0086 20.824 67.8886 20.824C66.7406 20.824 66.0006 21.52 65.8086 22.74ZM75.2713 23.588C75.2713 25.22 76.0353 26.152 77.3353 26.152C78.4273 26.152 78.9953 25.472 79.1753 24.516H81.5673C81.2913 26.7 79.6913 28.24 77.3313 28.24C74.6953 28.24 72.8593 26.404 72.8593 23.588C72.8593 20.772 74.6953 18.94 77.3313 18.94C79.6913 18.94 81.2913 20.48 81.5673 22.664H79.1793C78.9953 21.704 78.4273 21.028 77.3353 21.028C76.0353 21.028 75.2713 21.956 75.2713 23.588ZM88.0405 27.932C87.2965 28.136 86.6405 28.236 86.0645 28.236C84.1245 28.236 83.1085 27.088 83.1085 24.844V21.084H82.0045V19.18H83.1085V17.148H85.5045V19.18H88.0405V21.084H85.5045V24.848C85.5045 25.86 85.8605 26.308 86.6765 26.308C87.0045 26.308 87.4405 26.236 88.0405 26.084V27.932Z"
-                      fill="white"
-                    />
-                    <rect
-                      x="118"
-                      y="8"
-                      width="32"
-                      height="32"
-                      rx="16"
-                      fill="#99FF33"
-                    />
-                    <path
-                      d="M137 25.3333H137.007M128 19.3333V28.6667C128 29.403 128.597 30 129.333 30H138.667C139.403 30 140 29.403 140 28.6667V22C140 21.2636 139.403 20.6667 138.667 20.6667L129.333 20.6667C128.597 20.6667 128 20.0697 128 19.3333ZM128 19.3333C128 18.597 128.597 18 129.333 18H137.333M137.333 25.3333C137.333 25.5174 137.184 25.6667 137 25.6667C136.816 25.6667 136.667 25.5174 136.667 25.3333C136.667 25.1492 136.816 25 137 25C137.184 25 137.333 25.1492 137.333 25.3333Z"
-                      stroke="black"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </g>
-                  <defs>
-                    <filter
-                      id="filter0_d_423_14448"
-                      x="0.5"
-                      y="0.5"
-                      width="158"
-                      height="49"
-                      filterUnits="userSpaceOnUse"
-                      color-interpolation-filters="sRGB"
-                    >
-                      <feFlood flood-opacity="0" result="BackgroundImageFix" />
-                      <feColorMatrix
-                        in="SourceAlpha"
-                        type="matrix"
-                        values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
-                        result="hardAlpha"
-                      />
-                      <feOffset dy="1" />
-                      <feGaussianBlur stdDeviation="1" />
-                      <feComposite in2="hardAlpha" operator="out" />
-                      <feColorMatrix
-                        type="matrix"
-                        values="0 0 0 0 0.0627451 0 0 0 0 0.0941176 0 0 0 0 0.156863 0 0 0 0.04 0"
-                      />
-                      <feBlend
-                        mode="normal"
-                        in2="BackgroundImageFix"
-                        result="effect1_dropShadow_423_14448"
-                      />
-                      <feBlend
-                        mode="normal"
-                        in="SourceGraphic"
-                        in2="effect1_dropShadow_423_14448"
-                        result="shape"
-                      />
-                    </filter>
-                  </defs>
-                </svg>
-              ) : (
-                <svg
-                  width="159"
-                  height="50"
-                  viewBox="0 0 159 50"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <g filter="url(#filter0_d_494_16539)">
-                    <rect
-                      x="3"
-                      y="2"
-                      width="153"
-                      height="44"
-                      rx="22"
-                      stroke="#9933FF"
-                      shape-rendering="crispEdges"
-                    />
-                    <path
-                      d="M25.976 22.28C25.976 24.724 27.072 26.072 28.992 26.072C30.524 26.072 31.464 25.172 31.768 23.4H34.28C33.848 26.412 31.856 28.24 28.988 28.24C25.728 28.24 23.432 25.872 23.432 22.28C23.432 18.688 25.728 16.32 28.988 16.32C31.856 16.32 33.848 18.148 34.28 21.16H31.768C31.464 19.384 30.524 18.488 28.992 18.488C27.072 18.488 25.976 19.836 25.976 22.28ZM35.0624 23.588C35.0624 20.772 36.8984 18.94 39.5344 18.94C42.1704 18.94 44.0064 20.772 44.0064 23.588C44.0064 26.404 42.1704 28.24 39.5344 28.24C36.8984 28.24 35.0624 26.404 35.0624 23.588ZM37.4744 23.588C37.4744 25.22 38.2384 26.152 39.5344 26.152C40.8344 26.152 41.5944 25.224 41.5944 23.588C41.5944 21.952 40.8344 21.028 39.5344 21.028C38.2384 21.028 37.4744 21.956 37.4744 23.588ZM47.2361 23.372V28H44.8401V19.18H47.2361V21.832C47.6081 19.964 48.7001 18.94 50.3361 18.94C52.2361 18.94 53.2641 20.328 53.2641 22.876V28H50.8681V23.276C50.8681 21.772 50.3041 21.028 49.1561 21.028C47.9321 21.028 47.2361 21.856 47.2361 23.372ZM56.6424 23.372V28H54.2464V19.18H56.6424V21.832C57.0144 19.964 58.1064 18.94 59.7424 18.94C61.6424 18.94 62.6704 20.328 62.6704 22.876V28H60.2744V23.276C60.2744 21.772 59.7104 21.028 58.5624 21.028C57.3384 21.028 56.6424 21.856 56.6424 23.372ZM69.9046 25.012H72.1566C71.6766 27.02 70.0686 28.24 67.9246 28.24C65.2646 28.24 63.4686 26.36 63.4686 23.58C63.4686 20.808 65.2446 18.94 67.8766 18.94C70.4846 18.94 72.1966 20.772 72.1966 23.568C72.1966 23.78 72.1886 23.996 72.1646 24.22H65.7806C65.9366 25.54 66.7446 26.324 67.9926 26.324C68.9246 26.324 69.5566 25.884 69.9046 25.012ZM65.8086 22.74H69.8966C69.6966 21.48 69.0086 20.824 67.8886 20.824C66.7406 20.824 66.0006 21.52 65.8086 22.74ZM75.2713 23.588C75.2713 25.22 76.0353 26.152 77.3353 26.152C78.4273 26.152 78.9953 25.472 79.1753 24.516H81.5673C81.2913 26.7 79.6913 28.24 77.3313 28.24C74.6953 28.24 72.8593 26.404 72.8593 23.588C72.8593 20.772 74.6953 18.94 77.3313 18.94C79.6913 18.94 81.2913 20.48 81.5673 22.664H79.1793C78.9953 21.704 78.4273 21.028 77.3353 21.028C76.0353 21.028 75.2713 21.956 75.2713 23.588ZM88.0405 27.932C87.2965 28.136 86.6405 28.236 86.0645 28.236C84.1245 28.236 83.1085 27.088 83.1085 24.844V21.084H82.0045V19.18H83.1085V17.148H85.5045V19.18H88.0405V21.084H85.5045V24.848C85.5045 25.86 85.8605 26.308 86.6765 26.308C87.0045 26.308 87.4405 26.236 88.0405 26.084V27.932Z"
-                      fill="#9933FF"
-                    />
-                    <rect
-                      x="118"
-                      y="8"
-                      width="32"
-                      height="32"
-                      rx="16"
-                      fill="#99FF33"
-                    />
-                    <path
-                      d="M137 25.3333H137.007M128 19.3333V28.6667C128 29.403 128.597 30 129.333 30H138.667C139.403 30 140 29.403 140 28.6667V22C140 21.2636 139.403 20.6667 138.667 20.6667L129.333 20.6667C128.597 20.6667 128 20.0697 128 19.3333ZM128 19.3333C128 18.597 128.597 18 129.333 18H137.333M137.333 25.3333C137.333 25.5174 137.184 25.6667 137 25.6667C136.816 25.6667 136.667 25.5174 136.667 25.3333C136.667 25.1492 136.816 25 137 25C137.184 25 137.333 25.1492 137.333 25.3333Z"
-                      stroke="#161717"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </g>
-                  <defs>
-                    <filter
-                      id="filter0_d_494_16539"
-                      x="0.5"
-                      y="0.5"
-                      width="158"
-                      height="49"
-                      filterUnits="userSpaceOnUse"
-                      color-interpolation-filters="sRGB"
-                    >
-                      <feFlood flood-opacity="0" result="BackgroundImageFix" />
-                      <feColorMatrix
-                        in="SourceAlpha"
-                        type="matrix"
-                        values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
-                        result="hardAlpha"
-                      />
-                      <feOffset dy="1" />
-                      <feGaussianBlur stdDeviation="1" />
-                      <feComposite in2="hardAlpha" operator="out" />
-                      <feColorMatrix
-                        type="matrix"
-                        values="0 0 0 0 0.0627451 0 0 0 0 0.0941176 0 0 0 0 0.156863 0 0 0 0.04 0"
-                      />
-                      <feBlend
-                        mode="normal"
-                        in2="BackgroundImageFix"
-                        result="effect1_dropShadow_494_16539"
-                      />
-                      <feBlend
-                        mode="normal"
-                        in="SourceGraphic"
-                        in2="effect1_dropShadow_494_16539"
-                        result="shape"
-                      />
-                    </filter>
-                  </defs>
-                </svg>
-              )}
-            </div>
-          ) : (
-            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-              {accInfo ? (
-                <>
-                  <div
-                    style={{
-                      color: isDarkTheme ? "#717579" : undefined,
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{
+                      display: { xs: "none", sm: "flex" },
                     }}
                   >
                     <Stack
                       direction="row"
-                      spacing={1}
+                      spacing={0.5}
                       sx={{
-                        display: { xs: "none", sm: "flex" },
+                        alignItems: "center",
+                        justifyContent: "space-between",
                       }}
                     >
-                      <Stack
-                        direction="row"
-                        spacing={0.5}
-                        sx={{
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <img src={VOIIcon} style={{ height: "12px" }} />
-                        <div>
-                          {(
-                            (accInfo.amount - accInfo["min-balance"]) /
-                            1e6
-                          ).toLocaleString()}{" "}
-                          VOI
-                        </div>
-                      </Stack>
-                      <Stack
-                        direction="row"
-                        spacing={0.5}
-                        sx={{
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <img src={VIAIcon} style={{ height: "12px" }} />
-                        <div>{(balance / 1e6).toLocaleString()} VIA</div>
-                      </Stack>
+                      <img src={VOIIcon} style={{ height: "12px" }} />
+                      <div>
+                        {(
+                          (accInfo.amount - accInfo["min-balance"]) /
+                          1e6
+                        ).toLocaleString()}{" "}
+                        VOI
+                      </div>
                     </Stack>
-                  </div>
-                  {/*<Divider
-                    orientation="vertical"
-                    flexItem
-                    sx={{
-                      backgroundColor: isDarkTheme ? "#717579" : undefined,
-                    }}
-                  />*/}
-                  <div
-                    style={{
-                      color: isDarkTheme ? "#717579" : undefined,
-                    }}
-                  >
-                    {activeAccount.address.slice(0, 4)}
-                  </div>
-                </>
-              ) : null}
-              <div
-                onClick={handleClick}
-                style={{
-                  cursor: "pointer",
-                }}
-              >
-                {activeAccount ? (
-                  <img
-                    style={{
-                      height: "29px",
-                      width: "29px",
-                      borderRadius: "29px",
-                    }}
-                    src={
-                      providers?.find(
-                        (el) => el.metadata.id === activeAccount.providerId
-                      )?.metadata.icon
-                    }
-                  />
-                ) : null}
-                {/*<AccountBalanceWalletOutlinedIcon
-                  sx={{
-                    color: isDarkTheme ? "#717579" : undefined,
-                  }}
-                />*/}
-              </div>
-            </Stack>
-          )}
-          <Popper
-            id={id}
-            open={open}
-            anchorEl={anchorEl}
-            transition
-            placement="bottom-start"
-          >
-            {({ TransitionProps }) => (
-              <Fade {...TransitionProps} timeout={350}>
-                <Box
-                  sx={{
-                    width: "300px",
-                    border: 1,
-                    p: 1,
-                    bgcolor: "background.paper",
-                  }}
-                >
-                  {providers ? (
-                    <Stack spacing={2}>
-                      {providers.map((provider) => (
-                        <Stack spacing={2}>
-                          {!connectedAccounts
-                            .map(({ providerId }) => providerId)
-                            .includes(provider.metadata.id) ? (
-                            <button
-                              onClick={() => {
-                                provider.connect();
-                                setOpen(false);
-                              }}
-                            >
-                              {provider.metadata.name}
-                            </button>
-                          ) : (
-                            <Stack
-                              spacing={2}
-                              direction="row"
-                              style={{ justifyContent: "space-between" }}
-                            >
-                              <u>{provider.metadata.name}</u>
-                              <button
-                                onClick={() => {
-                                  provider.disconnect();
-                                }}
-                              >
-                                Disconnect
-                              </button>
-                            </Stack>
-                          )}
-                          {connectedAccounts
-                            ?.filter(
-                              (account) =>
-                                account?.providerId === provider.metadata.id
-                            )
-                            ?.map((account) => {
-                              const isAccountActive =
-                                activeAccount?.providerId ===
-                                  provider.metadata.id &&
-                                activeAccount?.address === account?.address;
-                              return (
-                                <Stack spacing={2} direction="row">
-                                  <span
-                                    style={{
-                                      fontWeight: isAccountActive
-                                        ? "bold"
-                                        : "normal",
-                                    }}
-                                  >
-                                    {account?.address?.slice(0, 4)}
-                                  </span>
-                                  <button
-                                    onClick={handleCopy(account?.address)}
-                                  >
-                                    Copy
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      navigate(`/account/${account?.address}`);
-                                    }}
-                                  >
-                                    View
-                                  </button>
-                                  {!isAccountActive ? (
-                                    <button
-                                      onClick={() => {
-                                        provider.setActiveProvider();
-                                        provider.setActiveAccount(
-                                          account?.address
-                                        );
-                                      }}
-                                    >
-                                      Set Active
-                                    </button>
-                                  ) : (
-                                    <em>Active</em>
-                                  )}
-                                </Stack>
-                              );
-                            })}
-                        </Stack>
-                      ))}
-                    </Stack>
-                  ) : null}
-                </Box>
-              </Fade>
-            )}
-          </Popper>
+                    {/*<Stack
+                      direction="row"
+                      spacing={0.5}
+                      sx={{
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <img src={VIAIcon} style={{ height: "12px" }} />
+                      <div>{(balance / 1e6).toLocaleString()} VIA</div>
+                    </Stack>*/}
+                  </Stack>
+                </div>
+              </Stack>
+            </StyledLink>
+          ) : null}
+          <AccountContainer>
+            {activeAccount ? (
+              <Link to={`/account/${activeAccount?.address}`}>
+                <AccountIconContainer>
+                  <AccountIcon />
+                </AccountIconContainer>
+              </Link>
+            ) : null}
+            <ConnectWallet />
+          </AccountContainer>
         </div>
       </NavContainer>
     </NavRoot>

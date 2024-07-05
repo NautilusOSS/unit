@@ -1,9 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import Layout from "../../layouts/Default";
 import { Container, Grid, Stack, Typography } from "@mui/material";
-import NFTCard from "../../components/NFTCard";
-import Section from "../../components/Section";
-import { nfts } from "../../static/json/nfts";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/store";
@@ -15,6 +12,9 @@ import { getCollections } from "../../store/collectionSlice";
 import { getSales } from "../../store/saleSlice";
 import { getRankings } from "../../utils/mp";
 import NFTCollectionTable from "../../components/NFTCollectionTable";
+import { getPrices } from "../../store/dexSlice";
+import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
+import { ARC72_INDEXER_API } from "../../config/arc72-idx";
 
 const SectionHeading = styled.div`
   display: flex;
@@ -71,6 +71,18 @@ const StyledLink = styled(Link)`
 export const Collections: React.FC = () => {
   /* Dispatch */
   const dispatch = useDispatch();
+  /* Dex */
+  const prices = useSelector((state: RootState) => state.dex.prices);
+  const dexStatus = useSelector((state: RootState) => state.dex.status);
+  useEffect(() => {
+    dispatch(getPrices() as unknown as UnknownAction);
+  }, [dispatch]);
+  const exchangeRate = useMemo(() => {
+    if (!prices || dexStatus !== "succeeded") return 0;
+    const voiPrice = prices.find((p) => p.contractId === CTCINFO_LP_WVOI_VOI);
+    if (!voiPrice) return 0;
+    return voiPrice.rate;
+  }, [prices, dexStatus]);
   /* Tokens */
   const tokens = useSelector((state: any) => state.tokens.tokens);
   const tokenStatus = useSelector((state: any) => state.tokens.status);
@@ -104,7 +116,7 @@ export const Collections: React.FC = () => {
   React.useEffect(() => {
     try {
       const res = axios
-        .get("https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/listings", {
+        .get(`${ARC72_INDEXER_API}/nft-indexer/v1/mp/listings`, {
           params: {
             active: true,
           },
@@ -127,10 +139,8 @@ export const Collections: React.FC = () => {
       collectionStatus !== "succeeded"
     )
       return new Map();
-    return getRankings(tokens, collections, sales, listings);
+    return getRankings(tokens, collections, sales, listings, exchangeRate);
   }, [sales, tokens, collections, listings]);
-
-  console.log({ rankings, sales, tokens, collections, listings });
 
   const isLoading = useMemo(
     () =>

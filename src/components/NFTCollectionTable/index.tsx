@@ -6,12 +6,12 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import Paper from "@mui/material/Paper";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import styled from "styled-components";
 import { Box } from "@mui/material";
 import { RankingI } from "../../types";
+import { Link } from "react-router-dom";
 
 const StyledImage = styled(Box)`
   width: 53px;
@@ -66,19 +66,24 @@ const NFTCollectionTable: React.FC<Props> = ({ rankings }) => {
               <StyledTableCell>
                 <StyledImage sx={{ backgroundImage: `url(${player.image})` }} />
               </StyledTableCell>
-              <StyledTableCell>{player.name}</StyledTableCell>
+              <StyledTableCell>
+                <Link
+                  style={{ textDecoration: "none", color: "inherit" }}
+                  to={`/collection/${player.collectionId}`}
+                >
+                  {player.name}
+                </Link>
+              </StyledTableCell>
               <StyledTableCell>
                 {player.floorPrice === 0
                   ? "-"
                   : (Number(player.floorPrice) / 1e6).toLocaleString() + " VOI"}
               </StyledTableCell>
-              {/*<StyledTableCell>-</StyledTableCell>*/}
               <StyledTableCell>
                 {player.volume === 0
                   ? "-"
                   : (Number(player.volume) / 1e6).toLocaleString() + " VOI"}
               </StyledTableCell>
-              {/*<StyledTableCell>-</StyledTableCell>*/}
               <StyledTableCell>
                 {player.items === 0 ? "-" : player.items}
               </StyledTableCell>

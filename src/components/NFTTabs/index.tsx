@@ -45,9 +45,11 @@ function a11yProps(index: number) {
 interface NFTTabsProps {
   nft: any;
   loading: boolean;
+  exchangeRate: number;
 }
 
-const NFTTabs: React.FC<NFTTabsProps> = ({ nft, loading }) => {
+const NFTTabs: React.FC<NFTTabsProps> = ({ nft, loading, exchangeRate }) => {
+  const sales = useSelector((state: any) => state.sales.sales);
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
   );
@@ -59,19 +61,14 @@ const NFTTabs: React.FC<NFTTabsProps> = ({ nft, loading }) => {
     setValue(newValue);
   };
 
-  const [sales, setSales] = React.useState<any>(null);
-  React.useEffect(() => {
-    axios
-      .get("https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/mp/sales", {
-        params: {
-          collectionId: nft.contractId,
-          tokenId: nft.tokenId,
-        },
-      })
-      .then(({ data }) => {
-        setSales(data.sales.reverse());
-      });
-  }, [nft]);
+  const tokenSales = React.useMemo(() => {
+    const tokenSales = sales.filter(
+      (sale: any) =>
+        sale.collectionId === nft.contractId && sale.tokenId === nft.tokenId
+    );
+    tokenSales.sort((a: any, b: any) => b.timestamp - a.timestamp);
+    return tokenSales;
+  }, [sales, nft]);
 
   return !loading ? (
     <Box sx={{ width: "100%" }}>
@@ -113,21 +110,21 @@ const NFTTabs: React.FC<NFTTabsProps> = ({ nft, loading }) => {
         </Tabs>
       </Box>
       <CustomTabPanel value={value} index={0}>
-        {sales && sales.length > 0 ? (
+        {tokenSales && tokenSales.length > 0 ? (
           <NFTSalesTable
             sales={
-              sales?.map((sale: any) => ({
+              tokenSales?.map((sale: any) => ({
                 event: "Sale",
-                price: `${(sale.price / 1e6).toLocaleString()} ${
-                  String(sale.currency) === "0" ? "VOI" : "VIA"
-                }`,
-                seller: ((addr) => `${addr.slice(0, 4)}...${addr.slice(-4)}`)(
-                  sale.seller
-                ),
-                buyer: ((addr) => `${addr.slice(0, 4)}...${addr.slice(-4)}`)(
-                  sale.buyer
-                ),
+                price: sale.price / 1e6,
+                normalPrice:
+                  String(sale.currency) === "0"
+                    ? (sale.price * exchangeRate) / 1e6
+                    : sale.price / 1e6,
+                currency: sale.currency,
+                seller: sale.seller,
+                buyer: sale.buyer,
                 date: moment.unix(sale.timestamp).format("LLL"),
+                round: sale.round,
               })) || []
             }
           />

@@ -11,7 +11,16 @@ import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import styled from "styled-components";
 import { Box } from "@mui/material";
-import { CollectionI, RankingI, Sale, SaleI, Token } from "../../types";
+import {
+  CollectionI,
+  ListingActivityI,
+  ListingI,
+  RankingI,
+  Sale,
+  SaleActivityI,
+  SaleI,
+  Token,
+} from "../../types";
 import { compactAddress } from "../../utils/mp";
 import moment from "moment";
 import { Link } from "react-router-dom";
@@ -64,51 +73,47 @@ const StyledTableRow = mstyled(TableRow)(({ theme }) => {
 
 interface Props {
   sales: Sale[];
+  listings: ListingI[];
   tokens: Token[];
   collections: CollectionI[];
+  activeFilter?: string[];
   limit?: number;
 }
 
-// transactionId: string;
-// mpContractId: number;
-// mpListingId: number;
-// tokenId: number;
-// seller: string;
-// buyer: string;
-// currency: number;
-// price: number;
-// round: number;
-// timestamp: number;
-// collectionId: number;
-
 const NFTCollectionTable: React.FC<Props> = ({
   sales,
+  listings,
   tokens,
   collections,
+  activeFilter = ["all"],
   limit = 0,
 }) => {
-  const sortedSales = useMemo(() => {
-    return [...sales]
+  console.log({ sales, listings, tokens, collections });
+  const sortedList = useMemo(() => {
+    return [
+      ...(sales.map((el) => ({ ...el, activity: "sale" })) as SaleActivityI[]),
+      ...(listings.map((el) => ({
+        ...el,
+        activity: "listing",
+      })) as ListingActivityI[]),
+    ]
+      .filter((el) => {
+        if (
+          activeFilter &&
+          activeFilter.length === 1 &&
+          activeFilter[0] === "all"
+        ) {
+          return true;
+        } else if (activeFilter && activeFilter.includes(el.activity)) {
+          return true;
+        }
+        return false;
+      })
       .sort((a, b) => b.timestamp - a.timestamp)
-      .filter(
-        (sale: SaleI) =>
-          sale.buyer !== sale.seller &&
-          sale.price > 1e6 &&
-          !(
-            (sale.seller ===
-              "GFFT7TUFCGDN4I6VUWVQKDB5JOI733U3JLP2YOVERQWMWL5IEZVU2D7U5A" &&
-              sale.buyer ===
-                "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ") ||
-            (sale.seller ===
-              "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ" &&
-              sale.buyer ===
-                "GFFT7TUFCGDN4I6VUWVQKDB5JOI733U3JLP2YOVERQWMWL5IEZVU2D7U5A")
-          )
-      )
       .slice(0, limit > 0 ? limit : sales.length);
-  }, [sales]);
+  }, [sales, listings, activeFilter, limit]);
   return (
-    <TableContainer>
+    <TableContainer sx={{ mt: 2 }}>
       <Table aria-label="rankings table">
         <TableHead>
           <StyledTableRow hover={true}>
@@ -117,13 +122,14 @@ const NFTCollectionTable: React.FC<Props> = ({
             ></StyledTableCell>
             <StyledTableCell></StyledTableCell>
             <StyledTableHeading>Token</StyledTableHeading>
+            <StyledTableHeading>Activity</StyledTableHeading>
             <StyledTableHeading>Seller</StyledTableHeading>
             <StyledTableHeading>Buyer</StyledTableHeading>
             <StyledTableHeading>Price</StyledTableHeading>
           </StyledTableRow>
         </TableHead>
         <TableBody>
-          {sortedSales.map((sale, index) => {
+          {sortedList.map((sale, index) => {
             const token =
               tokens.find(
                 (token) =>
@@ -134,6 +140,13 @@ const NFTCollectionTable: React.FC<Props> = ({
               collections.find(
                 (collection) => collection.contractId === sale.collectionId
               ) || ({} as CollectionI);
+
+            const collectionsMissingImage = [35720076];
+            const url = !collectionsMissingImage.includes(sale.collectionId)
+              ? `https://prod.cdn.highforge.io/i/${encodeURIComponent(
+                  token.metadataURI
+                )}?w=240`
+              : token.metadata.image;
             return (
               <StyledTableRow hover={true} key={index}>
                 <StyledTableCell
@@ -146,7 +159,9 @@ const NFTCollectionTable: React.FC<Props> = ({
                     to={`/collection/${collection.contractId}/token/${token.tokenId}`}
                   >
                     <StyledImage
-                      sx={{ backgroundImage: `url(${token.metadata.image})` }}
+                      sx={{
+                        backgroundImage: `url(${url})`,
+                      }}
                     />
                   </Link>
                 </StyledTableCell>
@@ -154,8 +169,11 @@ const NFTCollectionTable: React.FC<Props> = ({
                   <Link
                     to={`/collection/${collection.contractId}/token/${token.tokenId}`}
                   >
-                    {token.metadata.name}
+                    {token?.metadata?.name || ""}
                   </Link>
+                </StyledTableCell>
+                <StyledTableCell>
+                  {sale.activity[0].toUpperCase() + sale.activity.slice(1)}
                 </StyledTableCell>
                 <StyledTableCell>
                   <Link to={`/account/${sale.seller}`}>
@@ -163,9 +181,13 @@ const NFTCollectionTable: React.FC<Props> = ({
                   </Link>
                 </StyledTableCell>
                 <StyledTableCell>
-                  <Link to={`/account/${sale.buyer}`}>
-                    {compactAddress(sale.buyer)}
-                  </Link>
+                  {sale.buyer ? (
+                    <Link to={`/account/${sale?.buyer}`}>
+                      {compactAddress(sale?.buyer)}
+                    </Link>
+                  ) : (
+                    "-"
+                  )}
                 </StyledTableCell>
                 <StyledTableCell>
                   {(sale.price / 1e6).toLocaleString()}{" "}

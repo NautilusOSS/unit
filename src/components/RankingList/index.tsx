@@ -13,7 +13,8 @@ import { Box, Grid } from "@mui/material";
 import Stack from "@mui/material/Stack";
 import styled from "styled-components";
 import { collections } from "../../contants/games";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Style } from "@mui/icons-material";
 
 export interface Player {
   collectionId: number;
@@ -29,20 +30,29 @@ interface Props {
   selectedOption: string | null;
 }
 
-const formatter = Intl.NumberFormat("en", { notation: "compact" });
+const StyledGrid = styled(Grid)`
+  display: flex;
+  padding: 0px 72px 0px 24px;
+  justify-content: space-between;
+  align-items: center;
+  @media (max-width: 600px) {
+    padding: 0px 24px 0px 24px;
+  }
+`;
 
-const StyledGrid = mstyled(Grid)(({ theme }) => {
-  const isDarkTheme = useSelector(
-    (state: RootState) => state.theme.isDarkTheme
-  );
-  return {
-    display: "flex",
-    //width: "630px",
-    padding: "0px 24px",
-    justifyContent: "space-between",
-    alignItems: "center",
-  };
-});
+const StyledGrid2 = styled(StyledGrid)`
+  justify-content: flex-end;
+  padding-right: 120px;
+  &.light {
+    color: #000;
+  }
+  &.dark {
+    color: #fff;
+  }
+  @media (max-width: 600px) {
+    padding-right: 72px;
+  }
+`;
 
 const AccountContainer = styled.div`
   display: flex;
@@ -74,7 +84,7 @@ const AccountName = styled.div`
 const AccountMetric = styled(Box)`
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
 `;
 
 const AccountMetricSubtext = styled.span`
@@ -119,7 +129,7 @@ const RankText = styled.div`
 const VolumeContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
 `;
 
 const AccountInfo = styled.div`
@@ -140,6 +150,7 @@ const filterGames = (ranking: Player) =>
     .some((id) => id === ranking.collectionId);
 
 const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
+  const navigate = useNavigate();
   /* Theme */
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
@@ -161,12 +172,30 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
     <Grid container spacing={5}>
       <Grid item xs={12} lg={6}>
         <Grid container gap={1}>
+          <StyledGrid2 item xs={12} className={isDarkTheme ? "dark" : "light"}>
+            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+              <VolumeContainer>
+                <AccountMetricMaintext
+                  className={isDarkTheme ? "dark" : "light"}
+                >
+                  Volume
+                </AccountMetricMaintext>
+              </VolumeContainer>
+            </Stack>
+          </StyledGrid2>
           {[0, 1, 2, 3, 4].map((index) =>
             filteredRankings[index] ? (
               <StyledGrid
                 item
                 xs={12}
                 key={filteredRankings[index].collectionId}
+                sx={{ cursor: "pointer" }}
+                onClick={() => {
+                  navigate(
+                    `/collection/${filteredRankings[index].collectionId}`
+                  );
+                  window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+                }}
               >
                 <Stack
                   direction="row"
@@ -202,7 +231,10 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                       </Link>
                       {filteredRankings[index]?.floorPrice > 0 ? (
                         <AccountMetric
-                          sx={{ display: { xs: "none", sm: "block" } }}
+                          sx={{
+                            display: { xs: "none", sm: "flex" },
+                            gap: "6px",
+                          }}
                         >
                           <AccountMetricSubtext>Floor</AccountMetricSubtext>
                           <AccountMetricMaintext
@@ -210,7 +242,7 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                           >
                             {filteredRankings[index]?.floorPrice
                               ? filteredRankings[index].floorPrice !== 0
-                                ? (
+                                ? Math.round(
                                     filteredRankings[index].floorPrice / 1e6
                                   ).toLocaleString()
                                 : "-"
@@ -243,12 +275,30 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
       </Grid>
       <Grid item xs={12} lg={6} sx={{ display: { xs: "none", lg: "block" } }}>
         <Grid container spacing={1}>
+          <StyledGrid2 item xs={12}>
+            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+              <VolumeContainer>
+                <AccountMetricMaintext
+                  className={isDarkTheme ? "dark" : "light"}
+                >
+                  Volume
+                </AccountMetricMaintext>
+              </VolumeContainer>
+            </Stack>
+          </StyledGrid2>
           {[5, 6, 7, 8, 9].map((index) =>
             filteredRankings[index] ? (
               <StyledGrid
                 item
                 xs={12}
                 key={filteredRankings[index].collectionId}
+                sx={{ cursor: "pointer" }}
+                onClick={() => {
+                  navigate(
+                    `/collection/${filteredRankings[index]?.collectionId}`
+                  );
+                  window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+                }}
               >
                 <Stack
                   direction="row"
@@ -277,25 +327,27 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                           ? filteredRankings[index].name
                           : "Collection Name"}
                       </AccountName>
-                      <AccountMetric>
-                        <AccountMetricSubtext>Floor</AccountMetricSubtext>
-                        <AccountMetricMaintext>
-                          <span className={isDarkTheme ? "dark" : "light"}>
-                            {filteredRankings[index]?.floorPrice
-                              ? filteredRankings[index].floorPrice !== 0
-                                ? (
-                                    filteredRankings[index].floorPrice / 1e6
-                                  ).toLocaleString()
-                                : "-"
-                              : "-"}
-                          </span>
-                        </AccountMetricMaintext>
-                        <AccountMetricSubtext>
-                          {filteredRankings[index]?.scoreUnit
-                            ? filteredRankings[index].scoreUnit
-                            : "Score Unit"}
-                        </AccountMetricSubtext>
-                      </AccountMetric>
+                      {filteredRankings[index]?.floorPrice > 0 ? (
+                        <AccountMetric>
+                          <AccountMetricSubtext>Floor</AccountMetricSubtext>
+                          <AccountMetricMaintext>
+                            <span className={isDarkTheme ? "dark" : "light"}>
+                              {filteredRankings[index]?.floorPrice
+                                ? filteredRankings[index].floorPrice !== 0
+                                  ? Math.round(
+                                      filteredRankings[index].floorPrice / 1e6
+                                    ).toLocaleString()
+                                  : "-"
+                                : "-"}
+                            </span>
+                          </AccountMetricMaintext>
+                          <AccountMetricSubtext>
+                            {filteredRankings[index]?.scoreUnit
+                              ? filteredRankings[index].scoreUnit
+                              : "Score Unit"}
+                          </AccountMetricSubtext>
+                        </AccountMetric>
+                      ) : null}
                     </AccountInfo>
                   </AccountContainer>
                 </Stack>
