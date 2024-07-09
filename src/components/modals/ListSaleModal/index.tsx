@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Modal,
   Button,
@@ -8,17 +8,24 @@ import {
   InputLabel,
   Box,
   Grid,
+  FormControl,
 } from "@mui/material";
 import PaymentCurrencyRadio, {
   defaultCurrencies,
 } from "../../PaymentCurrencyRadio";
 import { collections } from "../../../contants/games";
+import axios from "axios";
+import { Token } from "@mui/icons-material";
+import TokenSelect from "../../TokenSelect";
+import RoyaltyCheckbox from "../../checkboxes/RoyaltyCheckbox";
+import { TokenType } from "../../../types";
+import BigNumber from "bignumber.js";
 
 interface ListSaleModalProps {
   open: boolean;
   loading: boolean;
   handleClose: () => void;
-  onSave: (address: string, amount: string) => Promise<void>;
+  onSave: (address: string, amount: string, token: any) => Promise<void>;
   title?: string;
   buttonText?: string;
   //image: string;
@@ -35,12 +42,12 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
   //royalties,
   nft,
   title = "Enter Address",
-  buttonText = "Send",
+  buttonText = "List for Sale",
 }) => {
   /* Price */
   const [price, setPrice] = useState("");
-
-  /* Payment currency */
+  const [royalties, setRoyalties] = useState<boolean>(true);
+  const [token, setToken] = useState<any>();
 
   /* Payment currency */
 
@@ -62,10 +69,28 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
   //   setCurrency(newCurrency);
   // };
 
+  const [tokens, setTokens] = useState<any[]>([]);
+  useEffect(() => {
+    axios
+      .get(`https://arc72-idx.nautilus.sh/nft-indexer/v1/arc200/tokens`)
+      .then(({ data }) => setTokens(data.tokens));
+  }, []);
+
+  const royaltyPercent = useMemo(() => {
+    return royalties ? nft?.royalties?.royaltyPercent || 0 : 0;
+  }, [royalties]);
+
+  const proceeds = useMemo(() => {
+    return new BigNumber(price)
+      .times(100 - (royaltyPercent + 2.5))
+      .div(100)
+      .toFixed(token?.decimals || 0);
+  }, [price, royaltyPercent, token]);
+
   /* Modal */
 
   const handleSave = async () => {
-    await onSave(price, currency);
+    await onSave(price, currency, token);
     handleClose();
   };
 
@@ -123,7 +148,7 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
                     margin="normal"
                     onChange={(e) => setPrice(e.target.value)}
                   />
-                  <Box sx={{ mt: 2 }}>
+                  {/*<Box sx={{ mt: 2 }}>
                     <PaymentCurrencyRadio
                       selectedValue={currency}
                       // onCurrencyChange={handleCurrencyChange}
@@ -131,7 +156,26 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
                       currencies={currencies}
                       disabled={true}
                     />
+                </Box>*/}
+                  <Box sx={{ mt: 2 }}>
+                    <TokenSelect
+                      onChange={(
+                        event: any,
+                        newValue: TokenType | null,
+                        reason: any
+                      ) => {
+                        setToken(newValue);
+                      }}
+                    />
                   </Box>
+                  {/*<Box sx={{ mt: 2 }}>
+                    <RoyaltyCheckbox
+                      defaultChecked={royalties}
+                      onChange={(e) => {
+                        setRoyalties(e.target.checked);
+                      }}
+                    />
+                    </Box>*/}
                 </Box>
               </Grid>
               <Grid xs={12}>
@@ -145,11 +189,9 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
                     id="proceeds"
                     label="Proceeds"
                     variant="outlined"
-                    value={(
-                      ((100 - ((nft?.royalties?.royaltyPercent || 0) + 2.5)) *
-                        Number(price)) /
-                      100
-                    ).toLocaleString()}
+                    value={
+                      isNaN(Number(proceeds)) ? "" : proceeds.toLocaleString()
+                    }
                     fullWidth
                     margin="normal"
                     disabled

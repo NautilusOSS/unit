@@ -18,7 +18,7 @@ import axios from "axios";
 import styled from "styled-components";
 import { getSales } from "../../store/saleSlice";
 import { UnknownAction } from "@reduxjs/toolkit";
-import { ListingI } from "../../types";
+import { ListingI, RankingI, TokenType } from "../../types";
 import { getCollections } from "../../store/collectionSlice";
 import NFTListingTable from "../../components/NFTListingTable";
 import ViewListIcon from "@mui/icons-material/ViewList";
@@ -28,6 +28,9 @@ import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
 import NftCard from "../../components/NFTCard";
 import { getListings } from "../../store/listingSlice";
 import { getTokens } from "../../store/tokenSlice";
+import { BigNumber } from "bignumber.js";
+import { getSmartTokens } from "../../store/smartTokenSlice";
+import { getRankings } from "../../utils/mp";
 
 const StatContainer = styled(Stack)`
   display: flex;
@@ -90,8 +93,6 @@ const StyledLink = styled(Link)`
   gap: 10px;
 `;
 
-const displayUnit = "VIA";
-
 const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
 export const Collection: React.FC = () => {
@@ -108,18 +109,28 @@ export const Collection: React.FC = () => {
   useEffect(() => {
     dispatch(getTokens() as unknown as UnknownAction);
   }, [dispatch]);
+  /* Smart Tokens */
+  const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
+  const smartTokenStatus = useSelector(
+    (state: any) => state.smartTokens.status
+  );
+  useEffect(() => {
+    dispatch(getSmartTokens() as unknown as UnknownAction);
+  }, [dispatch]);
   /* Dex */
   const prices = useSelector((state: RootState) => state.dex.prices);
   const dexStatus = useSelector((state: RootState) => state.dex.status);
   useEffect(() => {
     dispatch(getPrices() as unknown as UnknownAction);
   }, [dispatch]);
-  const exchangeRate = useMemo(() => {
+  const exchangeRate = 1;
+  /*useMemo(() => {
     if (!prices || dexStatus !== "succeeded") return 0;
     const voiPrice = prices.find((p) => p.contractId === CTCINFO_LP_WVOI_VOI);
     if (!voiPrice) return 0;
     return voiPrice.rate;
   }, [prices, dexStatus]);
+  *
   /* Sales */
   const sales = useSelector((state: any) => state.sales.sales);
   const salesStatus = useSelector((state: any) => state.sales.status);
@@ -145,6 +156,54 @@ export const Collection: React.FC = () => {
   );
 
   const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid");
+
+  const stats: any = useMemo(() => {
+    if (
+      tokenStatus !== "succeeded" ||
+      listingsStatus !== "succeeded" ||
+      salesStatus !== "succeeded" ||
+      collectionStatus !== "succeeded" ||
+      smartTokenStatus !== "succeeded" ||
+      !tokens ||
+      !collections ||
+      !sales ||
+      !listings ||
+      !smartTokens
+    )
+      return null;
+    const rankings = getRankings(
+      tokens,
+      collections,
+      sales,
+      listings,
+      1,
+      smartTokens
+    );
+    return rankings.find((el: RankingI) => `${el.collectionId}` === `${id}`);
+  }, [
+    sales,
+    tokens,
+    collections,
+    listings,
+    smartTokens,
+    id,
+    tokenStatus,
+    listingsStatus,
+    salesStatus,
+    collectionStatus,
+    smartTokenStatus,
+  ]);
+
+  const [tokenPrices, setTokenPrices] = React.useState<Map<number, string>>();
+  useEffect(() => {
+    const tokenPrices = new Map();
+    for (const token of smartTokens) {
+      if (!token?.price) {
+        tokenPrices.set(token.contractId, token?.price || "0");
+      }
+    }
+    setTokenPrices(tokenPrices);
+  }, [smartTokens]);
 
   const normalListings = useMemo(() => {
     if (!listings || !exchangeRate) return [];
@@ -218,50 +277,13 @@ export const Collection: React.FC = () => {
     );
   }, [sales]);
 
-  const floor = useMemo(() => {
-    if (!listedNfts || !exchangeRate) return { listing: { price: 0 } };
-    return listedNfts.length > 0
-      ? listedNfts.reduce(
-          (acc: any, nft: any) => {
-            return (acc.listing.currency === 0
-              ? acc.listing.price
-              : acc.listing.price * exchangeRate) >
-              (nft.listing.currency === 0
-                ? nft.listing.price
-                : nft.listing.price * exchangeRate)
-              ? nft
-              : acc;
-          },
-          { listing: { price: Number.MAX_SAFE_INTEGER } }
-        )
-      : { listing: { price: 0 } };
-  }, [listedNfts, exchangeRate]);
-
-  const ceiling = useMemo(() => {
-    return listedNfts.reduce(
-      (acc: any, nft: any) => {
-        return acc.listing.price < nft.listing.price ? nft : acc;
-      },
-      { listing: { price: 0 } }
-    );
-  }, [listedNfts]);
-
-  const volume = useMemo(() => {
-    return (
-      collectionSales?.reduce((acc: any, sale: ListingI) => {
-        return (
-          acc + (sale.currency === 0 ? sale.price / exchangeRate : sale.price)
-        );
-      }, 0) || 0
-    );
-  }, [collectionSales, exchangeRate]);
-
   const isLoading = useMemo(
     () =>
       tokenStatus !== "succeeded" ||
       listingsStatus !== "succeeded" ||
       salesStatus !== "succeeded" ||
       collectionStatus !== "succeeded" ||
+      smartTokenStatus !== "succeeded" ||
       !tokens ||
       !collectionSales ||
       !collections ||
@@ -269,9 +291,8 @@ export const Collection: React.FC = () => {
       !listings ||
       !listedNfts ||
       !listedCollections ||
-      !sales ||
-      !floor,
-    [collections, nfts, listings, listedNfts, listedCollections, floor]
+      !sales,
+    [collections, nfts, listings, listedNfts, listedCollections, stats]
   );
 
   return (
@@ -331,38 +352,28 @@ export const Collection: React.FC = () => {
                     {
                       name: "Volume",
                       displayValue:
-                        formatter.format(volume / 1e6) + ` ${displayUnit}`,
-                      value: volume,
+                        formatter.format(stats?.volume) +
+                        ` ${stats?.scoreUnit || "VOI"}`,
+                      value: stats?.volume,
                     },
 
                     {
                       name: "Floor Price",
-                      displayValue: `${formatter.format(
-                        floor.listing.currency === 0
-                          ? floor.listing.price / exchangeRate / 1e6
-                          : floor.listing.price / 1e6
-                      )} ${displayUnit}`,
-                      value: floor.listing.price,
+                      displayValue: `${formatter.format(stats?.floorPrice)} ${
+                        stats?.scoreUnit || "VOI"
+                      }`,
+                      value: stats?.floorPrice,
                     },
                     {
                       name: "Avg. Sale",
                       displayValue:
                         formatter.format(
-                          volume / collectionSales.length / 1e6
-                        ) + ` ${displayUnit}`,
+                          stats?.volume / collectionSales.length
+                        ) + ` ${stats?.scoreUnit || "VOI"}`,
                       value:
-                        volume > 0 && collectionSales.length > 0
-                          ? volume / collectionSales.length
+                        stats?.volume > 0 && collectionSales.length > 0
+                          ? stats?.volume / collectionSales.length
                           : 0,
-                    },
-                    {
-                      name: "Ceiling Price",
-                      displayValue: `${formatter.format(
-                        ceiling.listing.currency === 0
-                          ? ceiling.listing.price / exchangeRate / 1e6
-                          : ceiling.listing.price / 1e6
-                      )} ${displayUnit}`,
-                      value: ceiling.listing.price,
                     },
                   ].map((el, i) =>
                     el.value > 0 ? (
@@ -418,6 +429,26 @@ export const Collection: React.FC = () => {
                   listedNfts.length > 0 ? (
                     <Grid container spacing={2}>
                       {listedNfts.map((el: any) => {
+                        const currency: any =
+                          `${el.listing.currency}` === "0"
+                            ? "VOI"
+                            : smartTokens.find(
+                                (t: TokenType) =>
+                                  `${t.contractId}` === `${el.listing.currency}`
+                              );
+
+                        const currencySymbol =
+                          currency?.tokenId === "0"
+                            ? "VOI"
+                            : currency?.symbol || "VOI";
+                        const currencyDecimals =
+                          currency?.decimals === 0
+                            ? 0
+                            : currency?.decimals || 6;
+                        const price = new BigNumber(el.listing.price)
+                          .dividedBy(new BigNumber(10).pow(currencyDecimals))
+                          .toNumber()
+                          .toLocaleString();
                         return (
                           <Grid
                             key={`${el.contractId}-${el.tokenId}`}
@@ -434,10 +465,8 @@ export const Collection: React.FC = () => {
                                 "?w=240"
                               }
                               owner={el.owner}
-                              price={(el.listing.price / 1e6).toLocaleString()}
-                              currency={
-                                `${el.listing.currency}` === "0" ? "VOI" : "VIA"
-                              }
+                              price={price}
+                              currency={currencySymbol}
                               onClick={() => {
                                 navigate(
                                   `/collection/${el.contractId}/token/${el.tokenId}`

@@ -243,7 +243,7 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                             {filteredRankings[index]?.floorPrice
                               ? filteredRankings[index].floorPrice !== 0
                                 ? Math.round(
-                                    filteredRankings[index].floorPrice / 1e6
+                                    filteredRankings[index].floorPrice
                                   ).toLocaleString()
                                 : "-"
                               : "-"}
@@ -335,7 +335,7 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                               {filteredRankings[index]?.floorPrice
                                 ? filteredRankings[index].floorPrice !== 0
                                   ? Math.round(
-                                      filteredRankings[index].floorPrice / 1e6
+                                      filteredRankings[index].floorPrice
                                     ).toLocaleString()
                                   : "-"
                                 : "-"}

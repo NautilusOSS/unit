@@ -1,6 +1,7 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import themeReducer, { ThemeState } from "./themeSlice";
 import tokenReducer, { TokensState } from "./tokenSlice";
+import smartTokenReducer, { SmartTokensState } from "./smartTokenSlice";
 import collectionReducer, { CollectionsState } from "./collectionSlice";
 import saleReducer, { SalesState } from "./saleSlice";
 import dexReducer, { DexState } from "./dexSlice";
@@ -10,6 +11,7 @@ import { persistStore, persistReducer } from "redux-persist";
 
 export type RootState = {
   tokens: TokensState;
+  smartTokens: TokensState;
   collections: CollectionsState;
   sales: SalesState;
   listings: ListingsState;
@@ -26,6 +28,7 @@ const persistConfig = {
 const rootReducer = combineReducers({
   theme: themeReducer,
   tokens: tokenReducer,
+  smartTokens: smartTokenReducer,
   collections: collectionReducer,
   sales: saleReducer,
   listings: listingReducer,

@@ -1,6 +1,5 @@
-//import { fee } from "../constants/mp";
-
-import { CollectionI, RankingI, Token } from "../types";
+import { CollectionI, RankingI, Token, TokenType } from "../types";
+import { BigNumber } from "bignumber.js";
 
 export const computeExtraPayment = (
   price: any,
@@ -142,41 +141,52 @@ export const getRankings = (
   collections: CollectionI[],
   sales: any,
   listings: any,
-  exchangeRate: number
+  exchangeRate: number,
+  smartTokens: TokenType[]
 ) => {
   const scores = new Map();
   const saleCounts = new Map();
   for (const sale of sales) {
+    const currency = smartTokens.find(
+      (t: any) => `${t.contractId}` === `${sale.currency}`
+    );
+    const currencyDecimals =
+      currency?.decimals === 0 ? 0 : currency?.decimals || 6;
+    const exchangeRate = sale.currency === 0 ? 1 : currency?.price || 0;
+    const priceBn = new BigNumber(sale?.price).div(
+      new BigNumber(10).pow(currencyDecimals)
+    );
+    const normalPriceBn = priceBn.multipliedBy(new BigNumber(exchangeRate));
     if (scores.has(sale.collectionId)) {
       scores.set(
         sale.collectionId,
-        scores.get(sale.collectionId) +
-          (sale.currency === 0 ? sale.price / exchangeRate : sale.price)
+        scores.get(sale.collectionId) + normalPriceBn.toNumber()
       );
       saleCounts.set(sale.collectionId, saleCounts.get(sale.collectionId) + 1);
     } else {
-      scores.set(
-        sale.collectionId,
-        sale.currency === 0 ? sale.price / exchangeRate : sale.price
-      );
+      scores.set(sale.collectionId, normalPriceBn.toNumber());
       saleCounts.set(sale.collectionId, 1);
     }
   }
   const floors = new Map();
   for (const listing of listings) {
+    const currency = smartTokens.find(
+      (t: any) => `${t.contractId}` === `${listing.currency}`
+    );
+    const currencyDecimals =
+      currency?.decimals === 0 ? 0 : currency?.decimals || 6;
+    const exchangeRate = listing.currency === 0 ? 1 : currency?.price || 0;
+    const priceBn = new BigNumber(listing?.price).div(
+      new BigNumber(10).pow(currencyDecimals)
+    );
+    const normalPriceBn = priceBn.multipliedBy(new BigNumber(exchangeRate));
     if (floors.has(listing.collectionId)) {
       floors.set(
         listing.collectionId,
-        Math.min(
-          floors.get(listing.collectionId),
-          listing.currency === 0 ? listing.price / exchangeRate : listing.price
-        )
+        Math.min(floors.get(listing.collectionId), normalPriceBn.toNumber())
       );
     } else {
-      floors.set(
-        listing.collectionId,
-        listing.currency === 0 ? listing.price / exchangeRate : listing.price
-      );
+      floors.set(listing.collectionId, normalPriceBn.toNumber());
     }
   }
   const rankings = Array.from(scores.entries()).map((kv: any) => {
@@ -209,11 +219,12 @@ export const getRankings = (
       floorPrice,
       volume,
       name: `${token?.metadata?.name?.replace(/[0-9 #]*$/, "")}`,
-      score: `${Math.round(volume / 1e6).toLocaleString()}`,
+      score: `${Math.round(volume).toLocaleString()}`,
       rank: volume,
-      scoreUnit: "VIA",
+      scoreUnit: "VOI",
       owners: owners.size,
       items: collection?.totalSupply || 0,
+      listings: listings.filter((l: any) => l.collectionId === kv[0]).length,
       sales: saleCount,
       exchangeRate,
     };

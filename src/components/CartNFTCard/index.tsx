@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import styled from "styled-components";
 import { Avatar, Box, Stack, Tooltip } from "@mui/material";
 import { stringToColorCode } from "../../utils/string";
@@ -13,6 +13,12 @@ import algosdk from "algosdk";
 import { getAlgorandClients } from "../../wallets";
 import { CONTRACT, arc200 } from "ulujs";
 import { ctcInfoMp206 } from "../../contants/mp";
+import { useDispatch, useSelector } from "react-redux";
+import { getSmartTokens } from "../../store/smartTokenSlice";
+import { UnknownAction } from "@reduxjs/toolkit";
+import { BigNumber } from "bignumber.js";
+
+const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
 const CollectionName = styled.div`
   color: var(--White, #fff);
@@ -242,6 +248,29 @@ const CartNftCard: React.FC<NFTCardProps> = ({ listedNft: el }) => {
   const [isBuying, setIsBuying] = React.useState(false);
   const [openBuyModal, setOpenBuyModal] = React.useState(false);
 
+  const dispatch = useDispatch();
+  const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
+  const smartTokenStatus = useSelector(
+    (state: any) => state.smartTokens.status
+  );
+  useEffect(() => {
+    dispatch(getSmartTokens() as unknown as UnknownAction);
+  }, [dispatch]);
+
+  const currency = smartTokens.find(
+    (token: any) => `${token.contractId}` === `${el.listing.currency}`
+  );
+
+  const currencyDecimals =
+    currency?.decimals === 0 ? 0 : currency?.decimals || 6;
+  const currencySymbol =
+    currency?.tokenId === "0" ? "VOI" : currency?.symbol || "VOI";
+  const price = formatter.format(
+    new BigNumber(el.listing.price)
+      .div(new BigNumber(10).pow(currencyDecimals))
+      .toNumber()
+  );
+
   // handleBuy
   const handleBuy = async () => {
     try {
@@ -263,7 +292,6 @@ const CartNftCard: React.FC<NFTCardProps> = ({ listedNft: el }) => {
       const availableBalance = amount - minBalance;
       const boxCost = 28500;
       const addBoxPayment = availableBalance < boxCost;
-      console.log({ availableBalance, boxCost, addBoxPayment });
       if (addBoxPayment) {
         const paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
           from: activeAccount.address,
@@ -390,12 +418,10 @@ const CartNftCard: React.FC<NFTCardProps> = ({ listedNft: el }) => {
             activeAccount.address,
             mpAddr
           );
-          console.log({ hasAllowanceR, arc200_allowanceR });
           if (!hasAllowanceR.success) {
             throw new Error("Failed to check allowance");
           }
           const hasAllowance = hasAllowanceR.returnValue;
-          console.log({ hasAllowance });
           if (hasAllowance === 0) {
             const ci = new CONTRACT(
               ptid,
@@ -721,10 +747,7 @@ const CartNftCard: React.FC<NFTCardProps> = ({ listedNft: el }) => {
         >
           <Stack gap={1}>
             <CollectionName>{el.metadata.name}</CollectionName>
-            <CollectionVolume>
-              {Math.round(el.listing.price / 1e6).toLocaleString()}{" "}
-              {el.listing.currency === 0 ? "VOI" : "VIA"}
-            </CollectionVolume>
+            <CollectionVolume>{`${price} ${currencySymbol}`}</CollectionVolume>
           </Stack>
           <img
             height="40"
@@ -744,8 +767,8 @@ const CartNftCard: React.FC<NFTCardProps> = ({ listedNft: el }) => {
         title="Buy NFT"
         buttonText="Buy"
         image={el.metadata.image}
-        price={(el.listing.price / 1e6).toLocaleString()}
-        currency={el.listing.currency === 0 ? "VOI" : "VIA"}
+        price={price}
+        currency={currencySymbol}
       />
     </>
   );

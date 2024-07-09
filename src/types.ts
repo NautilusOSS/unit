@@ -158,6 +158,8 @@ export interface RankingI {
   owners: number;
   items: number;
   sales: number;
+  listings: number;
+  //price: string | null;
 }
 
 /* Activity */
@@ -169,4 +171,19 @@ export interface ActivityI {
   seller: string;
   buyer: string;
   price: number;
+}
+
+/* Types for arc200 indexer api tokens */
+
+export interface TokenType {
+  contractId: number;
+  name: string;
+  symbol: string;
+  decimals: number;
+  totalSupply: string;
+  creator: string;
+  mintRound: number;
+  globalState: Record<string, unknown>;
+  tokenId: string | null;
+  price?: string | null;
 }

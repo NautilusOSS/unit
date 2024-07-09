@@ -12,6 +12,9 @@ import styled from "styled-components";
 import { Box } from "@mui/material";
 import { RankingI } from "../../types";
 import { Link } from "react-router-dom";
+import { BigNumber } from "bignumber.js";
+
+const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
 const StyledImage = styled(Box)`
   width: 53px;
@@ -50,6 +53,8 @@ const NFTCollectionTable: React.FC<Props> = ({ rankings }) => {
               //"Floor Change",
               "Volume",
               //"Volume Change",
+              "Listings",
+              "Sales",
               "Items",
               "Owners",
             ].map((header, index) => (
@@ -77,13 +82,15 @@ const NFTCollectionTable: React.FC<Props> = ({ rankings }) => {
               <StyledTableCell>
                 {player.floorPrice === 0
                   ? "-"
-                  : (Number(player.floorPrice) / 1e6).toLocaleString() + " VOI"}
+                  : player.floorPrice.toLocaleString() + " VOI"}
               </StyledTableCell>
               <StyledTableCell>
                 {player.volume === 0
                   ? "-"
-                  : (Number(player.volume) / 1e6).toLocaleString() + " VOI"}
+                  : player.volume.toLocaleString() + " VOI"}
               </StyledTableCell>
+              <StyledTableCell>{player.listings}</StyledTableCell>
+              <StyledTableCell>{player.sales}</StyledTableCell>
               <StyledTableCell>
                 {player.items === 0 ? "-" : player.items}
               </StyledTableCell>

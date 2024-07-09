@@ -15,6 +15,7 @@ import NFTCollectionTable from "../../components/NFTCollectionTable";
 import { getPrices } from "../../store/dexSlice";
 import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
 import { ARC72_INDEXER_API } from "../../config/arc72-idx";
+import { getSmartTokens } from "../../store/smartTokenSlice";
 
 const SectionHeading = styled.div`
   display: flex;
@@ -106,6 +107,16 @@ export const Collections: React.FC = () => {
   useEffect(() => {
     dispatch(getSales() as unknown as UnknownAction);
   }, [dispatch]);
+
+  /* Smart Tokens */
+  const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
+  const smartTokenStatus = useSelector(
+    (state: any) => state.smartTokens.status
+  );
+  useEffect(() => {
+    dispatch(getSmartTokens() as unknown as UnknownAction);
+  }, [dispatch]);
+
   /* Theme */
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
@@ -139,7 +150,7 @@ export const Collections: React.FC = () => {
       collectionStatus !== "succeeded"
     )
       return new Map();
-    return getRankings(tokens, collections, sales, listings, exchangeRate);
+    return getRankings(tokens, collections, sales, listings, 1, smartTokens);
   }, [sales, tokens, collections, listings]);
 
   const isLoading = useMemo(

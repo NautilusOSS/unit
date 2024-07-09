@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { styled as mstyled } from "@mui/system";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -7,7 +7,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import styled from "styled-components";
 import { Box } from "@mui/material";
@@ -20,10 +20,18 @@ import {
   SaleActivityI,
   SaleI,
   Token,
+  TokenType,
 } from "../../types";
 import { compactAddress } from "../../utils/mp";
 import moment from "moment";
 import { Link } from "react-router-dom";
+import { getSmartTokens } from "../../store/smartTokenSlice";
+import { UnknownAction } from "@reduxjs/toolkit";
+import { BigNumber } from "bignumber.js";
+import CryptoIconPlaceholder from "../CryptoIconPlaceholder";
+import { intToColorCode } from "../../utils/string";
+
+const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
 const StyledImage = styled(Box)`
   width: 53px;
@@ -88,7 +96,15 @@ const NFTCollectionTable: React.FC<Props> = ({
   activeFilter = ["all"],
   limit = 0,
 }) => {
-  console.log({ sales, listings, tokens, collections });
+  const dispatch = useDispatch();
+  const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
+  const smartTokenStatus = useSelector(
+    (state: any) => state.smartTokens.status
+  );
+  useEffect(() => {
+    dispatch(getSmartTokens() as unknown as UnknownAction);
+  }, [dispatch]);
+
   const sortedList = useMemo(() => {
     return [
       ...(sales.map((el) => ({ ...el, activity: "sale" })) as SaleActivityI[]),
@@ -147,6 +163,19 @@ const NFTCollectionTable: React.FC<Props> = ({
                   token.metadataURI
                 )}?w=240`
               : token.metadata.image;
+            const currency = smartTokens.find(
+              (smartToken: TokenType) =>
+                `${smartToken.contractId}` === `${sale.currency}`
+            );
+            const currencyDecimals =
+              currency?.decimals === 0 ? 0 : currency?.decimals || 6;
+            const currencySymbol =
+              currency?.tokenId === "0" ? "VOI" : currency?.symbol || "VOI";
+            const price = formatter.format(
+              new BigNumber(sale.price)
+                .div(new BigNumber(10).pow(currencyDecimals))
+                .toNumber()
+            );
             return (
               <StyledTableRow hover={true} key={index}>
                 <StyledTableCell
@@ -190,8 +219,24 @@ const NFTCollectionTable: React.FC<Props> = ({
                   )}
                 </StyledTableCell>
                 <StyledTableCell>
-                  {(sale.price / 1e6).toLocaleString()}{" "}
-                  {sale.currency === 0 ? "VOI" : "VIA"}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <CryptoIconPlaceholder
+                      color={intToColorCode(
+                        currency?.tokenId === "0"
+                          ? 0
+                          : currency?.contractId || 0
+                      )}
+                    />
+                    <span>
+                      {price} {currencySymbol}
+                    </span>
+                  </Box>
                 </StyledTableCell>
               </StyledTableRow>
             );

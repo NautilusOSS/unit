@@ -21,6 +21,11 @@ import NFTCard2 from "../../components/NFTCard2";
 import { getListings } from "../../store/listingSlice";
 import { getTokens } from "../../store/tokenSlice";
 import { getSales } from "../../store/saleSlice";
+import { getSmartTokens } from "../../store/smartTokenSlice";
+import { TokenType } from "../../types";
+import { BigNumber } from "bignumber.js";
+
+const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
 const CryptoIcon = styled.img`
   width: 16px;
@@ -350,6 +355,15 @@ export const Token: React.FC = () => {
   useEffect(() => {
     dispatch(getTokens() as unknown as UnknownAction);
   }, [dispatch]);
+  /* Smart Tokens */
+  const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
+  const smartTokenStatus = useSelector(
+    (state: any) => state.smartTokens.status
+  );
+  useEffect(() => {
+    dispatch(getSmartTokens() as unknown as UnknownAction);
+  }, [dispatch]);
+  console.log({ smartTokens, smartTokenStatus });
   /* Listings */
   const listings = useSelector((state: any) => state.listings.listings);
   const listingsStatus = useSelector((state: any) => state.listings.status);
@@ -386,6 +400,16 @@ export const Token: React.FC = () => {
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
   );
+
+  const [paymentTokens, setPaymentTokens] = React.useState<any[]>([]);
+  useEffect(() => {
+    axios
+      .get("https://arc72-idx.nautilus.sh/nft-indexer/v1/arc200/tokens")
+      .then((res: any) => res.data.tokens)
+      .then(setPaymentTokens);
+  }, []);
+
+  console.log({ paymentTokens });
 
   /* Carousel */
   const listingsRef = useRef<HTMLDivElement>(null);
@@ -574,7 +598,6 @@ export const Token: React.FC = () => {
               nft={nft}
               loading={isLoading}
             />
-
             <HeadingContainer>
               <HeadingText
                 className={isDarkTheme ? "dark" : "light"}
@@ -681,6 +704,19 @@ export const Token: React.FC = () => {
                       el.metadataURI
                     )}?w=400`
                   : el.metadata.image;
+                const currency = smartTokens.find(
+                  (t: TokenType) =>
+                    `${t.contractId}` === `${el.listing.currency}`
+                );
+                const currencySymbol =
+                  currency?.tokenId === "0" ? "VOI" : currency?.symbol || "VOI";
+                const currencyDecimals =
+                  currency?.decimals === 0 ? 0 : currency?.decimals || 6;
+                const price = formatter.format(
+                  new BigNumber(el.listing.price)
+                    .dividedBy(new BigNumber(10).pow(currencyDecimals))
+                    .toNumber()
+                );
                 return (
                   <NFTCard2
                     style={{
@@ -690,8 +726,8 @@ export const Token: React.FC = () => {
                     }}
                     nftName={el?.metadata?.name}
                     image={url}
-                    price={(el.listing.price / 1e6).toLocaleString()}
-                    currency={"VIA"}
+                    price={price}
+                    currency={currencySymbol}
                     onClick={() => {
                       navigate(
                         `/collection/${el.contractId}/token/${el.tokenId}`

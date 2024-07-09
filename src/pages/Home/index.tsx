@@ -19,6 +19,7 @@ import { getPrices } from "../../store/dexSlice";
 import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
 import { getListings } from "../../store/listingSlice";
 import { getRankings } from "../../utils/mp";
+import { getSmartTokens } from "../../store/smartTokenSlice";
 
 const ActivityFilterContainer = styled.div`
   display: flex;
@@ -191,12 +192,22 @@ export const Home: React.FC = () => {
 
   /* Dispatch */
   const dispatch = useDispatch();
+
+  /* Smart Tokens */
+  const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
+  const smartTokenStatus = useSelector(
+    (state: any) => state.smartTokens.status
+  );
+  useEffect(() => {
+    dispatch(getSmartTokens() as unknown as UnknownAction);
+  }, [dispatch]);
+
   /* Dex */
   const prices = useSelector((state: RootState) => state.dex.prices);
   const dexStatus = useSelector((state: RootState) => state.dex.status);
   useEffect(() => {
     dispatch(getPrices() as unknown as UnknownAction);
-  }, [dispatch])
+  }, [dispatch]);
   const exchangeRate = useMemo(() => {
     // if (!prices || dexStatus !== "succeeded") return 0;
     // const voiPrice = prices.find((p) => p.contractId === CTCINFO_LP_WVOI_VOI);
@@ -316,6 +327,16 @@ export const Home: React.FC = () => {
     return listedCollections;
   }, [collectionStatus, collections, listedNfts]);
 
+  console.log({
+    sales,
+    listings,
+    exchangeRate,
+    salesStatus,
+    collectionStatus,
+    tokenStatus,
+    dexStatus,
+  });
+
   const rankings: any = useMemo(() => {
     if (
       !sales ||
@@ -327,7 +348,7 @@ export const Home: React.FC = () => {
       dexStatus !== "succeeded"
     )
       return new Map();
-    return getRankings(tokens, collections, sales, listings, exchangeRate);
+    return getRankings(tokens, collections, sales, listings, 1, smartTokens);
   }, [sales, tokens, collections, listings, exchangeRate]);
 
   const isLoading = useMemo(
@@ -354,6 +375,15 @@ export const Home: React.FC = () => {
       dexStatus,
     ]
   );
+
+  console.log({
+    exchangeRate,
+    listings,
+    listedNfts,
+    listedCollections,
+    rankings,
+    isLoading,
+  });
 
   return (
     <Layout>

@@ -400,11 +400,13 @@ const SalesTable: React.FC<Props> = ({ sales }) => {
                     </HistoryPriceValueCurrency>*/}
                   <HistoryPriceValueLabel>
                     <HistoryPriceValueLabelMain className="label">
-                      {sale.price.toLocaleString()} VIA
+                      {sale.price} {sale.currency}
                     </HistoryPriceValueLabelMain>
-                    {/*<HistoryPriceValueLabelSub>
-                      {sale.normalPrice}
-                    </HistoryPriceValueLabelSub>*/}
+                    {sale.normalPrice ? (
+                      <HistoryPriceValueLabelSub>
+                        {sale.normalPrice} VOI
+                      </HistoryPriceValueLabelSub>
+                    ) : null}
                   </HistoryPriceValueLabel>
                 </HistoryPriceValueWrapper>
               </HistoryPriceValue>

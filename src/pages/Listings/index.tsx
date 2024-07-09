@@ -27,6 +27,7 @@ import {
   RankingI,
   Token,
   TokenI,
+  TokenType,
 } from "../../types";
 import { getSales } from "../../store/saleSlice";
 import { getPrices } from "../../store/dexSlice";
@@ -36,6 +37,10 @@ import { getListings } from "../../store/listingSlice";
 import { Search } from "@mui/icons-material";
 import { useDebounceCallback } from "usehooks-ts";
 import { lazy } from "react";
+import { getSmartTokens } from "../../store/smartTokenSlice";
+import { BigNumber } from "bignumber.js";
+
+const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
 const NFTCard = lazy(() => import("../../components/NFTCard2"));
 
@@ -439,12 +444,15 @@ export const Listings: React.FC = () => {
   useEffect(() => {
     dispatch(getPrices() as unknown as UnknownAction);
   }, [dispatch]);
+
   const exchangeRate = useMemo(() => {
-    if (!prices || dexStatus !== "succeeded") return 0;
-    const voiPrice = prices.find((p) => p.contractId === CTCINFO_LP_WVOI_VOI);
-    if (!voiPrice) return 0;
-    return voiPrice.rate;
-  }, [prices, dexStatus]);
+    return 1;
+    //   if (!prices || dexStatus !== "succeeded") return 0;
+    //   const voiPrice = prices.find((p) => p.contractId === /* wVOI2/VIA */ 34099095);
+    //   if (!voiPrice) return 0;
+    //   return voiPrice.rate;
+    // }, [prices, dexStatus]);
+  }, []);
 
   /* Tokens */
   const tokens = useSelector((state: any) => state.tokens.tokens);
@@ -469,6 +477,15 @@ export const Listings: React.FC = () => {
   const salesStatus = useSelector((state: any) => state.sales.status);
   useEffect(() => {
     dispatch(getSales() as unknown as UnknownAction);
+  }, [dispatch]);
+
+  /* Smart Tokens */
+  const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
+  const smartTokenStatus = useSelector(
+    (state: any) => state.smartTokens.status
+  );
+  useEffect(() => {
+    dispatch(getSmartTokens() as unknown as UnknownAction);
   }, [dispatch]);
 
   /* Theme */
@@ -501,14 +518,22 @@ export const Listings: React.FC = () => {
 
   const normalListings = useMemo(() => {
     if (!listings || !exchangeRate) return [];
-    return listings.map((listing: ListingI) => {
-      return {
-        ...listing,
-        normalPrice:
-          listing.currency === 0 ? listing.price : listing.price * exchangeRate,
-      };
-    });
-  }, [listings, exchangeRate]);
+
+    return listings.map((l: ListingI) => ({
+      ...l,
+      normalPrice: l.price,
+    }));
+    //   return listings.map((listing: ListingI) => {
+    //     return {
+    //       ...listing,
+    //       normalPrice:
+    //         listing.currency === 0 ? listing.price : listing.price * exchangeRate,
+    //     };
+    //   });
+    // }, [listings, exchangeRate]);
+  }, [listings]);
+
+  console.log({ normalListings, exchangeRate });
 
   const filteredListings = useMemo(() => {
     const listings = normalListings.map((listing: ListingI) => {
@@ -644,7 +669,14 @@ export const Listings: React.FC = () => {
       tokenStatus !== "succeeded"
     )
       return new Map();
-    return getRankings(tokens, collections, sales, listings, exchangeRate);
+    return getRankings(
+      tokens,
+      collections,
+      sales,
+      listings,
+      exchangeRate,
+      smartTokens
+    );
   }, [sales, tokens, collections, listings]);
 
   const isLoading = useMemo(
@@ -667,6 +699,8 @@ export const Listings: React.FC = () => {
       salesStatus,
     ]
   );
+
+  console.log({ isLoading, listings, filteredListings });
 
   return (
     <>
@@ -841,6 +875,18 @@ export const Listings: React.FC = () => {
                       nft?.metadataURI
                     )}?w=400`
                   : nft?.metadata?.image;
+                const currency = smartTokens.find(
+                  (st: TokenType) => `${st.contractId}` === `${el.currency}`
+                );
+                const currencySymbol =
+                  currency?.tokenId === "0" ? "VOI" : currency?.symbol || "VOI";
+                const currencyDecimals =
+                  currency?.decimals === 0 ? 0 : currency?.decimals || 6;
+                const price = formatter.format(
+                  new BigNumber(el.price)
+                    .div(new BigNumber(10).pow(currencyDecimals))
+                    .toNumber()
+                );
                 return (
                   <Suspense fallback={<div>Loading...</div>}>
                     <NFTCard
@@ -851,8 +897,8 @@ export const Listings: React.FC = () => {
                         //+
                         //(nft?.metadata?.name?.length || 0 > 13 ? "..." : "")
                       }
-                      price={(el.price / 1e6).toLocaleString()}
-                      currency={el.currency === 0 ? "VOI" : "VIA"}
+                      price={price}
+                      currency={currencySymbol}
                       image={url}
                       onClick={() => {
                         navigate(

@@ -62,6 +62,8 @@ export const NFTMore: React.FC<NFTMoreProps> = ({ nfts, title, onClick }) => {
 
   const isLoading = false;
 
+  console.log({ nfts });
+
   return !isLoading && nfts.length > 0 ? (
     <Stack style={{ gap: "36px" }}>
       <div style={{ display: "flex", justifyContent: "space-between" }}>
