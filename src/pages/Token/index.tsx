@@ -401,16 +401,6 @@ export const Token: React.FC = () => {
     (state: RootState) => state.theme.isDarkTheme
   );
 
-  const [paymentTokens, setPaymentTokens] = React.useState<any[]>([]);
-  useEffect(() => {
-    axios
-      .get("https://arc72-idx.nautilus.sh/nft-indexer/v1/arc200/tokens")
-      .then((res: any) => res.data.tokens)
-      .then(setPaymentTokens);
-  }, []);
-
-  console.log({ paymentTokens });
-
   /* Carousel */
   const listingsRef = useRef<HTMLDivElement>(null);
   const [offset, setOffset] = React.useState<number>(0);
@@ -444,11 +434,31 @@ export const Token: React.FC = () => {
       console.log(e);
     }
   }, [id]);
+  console.log({ collectionInfo });
 
   const [nft, setNft] = React.useState<any>(null);
   useEffect(() => {
-    if (!collection || !tid || !collectionListings || !listings) return;
+    if (
+      !collection ||
+      !collectionInfo ||
+      !tid ||
+      !collectionListings ||
+      !listings
+    )
+      return;
     (async () => {
+      const {
+        data: {
+          tokens: [nftData],
+        },
+      } = await axios.get(
+        `https://arc72-idx.nautilus.sh/nft-indexer/v1/tokens?contractId=${id}&tokenId=${tid}`
+      );
+
+      const metadata = JSON.parse(nftData.metadata || "{}");
+
+      if (!nftData) throw new Error("NFT not found");
+
       const { algodClient, indexerClient } = getAlgorandClients();
       const ciARC72 = new arc72(Number(id), algodClient, indexerClient, {
         acc: {
@@ -520,7 +530,8 @@ export const Token: React.FC = () => {
         ? decodeRoyalties(nft?.metadata?.royalties || "")
         : {};
       const displayNft = {
-        ...nft,
+        ...nftData,
+        metadata,
         royalties,
         approved: arc72_getApproved,
         owner: arc72_ownerOf,
@@ -531,7 +542,8 @@ export const Token: React.FC = () => {
       console.log(e);
       toast.error(e.message);
     });
-  }, [id, tid, collection, collectionListings, activeAccount]);
+  }, [id, tid, collection, collectionInfo, collectionListings, activeAccount]);
+  console.log({ nft });
 
   const listedNfts = useMemo(() => {
     const listedNfts =

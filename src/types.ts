@@ -62,6 +62,17 @@ export interface NFTIndexerCollectionResponse {
 
 /* Listing */
 
+export interface ListingTokenI {
+  approved: string;
+  contractId: string;
+  metadata: string;
+  metadataURI: string;
+  mintRound: number;
+  owner: string;
+  tokenId: string;
+  tokenIndex: number;
+}
+
 export interface NFTIndexerListingI {
   transactionId: string;
   mpContractId: number;
@@ -75,7 +86,7 @@ export interface NFTIndexerListingI {
   endTimestamp: number | null;
   royalty: number | null;
   collectionId: number;
-  token?: any;
+  token: ListingTokenI;
   delete?: any;
   sale?: any;
 }
@@ -98,6 +109,7 @@ export interface ListingI {
   // nftindexerlistingi
   transactionId: string;
   createTimestamp: number;
+  token?: Token;
 }
 
 export interface ListingActivityI extends ListingI {

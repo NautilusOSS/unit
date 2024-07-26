@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Layout from "../../layouts/Default";
 import {
   Avatar,
@@ -32,7 +32,7 @@ import { decodePrice, decodeTokenId } from "../../utils/mp";
 import NftCard from "../../components/NFTCard";
 import BuySaleModal from "../../components/modals/BuySaleModal";
 
-import { CONTRACT, arc72, arc200, mp, abi } from "ulujs";
+import { CONTRACT, arc72, arc200, mp, abi, swap } from "ulujs";
 import { getAlgorandClients } from "../../wallets";
 import { ListingBoxCost, ctcInfoMp206 } from "../../contants/mp";
 
@@ -47,8 +47,9 @@ import ListSaleModal from "../modals/ListSaleModal";
 import { QUEST_ACTION, getActions, submitAction } from "../../config/quest";
 import { getSmartTokens } from "../../store/smartTokenSlice";
 import { UnknownAction } from "@reduxjs/toolkit";
-import { TokenType } from "../../types";
+import { NFTIndexerListingI, TokenType } from "../../types";
 import { BigNumber } from "bignumber.js";
+import { decodeRoyalties } from "../../utils/hf";
 
 const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
@@ -863,125 +864,107 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
   };
 
   // handleBuy
-  const handleBuy = async () => {
+  const handleBuy = async (
+    addr: string,
+    listing: NFTIndexerListingI,
+    extraTxns = []
+  ) => {
     try {
-      if (!activeAccount) {
-        throw new Error("Please connect wallet!");
-      }
-      setIsBuying(true);
+      const CTC_INFO_WVOI = 34099056; // wVOI2
       const zeroAddress =
         "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ";
-      const CTC_INFO_MP206 = 29117863;
-      const CTC_INFO_WVOI2 = 34099056;
-      const CTC_INFO_NAUT = 57774022;
-      const ctcAddr = algosdk.getApplicationAddress(CTC_INFO_MP206);
       const manager =
         "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ";
-      const ci = new CONTRACT(
-        CTC_INFO_MP206,
-        algodClient,
-        indexerClient,
-        abi.custom,
-        {
-          addr: activeAccount.address,
-          sk: new Uint8Array(0),
-        }
-      );
-      const ciWVOI = new CONTRACT(
-        CTC_INFO_WVOI2,
-        algodClient,
-        indexerClient,
-        abi.nt200,
-        {
-          addr: activeAccount.address,
-          sk: new Uint8Array(0),
-        }
-      );
-      const makePTok = () =>
-        new CONTRACT(
-          nft.listing.currency === 0 ? CTC_INFO_WVOI2 : nft.listing.currency,
-          algodClient,
-          indexerClient,
-          abi.nt200,
-          {
-            addr: activeAccount.address,
-            sk: new Uint8Array(0),
-          }
-        );
-      const builder = {
-        tokN: new CONTRACT(
-          CTC_INFO_NAUT,
-          algodClient,
-          indexerClient,
-          abi.arc200,
-          {
-            addr: activeAccount.address,
-            sk: new Uint8Array(0),
-          },
-          true,
-          false,
-          true
-        ),
-        tokV: new CONTRACT(
-          CTC_INFO_WVOI2,
-          algodClient,
-          indexerClient,
-          abi.nt200,
-          {
-            addr: activeAccount.address,
-            sk: new Uint8Array(0),
-          },
-          true,
-          false,
-          true
-        ),
-        tokP: new CONTRACT(
-          nft.listing.currency === "0" ? CTC_INFO_WVOI2 : nft.listing.currency,
-          algodClient,
-          indexerClient,
-          abi.nt200,
-          {
-            addr: activeAccount.address,
-            sk: new Uint8Array(0),
-          },
-          true,
-          false,
-          true
-        ),
-        mp: new CONTRACT(
-          ctcInfoMp206,
-          algodClient,
-          indexerClient,
-          abi.mp,
-          {
-            addr: activeAccount.address,
-            sk: new Uint8Array(0),
-          },
-          true,
-          false,
-          true
-        ),
-      };
+      const minFee = 8000;
 
-      const seller = nft.listing.seller;
-      const royaltyInfo = nft.royalties;
+      const { mpContractId, mpListingId, token, seller } = listing;
+      const { tokenId, contractId } = token;
+
+      const nftContractId = Number(contractId);
+
+      const metadata = JSON.parse(token.metadata || "{}");
+
+      const royalties = metadata?.royalties
+        ? decodeRoyalties(metadata?.royalties || "")
+        : null;
+
+      const royaltyInfo = royalties;
       const createAddr1 = royaltyInfo?.creator1Address || zeroAddress;
       const createAddr2 = royaltyInfo?.creator2Address || zeroAddress;
       const createAddr3 = royaltyInfo?.creator3Address || zeroAddress;
 
-      console.log({
-        currency: nft.listing.currency,
-        price: nft.listing.price,
-        nft,
-        seller,
-        royaltyInfo,
-        createAddr1,
-        createAddr2,
-        createAddr3,
-      });
+      const ctcAddr = algosdk.getApplicationAddress(mpContractId);
+
+      const { algodClient, indexerClient } = getAlgorandClients();
+
+      const accInfo = await algodClient.accountInformation(addr).do();
+
+      const balance = accInfo.amount;
+      const minBalance = accInfo["min-balance"];
+      const availableBalance = Math.max(balance - minBalance - minFee, 0);
+
+      const makeCI = (ctcInfo: number, spec: any) =>
+        new CONTRACT(ctcInfo, algodClient, indexerClient, spec, {
+          addr: addr,
+          sk: new Uint8Array(0),
+        });
+
+      const makePTok = () =>
+        new CONTRACT(
+          listing.currency === 0 ? CTC_INFO_WVOI : listing.currency,
+          algodClient,
+          indexerClient,
+          abi.nt200,
+          {
+            addr: addr,
+            sk: new Uint8Array(0),
+          }
+        );
+
+      const makeConstructor = (ctcInfo: number, spec: any) =>
+        new CONTRACT(
+          ctcInfo,
+          algodClient,
+          indexerClient,
+          spec,
+          {
+            addr,
+            sk: new Uint8Array(0),
+          },
+          true,
+          false,
+          true
+        );
+
+      const ci = makeCI(mpContractId, abi.custom);
+
+      const ciWVOI = makeCI(CTC_INFO_WVOI, abi.nt200);
+
+      const wVOIBalanceR = await ciWVOI.arc200_balanceOf(addr);
+      if (!wVOIBalanceR.success)
+        throw new Error("wVOI balance failed in simulate");
+      const wVOIBalance = wVOIBalanceR.returnValue;
+      const wVOIBalanceNum = new BigNumber(wVOIBalance)
+        .dividedBy(new BigNumber(10).pow(6))
+        .toNumber();
+
+      console.log({ wVOIBalance, wVOIBalanceNum });
+
+      const builder = {
+        tokV: makeConstructor(CTC_INFO_WVOI, abi.nt200),
+        tokP: makeConstructor(
+          listing.currency === 0 ? CTC_INFO_WVOI : listing.currency,
+          abi.arc200
+        ),
+        nft: makeConstructor(nftContractId, abi.arc72),
+        mp: makeConstructor(mpContractId, abi.mp),
+      };
+
+      console.log({ listing });
 
       let ensureMarketplaceBalance = false;
       do {
+        if (listing.currency === 0) break; // abort if voi
         const ci = makePTok();
         const res = await ci.arc200_transfer(ctcAddr, 0);
         if (res.success) break;
@@ -1011,6 +994,7 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
 
       let ensureManagerBalance = false;
       do {
+        if (listing.currency === 0) break; // abort if voi
         const ci = makePTok();
         const res = await ci.arc200_transfer(manager, 0);
         if (res.success) break;
@@ -1041,6 +1025,7 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
 
       let ensureSellerBalance = false;
       do {
+        if (listing.currency === 0) break; // abort if voi
         const ci = makePTok();
         const res = await ci.arc200_transfer(seller, 0);
         if (res.success) break;
@@ -1070,6 +1055,7 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
 
       let ensureCreator1Balance = false;
       do {
+        if (listing.currency === 0) break; // abort if voi
         if (createAddr1 === zeroAddress) break;
         const ci = makePTok();
         const res = await ci.arc200_transfer(createAddr1, 0);
@@ -1081,9 +1067,9 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
         }
       } while (0);
       console.log({ ensureCreator1Balance });
-
       let ensureCreator2Balance = false;
       do {
+        if (listing.currency !== 0) break;
         if (createAddr2 === zeroAddress) break;
         const ci = makePTok();
         const res = await ci.arc200_transfer(createAddr2, 0);
@@ -1093,11 +1079,12 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
         if (res2.success) {
           ensureCreator2Balance = true;
         }
+        console.log({ ensureCreator2Balance });
       } while (0);
-      console.log({ ensureCreator2Balance });
 
       let ensureCreator3Balance = false;
       do {
+        if (listing.currency === 0) break;
         if (createAddr3 === zeroAddress) break;
         const ci = makePTok();
         const res = await ci.arc200_transfer(createAddr3, 0);
@@ -1112,19 +1099,33 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
 
       let ensureBuyerApproval = false;
       do {
+        if (listing.currency === 0) break;
         const ci = makePTok();
-        const res = await ci.arc200_approve(ctcAddr, BigInt(nft.listing.price));
+        const res = await ci.arc200_approve(ctcAddr, BigInt(listing.price));
         if (res.success) break;
         ci.setPaymentAmount(28100);
-        const res2 = await ci.arc200_approve(
-          ctcAddr,
-          BigInt(nft.listing.price)
-        );
+        const res2 = await ci.arc200_approve(ctcAddr, BigInt(listing.price));
         if (res2.success) {
           ensureBuyerApproval = true;
         }
       } while (0);
       console.log({ ensureBuyerApproval });
+
+      let ensureCollectionBalance = false;
+      do {
+        const accInfo = await algodClient
+          .accountInformation(
+            algosdk.getApplicationAddress(Number(listing.collectionId))
+          )
+          .do();
+        const amount = accInfo.amount;
+        const minBalance = accInfo["min-balance"];
+        const availableBalance = amount - minBalance;
+        if (availableBalance < 28500) {
+          ensureCollectionBalance = true;
+        }
+      } while (0);
+      console.log({ ensureCollectionBalance });
 
       // -----------------------------------------
       // send payment to collection ??
@@ -1147,53 +1148,46 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
       //     arc200 approve x
       //   mp sale buySC listId
       // -----------------------------------------
-      const minFee = 8000;
-      const wVOIBalanceR = await ciWVOI.arc200_balanceOf(activeAccount.address);
-      if (!wVOIBalanceR.success)
-        throw new Error("wVOI balance failed in simulate");
-      const wVOIBalance = wVOIBalanceR.returnValue;
-      console.log({ wVOIBalance });
-
-      // const sellerBalance =
-      //   (await ciPTok.arc200_balanceOf(seller)?.returnValue) || BigInt(0);
-      // const createAddr1 = royaltyInfo.creator1Address;
-      // const createAddr2 = royaltyInfo.creator2Address;
-      // const createAddr3 = royaltyInfo.creator3Address;
-      // const creator1Balance =
-      //   createAddr1 !== zeroAddress
-      //     ? (await ciPTok.arc200_balanceOf(royaltyInfo.creator1Address)
-      //         ?.returnValue) || BigInt(0)
-      //     : BigInt(0);
-      // const creator2Balance =
-      //   createAddr2 !== zeroAddress
-      //     ? (await ciPTok.arc200_balanceOf(royaltyInfo.creator2Address)
-      //         ?.returnValue) || BigInt(0)
-      //     : BigInt(0);
-      // const creator3Balance =
-      //   createAddr3 !== zeroAddress
-      //     ? (await ciPTok.arc200_balanceOf(royaltyInfo.creator3Address)
-      //         ?.returnValue) || BigInt(0)
-      //     : BigInt(0);
 
       let customR;
       for (const p1 of [1]) {
-        const buildN = [];
-        const priceBi = BigInt(nft.listing.price);
+        const buildN = extraTxns as any[];
+
+        if (ensureCollectionBalance) {
+          const res = await builder.nft.arc72_setApprovalForAll(
+            zeroAddress,
+            true
+          );
+          buildN.push({
+            ...res.obj,
+            payment: 100000,
+            paymentNote: new TextEncoder().encode(`
+            custom payment for nft collection box
+            `),
+            ignore: true,
+          });
+        }
+
+        const priceBi = BigInt(listing.price);
+
         // if buyNet and bal(wvoi) > 0
-        if (nft.listing.currency === 0 && wVOIBalance > BigInt(0)) {
-          const withdrawAmount = price <= wVOIBalance ? priceBi : wVOIBalance;
+        if (listing.currency === 0 && wVOIBalance > BigInt(0)) {
+          const withdrawAmount = priceBi <= wVOIBalance ? priceBi : wVOIBalance;
+          const balanceRemaining = wVOIBalance - withdrawAmount;
+          console.log({ withdrawAmount, balanceRemaining });
           const txnO = await builder.tokV.withdraw(withdrawAmount);
           console.log({ txnO });
           buildN.push({
             ...txnO.obj,
             note: new TextEncoder().encode(`
-              withdraw
-              amount: ${price} ${currencySymbol}
-            `),
+            withdraw
+            amount: ${price} ${currencySymbol}
+          `),
           });
         }
+
         // if buySC
-        if (nft.listing.currency > 0) {
+        if (listing.currency > 0) {
           // if WVOI
           //   deposit VOI x
           do {
@@ -1208,108 +1202,49 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
             }
           } while (0);
 
-          // create balance box for mp
-          // if (ensureManagerBalance) {
-          //   do {
-          //     const txnO = await builder.tokP.arc200_transfer(manager, 0);
-          //     console.log({ txnO });
-          //     buildN.push({
-          //       ...txnO.obj,
-          //       payment: 28500,
-          //     });
-          //   } while (0);
-          // }
-          // create balance box for seller
-          // if (ensureSellerBalance) {
-          //   do {
-          //     const txnO = await builder.tokP.arc200_transfer(seller, 0);
-          //     console.log({ txnO });
-          //     buildN.push({
-          //       ...txnO.obj,
-          //       payment: 28500,
-          //     });
-          //   } while (0);
-          // }
-          // if creator1 not zero
-          //   create balance box for creator1
-          // if (ensureCreator1Balance) {
-          //   const txnO = await builder.tokP.arc200_transfer(
-          //     royaltyInfo.creator1Address,
-          //     0
-          //   );
-          //   console.log({ txnO });
-          //   buildN.push({
-          //     ...txnO.obj,
-          //     payment: 28500 + 0,
-          //   });
-          // }
-          // if creator2 not zero
-          //   create balance box for creator2
-          // if (ensureCreator2Balance) {
-          //   const txnO = await builder.tokP.arc200_transfer(
-          //     royaltyInfo.creator2Address,
-          //     0
-          //   );
-          //   console.log({ txnO });
-          //   buildN.push({
-          //     ...txnO.obj,
-          //     payment: 28500,
-          //   });
-          // }
-          // if creator3 not zero
-          //   create balance box for creator3
-          // if (ensureCreator3Balance) {
-          //   const txnO = await builder.tokP.arc200_transfer(
-          //     royaltyInfo.creator3Address,
-          //     0
-          //   );
-          //   console.log({ txnO });
-          //   buildN.push({
-          //     ...txnO.obj,
-          //     payment: 28500,
-          //   });
-          // }
           // arc200 approve x
           const txnO = await builder.tokP.arc200_approve(
             ctcAddr,
-            BigInt(nft.listing.price)
+            BigInt(listing.price)
           );
           console.log({ txnO });
           buildN.push({
             ...txnO.obj,
             payment: ensureBuyerApproval ? 28100 : 0,
             note: new TextEncoder().encode(`
-              arc200_approve
-              spender: Nautilus
-              amount: ${price} ${currencySymbol}
-            `),
+            arc200_approve
+            spender: Nautilus
+            amount: ${price} ${currencySymbol}
+          `),
           });
         }
-        if (nft.listing.currency === 0) {
+
+        // call a_sale_buy
+        if (listing.currency === 0) {
           // mp sale buyNet listId with pmt x
           console.log({ builder });
-          const txnO = await builder.mp.a_sale_buyNet(nft.listing.mpListingId);
+          const txnO = await builder.mp.a_sale_buyNet(mpListingId);
           console.log({ txnO });
           buildN.push({
             ...txnO.obj,
             payment: priceBi,
             note: new TextEncoder().encode(`
-              a_sale_buyNet
-              nft: ${nft.metadata.name}
-              price: ${price} ${currencySymbol}
-            `),
+            a_sale_buyNet
+            nft: ${metadata.name}
+            price: ${price} ${currencySymbol}
+          `),
           });
         } else {
           // mp sale buySC listId
-          const txnO = await builder.mp.a_sale_buySC(nft.listing.mpListingId);
+          const txnO = await builder.mp.a_sale_buySC(mpListingId);
           console.log({ txnO });
           buildN.push({
             ...txnO.obj,
             note: new TextEncoder().encode(`
-              a_sale_buySC
-              nft: ${nft.metadata.name}
-              price: ${price} ${currencySymbol}
-            `),
+            a_sale_buySC
+            nft: ${metadata.name}
+            price: ${price} ${currencySymbol}
+          `),
           });
         }
         console.log({ buildN });
@@ -1319,19 +1254,100 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
         customR = await ci.custom();
         if (customR.success) break;
       }
+      return customR;
+    } catch (e: any) {
+      console.log(e);
+      toast.error(e.message);
+    }
+  };
 
+  // handleBuy
+  const handleBuyClick = async (pool: any, discount: any) => {
+    if (!activeAccount) {
+      toast.info("Please connect wallet!");
+      return;
+    }
+    try {
+      setIsBuying(true);
+      // -------------------------------------
+      // SIM HERE
+      // -------------------------------------
+      let customR;
+      console.log({ pool });
+      if (pool) {
+        const { algodClient, indexerClient } = getAlgorandClients();
+        const { contractId: poolId, tokAId, tokBId } = pool;
+
+        const ciTokA = new arc200(Number(tokAId), algodClient, indexerClient);
+        const ciTokB = new arc200(Number(tokBId), algodClient, indexerClient);
+        const arc200_balanceOfTokA = await ciTokA.arc200_balanceOf(
+          activeAccount.address
+        );
+        const arc200_balanceOfTokB = await ciTokB.arc200_balanceOf(
+          activeAccount.address
+        );
+        console.log({ arc200_balanceOfTokA, arc200_balanceOfTokB });
+        // -------------------------------------
+        const tokA: TokenType = smartTokens.find(
+          (el: any) => `${el.contractId}` === tokAId
+        );
+        const tokB: TokenType = smartTokens.find(
+          (el: any) => `${el.contractId}` === tokBId
+        );
+        const inToken = tokA?.tokenId === "0" ? tokA : tokB;
+        const outToken = tokA?.tokenId !== "0" ? tokA : tokB;
+        console.log({ tokA, tokB });
+        // figure out how much to swap
+        const swapR: any = await new swap(
+          poolId,
+          algodClient,
+          indexerClient
+        ).swap(
+          activeAccount.address,
+          poolId,
+          {
+            amount: new BigNumber(currency.price)
+              .times(priceBn.minus(new BigNumber(discount || 0)))
+              .times(1.03)
+              .toFixed(6),
+            contractId: inToken?.contractId,
+            tokenId: "0",
+            symbol: "VOI",
+          },
+          {
+            contractId: outToken?.contractId,
+            symbol: outToken?.symbol,
+            decimals: `${outToken?.decimals}`,
+          }
+        );
+        if (!swapR.success) throw new Error("swap failed");
+        console.log({ swapR });
+        const returnValue = swapR.response.txnGroups[0].txnResults
+          .slice(-1)[0]
+          .txnResult.logs.slice(-1)[0];
+        const selector = returnValue.slice(0, 4).toString("hex");
+        const outA = algosdk.bytesToBigInt(returnValue.slice(4, 36));
+        const outB = algosdk.bytesToBigInt(returnValue.slice(36, 68));
+        customR = await handleBuy(
+          activeAccount.address,
+          nft.listing,
+          swapR.objs
+        );
+      } else {
+        customR = await handleBuy(activeAccount.address, nft.listing);
+      }
       console.log({ customR });
-
-      if (!customR.success) throw new Error("custed failed at end");
-
+      if (!customR.success) throw new Error("custed failed at end"); // abort
+      // -------------------------------------
+      // SIGM HERE
+      // -------------------------------------
       await signTransactions(
         customR.txns.map(
           (txn: string) => new Uint8Array(Buffer.from(txn, "base64"))
         )
       ).then(sendTransactions);
-
       // -------------------------------------
-      // QUEST HERE buy voi
+      // QUEST HERE buy
       // -------------------------------------
       do {
         const address = activeAccount.address;
@@ -1354,8 +1370,7 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
         }
       } while (0);
       // -------------------------------------
-
-      toast.success("Transaction successful!");
+      toast.success("Purchase successful!");
     } catch (e: any) {
       console.log(e);
       toast.error(e.message);
@@ -1363,422 +1378,6 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
       setIsBuying(false);
       setOpenBuyModal(false);
     }
-    // try {
-    //   if (!activeAccount) {
-    //     throw new Error("Please connect wallet!");
-    //   }
-    //   setIsBuying(true);
-    //   // -----------------------------------------
-    //   // check if collection might need a payment to transfer
-    //   // -----------------------------------------
-    //   const collectionAddr = algosdk.getApplicationAddress(
-    //     nft?.contractId || 0
-    //   );
-    //   const collectionAccountInfo = await algodClient
-    //     .accountInformation(collectionAddr)
-    //     .do();
-    //   const { amount, ["min-balance"]: minBalance } = collectionAccountInfo;
-    //   const availableBalance = amount - minBalance;
-    //   const boxCost = 28500;
-    //   const addBoxPayment = availableBalance < boxCost;
-    //   console.log({ availableBalance, boxCost, addBoxPayment });
-    //   if (addBoxPayment) {
-    //     const paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-    //       from: activeAccount.address,
-    //       to: collectionAddr,
-    //       amount: 28500,
-    //       suggestedParams: await algodClient.getTransactionParams().do(),
-    //     });
-    //     await toast.promise(
-    //       signTransactions([paymentTxn.toByte()]).then(sendTransactions),
-    //       {
-    //         pending: `Transaction signature pending... ${((str) =>
-    //           str[0].toUpperCase() + str.slice(1))(
-    //           activeAccount.providerId
-    //         )} will prompt you to sign the transaction.`,
-    //         success: "Transaction successful!",
-    //         error: "Transaction failed",
-    //       }
-    //     );
-    //   }
-    //   // -----------------------------------------
-    //   switch (`${nft.listing.currency}`) {
-    //     case "0": {
-    //       const builder = {
-    //         mp: new CONTRACT(
-    //           ctcInfoMp206,
-    //           algodClient,
-    //           indexerClient,
-    //           {
-    //             name: "",
-    //             desc: "",
-    //             methods: [
-    //               {
-    //                 name: "a_sale_buyNet",
-    //                 args: [
-    //                   {
-    //                     name: "listId",
-    //                     type: "uint256",
-    //                   },
-    //                 ],
-    //                 returns: {
-    //                   type: "void",
-    //                 },
-    //               },
-    //             ],
-    //             events: [],
-    //           },
-    //           { addr: activeAccount?.address || "", sk: new Uint8Array(0) },
-    //           undefined,
-    //           undefined,
-    //           true
-    //         ),
-    //       };
-    //       const customTxn = (
-    //         await Promise.all([
-    //           builder.mp.a_sale_buyNet(nft.listing.mpListingId),
-    //         ])
-    //       ).map(({ obj }) => obj);
-    //       const ci = new CONTRACT(
-    //         ctcInfoMp206,
-    //         algodClient,
-    //         indexerClient,
-    //         {
-    //           name: "",
-    //           desc: "",
-    //           methods: [
-    //             {
-    //               name: "custom",
-    //               args: [],
-    //               returns: {
-    //                 type: "void",
-    //               },
-    //             },
-    //           ],
-    //           events: [],
-    //         },
-    //         {
-    //           addr: activeAccount?.address || "",
-    //           sk: new Uint8Array(0),
-    //         }
-    //       );
-
-    //       // -----------------------------------------
-    //       // eat auto optins
-    //       // if (nft.listing.collectionId === 29088600) {
-    //       //   // Cassette
-    //       //   ci.setOptins([29103397]);
-    //       // } else
-    //       /*
-    //       if (nft.listing.collectionId === 29085927) {
-    //         // Treehouse
-    //         ci.setOptins([33611293]);
-    //       }
-    //       */
-    //       // -----------------------------------------
-    //       ci.setExtraTxns(customTxn);
-    //       ci.setFee(10000);
-    //       ci.setPaymentAmount(nft.listing.price);
-    //       ci.setEnableGroupResourceSharing(true);
-
-    //       const customR = await ci.custom();
-
-    //       console.log({ customR });
-
-    //       if (!customR.success) {
-    //         throw new Error("Listing no longer available");
-    //       }
-
-    //       await toast.promise(
-    //         signTransactions(
-    //           customR.txns.map(
-    //             (txn: string) => new Uint8Array(Buffer.from(txn, "base64"))
-    //           )
-    //         ).then(sendTransactions),
-    //         {
-    //           pending: `Transaction signature pending... ${((str) =>
-    //             str[0].toUpperCase() + str.slice(1))(
-    //             activeAccount.providerId
-    //           )} will prompt you to sign the transaction.`,
-    //           success: "Transaction successful!",
-    //           error: "Transaction failed",
-    //         }
-    //       );
-    //       // -------------------------------------
-    //       // QUEST HERE buy voi
-    //       // -------------------------------------
-    //       do {
-    //         const address = activeAccount.address;
-    //         const actions: string[] = [QUEST_ACTION.SALE_BUY_ONCE];
-    //         const {
-    //           data: { results },
-    //         } = await getActions(address);
-    //         for (const action of actions) {
-    //           const address = activeAccount.address;
-    //           const key = `${action}:${address}`;
-    //           const completedAction = results.find((el: any) => el.key === key);
-    //           if (!completedAction) {
-    //             const { collectionId: contractId, tokenId } = nft.listing;
-    //             await submitAction(action, address, {
-    //               contractId,
-    //               tokenId,
-    //             });
-    //           }
-    //           // TODO notify quest completion here
-    //         }
-    //       } while (0);
-    //       // -------------------------------------
-    //       break;
-    //     }
-    //     // via sale
-    //     default: {
-    //       // -----------------------------------------
-    //       // conditional approval to mp addr
-    //       // -----------------------------------------
-    //       const mpAddr = algosdk.getApplicationAddress(ctcInfoMp206);
-    //       const ptid = Number(nft.listing.currency);
-    //       const ciArc200 = new arc200(ptid, algodClient, indexerClient);
-    //       const hasAllowanceR = await ciArc200.hasAllowance(
-    //         activeAccount.address,
-    //         mpAddr
-    //       );
-    //       const arc200_allowanceR = await ciArc200.arc200_allowance(
-    //         activeAccount.address,
-    //         mpAddr
-    //       );
-    //       console.log({ hasAllowanceR, arc200_allowanceR });
-    //       if (!hasAllowanceR.success) {
-    //         throw new Error("Failed to check allowance");
-    //       }
-    //       const hasAllowance = hasAllowanceR.returnValue;
-    //       console.log({ hasAllowance });
-    //       if (hasAllowance === 0) {
-    //         const ci = new CONTRACT(
-    //           ptid,
-    //           algodClient,
-    //           indexerClient,
-    //           {
-    //             name: "",
-    //             desc: "",
-    //             methods: [
-    //               {
-    //                 name: "arc200_approve",
-    //                 desc: "Approve spender for a token",
-    //                 args: [{ type: "address" }, { type: "uint256" }],
-    //                 returns: { type: "bool", desc: "Success" },
-    //               },
-    //             ],
-    //             events: [],
-    //           },
-    //           { addr: activeAccount?.address || "", sk: new Uint8Array(0) }
-    //         );
-    //         ci.setPaymentAmount(28100);
-    //         const arc200_approveR = await ci.arc200_approve(
-    //           algosdk.getApplicationAddress(ctcInfoMp206),
-    //           0
-    //         );
-    //         if (!arc200_approveR.success) {
-    //           throw new Error("Failed to approve spender");
-    //         }
-
-    //         await toast.promise(
-    //           signTransactions(
-    //             arc200_approveR.txns.map(
-    //               (txn: string) => new Uint8Array(Buffer.from(txn, "base64"))
-    //             )
-    //           ).then(sendTransactions),
-    //           {
-    //             pending: `Transaction signature pending... ${((str) =>
-    //               str[0].toUpperCase() + str.slice(1))(
-    //               activeAccount.providerId
-    //             )} will prompt you to sign the transaction.`,
-    //             success: "Transaction successful!",
-    //             error: "Transaction failed",
-    //           }
-    //         );
-    //         // -----------------------------------------
-    //       }
-
-    //       const builder = {
-    //         mp: new CONTRACT(
-    //           ctcInfoMp206,
-    //           algodClient,
-    //           indexerClient,
-    //           {
-    //             name: "",
-    //             desc: "",
-    //             methods: [
-    //               {
-    //                 name: "a_sale_buySC",
-    //                 args: [
-    //                   {
-    //                     name: "listId",
-    //                     type: "uint256",
-    //                   },
-    //                 ],
-    //                 returns: {
-    //                   type: "void",
-    //                 },
-    //               },
-    //             ],
-    //             events: [],
-    //           },
-    //           { addr: activeAccount?.address || "", sk: new Uint8Array(0) },
-    //           undefined,
-    //           undefined,
-    //           true
-    //         ),
-    //         arc200: new CONTRACT(
-    //           ptid,
-    //           algodClient,
-    //           indexerClient,
-    //           {
-    //             name: "",
-    //             desc: "",
-    //             methods: [
-    //               {
-    //                 name: "arc200_approve",
-    //                 desc: "Approve spender for a token",
-    //                 args: [{ type: "address" }, { type: "uint256" }],
-    //                 returns: { type: "bool", desc: "Success" },
-    //               },
-    //               {
-    //                 name: "arc200_transfer",
-    //                 desc: "Transfers tokens",
-    //                 args: [
-    //                   {
-    //                     type: "address",
-    //                   },
-    //                   {
-    //                     type: "uint256",
-    //                   },
-    //                 ],
-    //                 returns: { type: "bool" },
-    //               },
-    //             ],
-    //             events: [],
-    //           },
-    //           { addr: activeAccount?.address || "", sk: new Uint8Array(0) },
-    //           undefined,
-    //           undefined,
-    //           true
-    //         ),
-    //       };
-    //       const ci = new CONTRACT(
-    //         //ptid,
-    //         ctcInfoMp206,
-    //         algodClient,
-    //         indexerClient,
-    //         {
-    //           name: "",
-    //           desc: "",
-    //           methods: [
-    //             {
-    //               name: "custom",
-    //               args: [],
-    //               returns: {
-    //                 type: "void",
-    //               },
-    //             },
-    //           ],
-    //           events: [],
-    //         },
-    //         {
-    //           addr: activeAccount?.address || "",
-    //           sk: new Uint8Array(0),
-    //         }
-    //       );
-
-    //       const customTxn = (
-    //         await Promise.all([
-    //           builder.arc200.arc200_approve(
-    //             algosdk.getApplicationAddress(nft.listing?.mpContractId || 0),
-    //             nft.listing.price
-    //           ),
-    //           builder.mp.a_sale_buySC(nft.listing.mpListingId),
-    //         ])
-    //       ).map(({ obj }) => obj);
-    //       // -----------------------------------------
-    //       // eat auto optins
-    //       // if (nft.listing.collectionId === 29088600) {
-    //       //   // Cassette
-    //       //   ci.setOptins([29103397]);
-    //       // } else
-    //       /*
-    //       if (nft.listing.collectionId === 29085927) {
-    //         // Treehouse
-    //         ci.setOptins([33611293]);
-    //       }
-    //       */
-    //       // -----------------------------------------
-    //       ci.setPaymentAmount(28500);
-    //       ci.setAccounts([
-    //         "VIAGCPULN6FUTHUNPQZDRQIHBT7IUVT264B3XDXLZNX7OZCJP6MEF7JFQU", // tokenAddr
-    //       ]);
-    //       ci.setExtraTxns(customTxn);
-    //       ci.setFee(13000);
-    //       ci.setEnableGroupResourceSharing(true);
-    //       ci.setBeaconId(ctcInfoMp206);
-    //       const customR = await ci.custom();
-
-    //       console.log({ customR });
-
-    //       if (!customR.success) {
-    //         throw new Error("Listing no longer available");
-    //       }
-    //       console.log({ customR });
-
-    //       await toast.promise(
-    //         signTransactions(
-    //           customR.txns.map(
-    //             (txn: string) => new Uint8Array(Buffer.from(txn, "base64"))
-    //           )
-    //         ).then(sendTransactions),
-    //         {
-    //           pending: `Transaction signature pending... ${((str) =>
-    //             str[0].toUpperCase() + str.slice(1))(
-    //             activeAccount.providerId
-    //           )} will prompt you to sign the transaction.`,
-    //           success: "Transaction successful!",
-    //           error: "Transaction failed",
-    //         }
-    //       );
-    //       // -------------------------------------
-    //       // QUEST HERE buy via
-    //       // -------------------------------------
-    //       await new Promise((res) => setTimeout(res, 4000));
-    //       do {
-    //         const address = activeAccount.address;
-    //         const actions: string[] = [QUEST_ACTION.SALE_BUY_ONCE];
-    //         const {
-    //           data: { results },
-    //         } = await getActions(address);
-    //         for (const action of actions) {
-    //           const address = activeAccount.address;
-    //           const key = `${action}:${address}`;
-    //           const completedAction = results.find((el: any) => el.key === key);
-    //           if (!completedAction) {
-    //             const { collectionId: contractId, tokenId } = nft.listing;
-    //             await submitAction(action, address, {
-    //               contractId,
-    //               tokenId,
-    //             });
-    //           }
-    //           // TODO notify quest completion here
-    //         }
-    //       } while (0);
-    //       // -------------------------------------
-    //       break;
-    //     }
-    //   }
-    //   toast.success("NFT purchase successful!");
-    // } catch (e: any) {
-    //   console.log(e);
-    //   toast.error(e.message);
-    // } finally {
-    //   setIsBuying(false);
-    //   setOpenBuyModal(false);
-    // }
   };
 
   const handleBuyButtonClick = async () => {
@@ -1893,7 +1492,7 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
   const price = formatter.format(priceBn.toNumber());
   const priceAU = new BigNumber(nft.listing?.price).toFixed(0);
 
-  console.log({ currency, currencySymbol, currencyDecimals, price });
+  console.log({ currency, currencySymbol, currencyDecimals, price, nft });
 
   return !loading ? (
     <>
@@ -2202,6 +1801,8 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
       />
       {nft.listing ? (
         <BuySaleModal
+          listing={nft.listing}
+          seller={nft.listing.seller}
           image={nft?.metadata?.image}
           price={price}
           priceAU={priceAU}
@@ -2210,7 +1811,7 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
           loading={isBuying}
           open={openBuyModal}
           handleClose={() => setOpenBuyModal(false)}
-          onSave={handleBuy}
+          onSave={handleBuyClick}
           buttonText={`Buy`}
           paymentTokenId={nft.listing.currency}
           paymentAltTokenId={currency?.tokenId || "0"}

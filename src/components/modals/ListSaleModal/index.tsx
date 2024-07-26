@@ -9,6 +9,7 @@ import {
   Box,
   Grid,
   FormControl,
+  Typography,
 } from "@mui/material";
 import PaymentCurrencyRadio, {
   defaultCurrencies,
@@ -20,6 +21,8 @@ import TokenSelect from "../../TokenSelect";
 import RoyaltyCheckbox from "../../checkboxes/RoyaltyCheckbox";
 import { TokenType } from "../../../types";
 import BigNumber from "bignumber.js";
+import { useSelector } from "react-redux";
+import { formatter } from "../../../utils/number";
 
 interface ListSaleModalProps {
   open: boolean;
@@ -75,6 +78,54 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
       .get(`https://arc72-idx.nautilus.sh/nft-indexer/v1/arc200/tokens`)
       .then(({ data }) => setTokens(data.tokens));
   }, []);
+
+  useEffect(() => {
+    if (currency === "0") {
+      setToken(tokens.find((token) => token.contractId === 34099056));
+    } else {
+      setToken(tokens.find((token) => token.contractId === Number(currency)));
+    }
+  });
+
+  const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
+  const smartTokenStatus = useSelector(
+    (state: any) => state.smartTokens.status
+  );
+  console.log({ smartTokens, smartTokenStatus });
+
+  const [highestSale, setHighestSale] = useState<number>(0);
+  useEffect(() => {
+    axios
+      .get(
+        `https://arc72-idx.nautilus.sh/nft-indexer/v1/mp/sales?collectionId=${nft.contractId}&tokenId=${nft.tokenId}`
+      )
+      .then(({ data }) => {
+        console.log({ data });
+        const highestSale = data.sales
+          .map((sale: any) => {
+            const smartToken = smartTokens.find(
+              (token: TokenType) => `${token.contractId}` === `${sale.currency}`
+            );
+            console.log({ smartToken });
+            const unitPriceStr =
+              sale.currency === 0 ? "1" : smartToken?.price || "0";
+            const decimals =
+              sale.currency === 0 ? 6 : smartToken?.decimals || 6;
+            const unitPriceBn = new BigNumber(unitPriceStr);
+            const tokenPriceBn = new BigNumber(sale?.price).div(
+              new BigNumber(10).pow(decimals)
+            );
+            const normalPrice = unitPriceBn
+              .multipliedBy(tokenPriceBn)
+              .toNumber();
+            console.log({ normalPrice });
+            return normalPrice;
+          })
+          .reduce((acc: any, val: any) => Math.max(acc, val), 0);
+        setHighestSale(highestSale);
+      });
+  }, [smartTokens, smartTokenStatus, nft]);
+  console.log({ highestSale });
 
   const royaltyPercent = useMemo(() => {
     return royalties ? nft?.royalties?.royaltyPercent || 0 : 0;
@@ -148,6 +199,11 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
                     margin="normal"
                     onChange={(e) => setPrice(e.target.value)}
                   />
+                  {highestSale > 0 ? (
+                    <Typography variant="caption">
+                      Highest Sale: {formatter.format(highestSale)}
+                    </Typography>
+                  ) : null}
                   {/*<Box sx={{ mt: 2 }}>
                     <PaymentCurrencyRadio
                       selectedValue={currency}
@@ -159,12 +215,18 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
                 </Box>*/}
                   <Box sx={{ mt: 2 }}>
                     <TokenSelect
-                      onChange={(
-                        event: any,
-                        newValue: TokenType | null,
-                        reason: any
-                      ) => {
-                        setToken(newValue);
+                      onChange={(newValue: any) => {
+                        if (!newValue) {
+                          setCurrency("");
+                          return;
+                        }
+                        const currency = `${newValue?.contractId || "0"}`;
+                        if (currency === "0") {
+                          const CTC_INFO_WVOI = 34099056;
+                          setCurrency(`0,${CTC_INFO_WVOI}`);
+                        } else {
+                          setCurrency(`${newValue?.contractId}`);
+                        }
                       }}
                     />
                   </Box>

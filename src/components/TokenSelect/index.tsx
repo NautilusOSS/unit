@@ -1,76 +1,24 @@
 import * as React from "react";
-import Box from "@mui/material/Box";
-import TextField from "@mui/material/TextField";
-import Autocomplete from "@mui/material/Autocomplete";
 import { TokenType } from "../../types";
 import CryptoIconPlaceholder from "../CryptoIconPlaceholder";
 import { intToColorCode } from "../../utils/string";
+import Autocomplete from "../Autocomplete";
 
-interface TokenSelectProps {
-  onChange: (event: any, newValue: TokenType | null, reason: any) => void;
+interface SelectProps {
+  onChange: (event: any, newValue: any, reason: any) => void;
+  filter?: (c: any) => boolean;
 }
-const TokenSelect: React.FC<TokenSelectProps> = ({ onChange }) => {
-  const uniqueTokenIds = new Set();
-  tokens.forEach((e) => {
-    // pool
-    if (e.tokenId !== null && e.tokenId.indexOf(",") !== -1) {
-      const [a, b] = e.tokenId.split(",");
-      uniqueTokenIds.add(a);
-      uniqueTokenIds.add(b);
-    }
-  });
-  const tokenIds = Array.from(uniqueTokenIds);
+const Select: React.FC<SelectProps> = ({ onChange, filter = () => true }) => {
   return (
     <Autocomplete
-      fullWidth
+      placeholder="Currency"
       onChange={onChange}
-      id="token-select"
-      options={tokens.filter(
-        (el) =>
-          tokenIds.includes(`${el.contractId}`) &&
-          !["LPT", "ARC200LT"].includes(el.symbol)
-      )}
-      autoHighlight
-      getOptionLabel={(option) =>
-        `${option.name} (${option.symbol}) ${
-          option.tokenId === null
-            ? option.contractId
-            : option.contractId > 0
-            ? option.tokenId
-            : ""
-        }`
-      }
-      renderOption={(props, option) => {
-        const { ...optionProps } = props;
-        return (
-          <Box
-            key={option.contractId} //!!!
-            component="li"
-            sx={{ "& > img": { mr: 2, flexShrink: 0 } }}
-            {...optionProps}
-          >
-            <CryptoIconPlaceholder color={intToColorCode(option.contractId)} />
-            <Box sx={{ ml: 1 }}>
-              {option.name} ({option.symbol}){" "}
-              {option.tokenId === null
-                ? option.contractId
-                : option.contractId > 0
-                ? `${option.tokenId}`
-                : null}
-            </Box>
-          </Box>
-        );
-      }}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label="Choose a token"
-          inputProps={{
-            ...params.inputProps,
-            autoComplete: "new-password", // disable autocomplete and autofill
-          }}
-        />
-      )}
+      options={tokens.filter(filter).map((t: any) => {
+        return {
+          label: `${t.name} : ${t.contractId}`,
+          value: t,
+        };
+      })}
     />
   );
 };
@@ -49619,4 +49567,4 @@ const tokens: readonly TokenType[] = [
     globalState: {},
   },
 ];
-export default TokenSelect;
+export default Select;

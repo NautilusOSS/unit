@@ -1,7 +1,13 @@
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 import Layout from "../../layouts/Default";
 import Section from "../../components/Section";
-import { Box, Grid, Skeleton } from "@mui/material";
+import {
+  Box,
+  CircularProgress,
+  Grid,
+  Skeleton,
+  Unstable_Grid2,
+} from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/store";
@@ -16,6 +22,7 @@ import NFTSaleActivityTable from "../../components/NFTSaleActivityTable";
 import NFTListingTable from "../../components/NFTListingTable";
 import RankingList from "../../components/RankingList";
 import ToggleButtons from "../../components/RankingFilterToggleButtons";
+import MyAutocomplete from "../../components/Autocomplete";
 import { Stack } from "@mui/material";
 import { getTokens, updateToken } from "../../store/tokenSlice";
 import { UnknownAction } from "@reduxjs/toolkit";
@@ -24,6 +31,7 @@ import {
   CollectionI,
   ListedToken,
   ListingI,
+  NFTIndexerListingI,
   RankingI,
   Token,
   TokenI,
@@ -39,10 +47,14 @@ import { useDebounceCallback } from "usehooks-ts";
 import { lazy } from "react";
 import { getSmartTokens } from "../../store/smartTokenSlice";
 import { BigNumber } from "bignumber.js";
+import CartNftCard from "../../components/CartNFTCard";
+import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
+import LazyLoad from "react-lazy-load";
+import TokenSelect from "../../components/TokenSelect";
+import CollectionSelect from "../../components/CollectionSelect";
+import LayersIcon from "@mui/icons-material/Layers";
 
 const formatter = Intl.NumberFormat("en", { notation: "compact" });
-
-const NFTCard = lazy(() => import("../../components/NFTCard2"));
 
 const PriceRangeContainer = styled.div`
   display: flex;
@@ -205,7 +217,7 @@ const SearchPlaceholderText = styled.input`
 `;
 
 const ListingRoot = styled.div`
-  display: inline-flex;
+  display: flex;
   align-items: flex-start;
   gap: var(--Main-System-20px, 20px);
   margin-top: 44px;
@@ -293,9 +305,6 @@ const HeadingDescription = styled.div`
 
 const ListingGrid = styled.div`
   display: flex;
-  /*
-  width: 955px;
-  */
   align-items: flex-start;
   align-content: flex-start;
   gap: 20px var(--Main-System-20px, 20px);
@@ -429,6 +438,8 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffledArray;
 }
 
+//const CartNFTCard = lazy(() => import("../../components/CartNFTCard"));
+
 export const Listings: React.FC = () => {
   /* Dispatch */
   const dispatch = useDispatch();
@@ -439,11 +450,11 @@ export const Listings: React.FC = () => {
     dispatch(getListings() as unknown as UnknownAction);
   }, [dispatch]);
   /* Dex */
-  const prices = useSelector((state: RootState) => state.dex.prices);
-  const dexStatus = useSelector((state: RootState) => state.dex.status);
-  useEffect(() => {
-    dispatch(getPrices() as unknown as UnknownAction);
-  }, [dispatch]);
+  // const prices = useSelector((state: RootState) => state.dex.prices);
+  // const dexStatus = useSelector((state: RootState) => state.dex.status);
+  // useEffect(() => {
+  //   dispatch(getPrices() as unknown as UnknownAction);
+  // }, [dispatch]);
 
   const exchangeRate = useMemo(() => {
     return 1;
@@ -455,29 +466,30 @@ export const Listings: React.FC = () => {
   }, []);
 
   /* Tokens */
-  const tokens = useSelector((state: any) => state.tokens.tokens);
-  const tokenStatus = useSelector((state: any) => state.tokens.status);
-  useEffect(() => {
-    dispatch(getTokens() as unknown as UnknownAction);
-  }, [dispatch]);
-  console.log({ tokens });
+  // const tokens = useSelector((state: any) => state.tokens.tokens);
+  // const tokenStatus = useSelector((state: any) => state.tokens.status);
+  // useEffect(() => {
+  //   dispatch(getTokens() as unknown as UnknownAction);
+  // }, [dispatch]);
+  // console.log({ tokens });
 
   /* Collections */
-  const collections = useSelector(
-    (state: any) => state.collections.collections
-  );
-  const collectionStatus = useSelector(
-    (state: any) => state.collections.status
-  );
-  useEffect(() => {
-    dispatch(getCollections() as unknown as UnknownAction);
-  }, [dispatch]);
+  // const collections = useSelector(
+  //   (state: any) => state.collections.collections
+  // );
+  // const collectionStatus = useSelector(
+  //   (state: any) => state.collections.status
+  // );
+  // useEffect(() => {
+  //   dispatch(getCollections() as unknown as UnknownAction);
+  // }, [dispatch]);
+
   /* Sales */
-  const sales = useSelector((state: any) => state.sales.sales);
-  const salesStatus = useSelector((state: any) => state.sales.status);
-  useEffect(() => {
-    dispatch(getSales() as unknown as UnknownAction);
-  }, [dispatch]);
+  // const sales = useSelector((state: any) => state.sales.sales);
+  // const salesStatus = useSelector((state: any) => state.sales.status);
+  // useEffect(() => {
+  //   dispatch(getSales() as unknown as UnknownAction);
+  // }, [dispatch]);
 
   /* Smart Tokens */
   const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
@@ -511,58 +523,87 @@ export const Listings: React.FC = () => {
   const [search, setSearch] = useState<string>("");
   const [min, setMin] = useState<string>("");
   const [max, setMax] = useState<string>("");
+  const [currency, setCurrency] = useState<string>("");
+  const [collection, setCollection] = useState<string>("");
+
+  console.log({ collection });
 
   const debouncedSearch = useDebounceCallback(setSearch, 500);
   const debouncedMin = useDebounceCallback(setMin, 500);
   const debouncedMax = useDebounceCallback(setMax, 500);
 
-  const normalListings = useMemo(() => {
-    if (!listings || !exchangeRate) return [];
-
-    return listings.map((l: ListingI) => ({
-      ...l,
-      normalPrice: l.price,
-    }));
-    //   return listings.map((listing: ListingI) => {
-    //     return {
-    //       ...listing,
-    //       normalPrice:
-    //         listing.currency === 0 ? listing.price : listing.price * exchangeRate,
-    //     };
-    //   });
-    // }, [listings, exchangeRate]);
+  const listCollections = useMemo(() => {
+    const collectionIds: number[] = Array.from(
+      new Set(listings.map((listing: ListingI) => listing.collectionId))
+    );
+    const collections: ListingI[] = collectionIds.map(
+      (collectionId: number) => {
+        const collection = listings.find(
+          (l: ListingI) => l.collectionId || 0 === collectionId
+        );
+        return collection as ListingI;
+      }
+    );
+    return collections;
   }, [listings]);
 
-  console.log({ normalListings, exchangeRate });
+  const listCollectionIds: number[] = useMemo(() => {
+    return Array.from(
+      new Set(listings.map((collection: ListingI) => collection.collectionId))
+    );
+  }, [listings]);
+
+  const listTokens = useMemo(() => {
+    return listings.map((listing: ListingI) => {
+      const { token } = listing;
+      return {
+        ...token,
+      };
+    });
+  }, [listings]);
+
+  const listCurencies: number[] = useMemo(() => {
+    const tokenIds = new Set();
+    for (const listing of listings) {
+      tokenIds.add(listing.currency);
+    }
+    return Array.from(tokenIds) as number[];
+  }, [listings]);
+
+  const normalListings = useMemo(() => {
+    return listings.map((listing: ListingI) => {
+      const paymentCurrency = smartTokens.find(
+        (st: TokenType) => `${st.contractId}` === `${listing.currency}`
+      );
+      return {
+        ...listing,
+        paymentCurrency,
+        normalPrice: 0,
+      };
+    });
+  }, [listings, smartTokens]);
 
   const filteredListings = useMemo(() => {
     const listings = normalListings.map((listing: ListingI) => {
-      const nft = tokens.find(
-        (t: TokenI) =>
-          t.contractId === listing.collectionId && t.tokenId === listing.tokenId
-      );
-      const properties = nft?.metadata?.properties || {};
+      const nft = listing.token;
+      const metadata = JSON.parse(`${nft?.metadata}`);
+      const properties = metadata?.properties || {};
       const traitKeys = Object.keys(properties).join("").toLowerCase();
       const traitValues = Object.values(properties).join("").toLowerCase();
       let relevancy = 0;
       do {
         if (search) {
-          if (
-            nft?.metadata?.name?.toLowerCase().includes(search.toLowerCase())
-          ) {
+          if (metadata?.name?.toLowerCase().includes(search.toLowerCase())) {
             relevancy +=
-              256 -
-              nft?.metadata?.name?.toLowerCase().indexOf(search.toLowerCase());
+              256 - metadata?.name?.toLowerCase().indexOf(search.toLowerCase());
             break;
           }
           if (
-            nft?.metadata?.description
-              ?.toLowerCase()
-              .includes(search.toLowerCase())
+            metadata?.description?.toLowerCase().includes(search.toLowerCase())
           ) {
             relevancy +=
               128 -
-              nft?.metadata?.description
+              metadata?.description
                 ?.toLowerCase()
                 .indexOf(search.toLowerCase());
             break;
@@ -579,7 +620,6 @@ export const Listings: React.FC = () => {
       } while (0);
       return {
         ...listing,
-        nft,
         relevancy,
       };
     });
@@ -587,6 +627,10 @@ export const Listings: React.FC = () => {
       listings.sort((a: any, b: any) => b.round - a.round);
       return listings.filter(
         (el: any) =>
+          (`${currency}` === "" ||
+            currency.split(",").map(Number).includes(el.currency)) &&
+          (`${collection}` === "" ||
+            `${collection}` === `${el.collectionId}`) &&
           el.price / 1e6 >= (min ? parseInt(min) : 0) &&
           el.price / 1e6 <= (max ? parseInt(max) : Number.MAX_SAFE_INTEGER)
       );
@@ -594,369 +638,303 @@ export const Listings: React.FC = () => {
       listings.sort((a: any, b: any) => b.relevancy - a.relevancy);
       return listings.filter(
         (el: any) =>
+          (`${currency}` === "" ||
+            currency.split(",").map(Number).includes(el.currency)) &&
+          (`${collection}` === "" ||
+            `${collection}` === `${el.collectionId}`) &&
           el.relevancy > 0 &&
           el.price / 1e6 >= (min ? parseInt(min) : 0) &&
           el.price / 1e6 <= (max ? parseInt(max) : Number.MAX_SAFE_INTEGER)
       );
     }
-  }, [normalListings, search, min, max]);
-
-  const listedNfts = useMemo(() => {
-    if (tokenStatus !== "succeeded") return [];
-    const listedNfts: ListedToken[] =
-      tokens
-        ?.filter((nft: TokenI) => {
-          return listings?.some(
-            (listing: ListingI) =>
-              `${listing.collectionId}` === `${nft.contractId}` &&
-              `${listing.tokenId}` === `${nft.tokenId}`
-          );
-        })
-        ?.map((nft: TokenI) => {
-          const listing = listings.find(
-            (l: ListingI) =>
-              `${l.collectionId}` === `${nft.contractId}` &&
-              `${l.tokenId}` === `${nft.tokenId}`
-          );
-          return {
-            ...nft,
-            listing: {
-              ...listing,
-              normalPrice:
-                listing.currency === 0
-                  ? listing.price
-                  : listing.price * exchangeRate,
-            },
-          };
-        }) || [];
-    listedNfts.sort(
-      (a: any, b: any) => b.listing.createTimestamp - a.listing.createTimestamp
-    );
-    return listedNfts;
-  }, [tokenStatus, tokens, listings]);
-
-  const listedCollections = useMemo(() => {
-    if (collectionStatus !== "succeeded") return [];
-    const listedCollections =
-      collections
-        ?.filter((c: any) => {
-          return listedNfts?.some(
-            (nft: any) => `${nft.contractId}` === `${c.contractId}`
-          );
-        })
-        .map((c: any) => {
-          return {
-            ...c,
-            tokens: listedNfts?.filter(
-              (nft: any) => `${nft.contractId}` === `${c.contractId}`
-            ),
-          };
-        }) || [];
-    listedCollections.sort(
-      (a: any, b: any) =>
-        b.tokens[0].listing.createTimestamp -
-        a.tokens[0].listing.createTimestamp
-    );
-    return listedCollections;
-  }, [collectionStatus, collections, listedNfts]);
-
-  const rankings: any = useMemo(() => {
-    if (
-      !sales ||
-      !listings ||
-      salesStatus !== "succeeded" ||
-      collectionStatus !== "succeeded" ||
-      tokenStatus !== "succeeded"
-    )
-      return new Map();
-    return getRankings(
-      tokens,
-      collections,
-      sales,
-      listings,
-      exchangeRate,
-      smartTokens
-    );
-  }, [sales, tokens, collections, listings]);
+  }, [normalListings, search, min, max, currency, collection]);
 
   const isLoading = useMemo(
-    () =>
-      !listings ||
-      !listedNfts ||
-      !listedCollections ||
-      !rankings ||
-      listingsStatus !== "succeeded" ||
-      tokenStatus !== "succeeded" ||
-      collectionStatus !== "succeeded" ||
-      salesStatus !== "succeeded",
-    [
-      listings,
-      listedNfts,
-      listedCollections,
-      rankings,
-      tokenStatus,
-      collectionStatus,
-      salesStatus,
-    ]
+    () => !listings || !smartTokens || listingsStatus !== "succeeded",
+    [listings, smartTokens, listingsStatus]
   );
 
-  console.log({ isLoading, listings, filteredListings });
-
-  return (
-    <>
-      <Layout>
-        <ListingRoot>
-          <SidebarFilterRoot
-            className={isDarkTheme ? "dark" : "light"}
+  const renderSidebar = (
+    <SidebarFilterRoot
+      className={isDarkTheme ? "dark" : "light"}
+      sx={{
+        display: { xs: "none", md: "block" },
+      }}
+    >
+      <SearchContainer>
+        <SearchInput className={isDarkTheme ? "dark" : "light"}>
+          <SearchIcon
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+          >
+            <g clip-path="url(#clip0_1018_4041)">
+              <path
+                d="M14.6673 14.6667L11.6673 11.6667M13.334 7.33333C13.334 10.647 10.6477 13.3333 7.33398 13.3333C4.02028 13.3333 1.33398 10.647 1.33398 7.33333C1.33398 4.01962 4.02028 1.33333 7.33398 1.33333C10.6477 1.33333 13.334 4.01962 13.334 7.33333Z"
+                stroke="#68727D"
+                stroke-width="1.77778"
+                stroke-linecap="round"
+              />
+            </g>
+            <defs>
+              <clipPath id="clip0_1018_4041">
+                <rect width="16" height="16" fill="white" />
+              </clipPath>
+            </defs>
+          </SearchIcon>
+          <SearchPlaceholderText
+            type="text"
+            className={[
+              search ? "has-value" : "",
+              isDarkTheme ? "dark" : "light",
+            ].join(" ")}
+            placeholder="Search"
+            onChange={(e) => {
+              if (e.target.value === "") setSearch("");
+              debouncedSearch(e.target.value);
+            }}
+          />
+        </SearchInput>
+      </SearchContainer>
+      <SidebarFilterContainer>
+        <SidebarFilter>
+          <Stack
+            direction="row"
             sx={{
-              display: { xs: "none", md: "block" },
+              justifyContent: "flex-start",
+              width: "100%",
+              gap: "12px",
             }}
           >
-            <SearchContainer>
-              <SearchInput className={isDarkTheme ? "dark" : "light"}>
-                <SearchIcon
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                >
-                  <g clip-path="url(#clip0_1018_4041)">
-                    <path
-                      d="M14.6673 14.6667L11.6673 11.6667M13.334 7.33333C13.334 10.647 10.6477 13.3333 7.33398 13.3333C4.02028 13.3333 1.33398 10.647 1.33398 7.33333C1.33398 4.01962 4.02028 1.33333 7.33398 1.33333C10.6477 1.33333 13.334 4.01962 13.334 7.33333Z"
-                      stroke="#68727D"
-                      stroke-width="1.77778"
-                      stroke-linecap="round"
-                    />
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_1018_4041">
-                      <rect width="16" height="16" fill="white" />
-                    </clipPath>
-                  </defs>
-                </SearchIcon>
-                <SearchPlaceholderText
-                  type="text"
-                  className={[
-                    search ? "has-value" : "",
-                    isDarkTheme ? "dark" : "light",
-                  ].join(" ")}
-                  placeholder="Search"
-                  onChange={(e) => {
-                    if (e.target.value === "") setSearch("");
-                    debouncedSearch(e.target.value);
-                  }}
-                />
-              </SearchInput>
-            </SearchContainer>
-            <SidebarFilterContainer>
-              <SidebarFilter>
-                <Stack
-                  direction="row"
-                  sx={{
-                    justifyContent: "flex-start",
-                    width: "100%",
-                    gap: "12px",
-                  }}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <path
-                      d="M8.5 14.6667C8.5 15.9553 9.54467 17 10.8333 17H13C14.3807 17 15.5 15.8807 15.5 14.5C15.5 13.1193 14.3807 12 13 12H11C9.61929 12 8.5 10.8807 8.5 9.5C8.5 8.11929 9.61929 7 11 7H13.1667C14.4553 7 15.5 8.04467 15.5 9.33333M12 5.5V7M12 17V18.5M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z"
-                      stroke={isDarkTheme ? "white" : "black"}
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                  <SidebarLabel className={isDarkTheme ? "dark" : "light"}>
-                    Price
-                  </SidebarLabel>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <path
-                      d="M5 12H19"
-                      stroke={isDarkTheme ? "white" : "black"}
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </Stack>
-                <PriceRangeContainer>
-                  <Min>
-                    <MinInputContainer
-                      className={isDarkTheme ? "dark" : "light"}
-                    >
-                      <MinInputLabelContainer>
-                        <input
-                          placeholder="Min"
-                          onChange={(e) => {
-                            if (
-                              e.target.value === "" &&
-                              isNaN(parseInt(e.target.value))
-                            )
-                              return;
-                            debouncedMin(e.target.value);
-                          }}
-                          style={{
-                            color: isDarkTheme ? "white" : "black",
-                            width: "100%",
-                          }}
-                          type="text"
-                        />
-                      </MinInputLabelContainer>
-                    </MinInputContainer>
-                  </Min>
-                  <To>to</To>
-                  <Min>
-                    <MinInputContainer
-                      className={isDarkTheme ? "dark" : "light"}
-                    >
-                      <MinInputLabelContainer>
-                        <input
-                          placeholder="Max"
-                          onChange={(e) => {
-                            if (
-                              e.target.value !== "" &&
-                              isNaN(parseInt(e.target.value))
-                            )
-                              return;
-                            debouncedMax(e.target.value);
-                          }}
-                          style={{
-                            color: isDarkTheme ? "white" : "black",
-                            width: "100%",
-                          }}
-                          type="text"
-                        />
-                      </MinInputLabelContainer>
-                    </MinInputContainer>
-                  </Min>
-                </PriceRangeContainer>
-              </SidebarFilter>
-            </SidebarFilterContainer>
-          </SidebarFilterRoot>
-          <ListingContainer>
-            <ListingHeading>
-              <HeadingContainer>
-                <HeadingTitle className={isDarkTheme ? "dark" : "light"}>
-                  Buy
-                </HeadingTitle>
-                <HeadingDescriptionContainer>
-                  <HeadingDescription>
-                    // {filteredListings.length} Results
-                  </HeadingDescription>
-                </HeadingDescriptionContainer>
-              </HeadingContainer>
-            </ListingHeading>
-            <ListingGrid>
-              {filteredListings.slice(0).map((el: ListingI) => {
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <path
+                d="M8.5 14.6667C8.5 15.9553 9.54467 17 10.8333 17H13C14.3807 17 15.5 15.8807 15.5 14.5C15.5 13.1193 14.3807 12 13 12H11C9.61929 12 8.5 10.8807 8.5 9.5C8.5 8.11929 9.61929 7 11 7H13.1667C14.4553 7 15.5 8.04467 15.5 9.33333M12 5.5V7M12 17V18.5M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z"
+                stroke={isDarkTheme ? "white" : "black"}
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <SidebarLabel className={isDarkTheme ? "dark" : "light"}>
+              Price
+            </SidebarLabel>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <path
+                d="M5 12H19"
+                stroke={isDarkTheme ? "white" : "black"}
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </Stack>
+          <TokenSelect
+            filter={(t: TokenType) => listCurencies.includes(t.contractId)}
+            onChange={(newValue: any) => {
+              if (!newValue) {
+                setCurrency("");
+                return;
+              }
+              const currency = `${newValue?.contractId || "0"}`;
+              if (currency === "0") {
+                const CTC_INFO_WVOI = 34099056;
+                setCurrency(`0,${CTC_INFO_WVOI}`);
+              } else {
+                setCurrency(`${newValue?.contractId}`);
+              }
+            }}
+          />
+          <PriceRangeContainer>
+            <Min>
+              <MinInputContainer className={isDarkTheme ? "dark" : "light"}>
+                <MinInputLabelContainer>
+                  <input
+                    placeholder="Min"
+                    onChange={(e) => {
+                      if (
+                        e.target.value === "" &&
+                        isNaN(parseInt(e.target.value))
+                      )
+                        return;
+                      debouncedMin(e.target.value);
+                    }}
+                    style={{
+                      color: isDarkTheme ? "white" : "black",
+                      width: "100%",
+                    }}
+                    type="text"
+                  />
+                </MinInputLabelContainer>
+              </MinInputContainer>
+            </Min>
+            <To>to</To>
+            <Min>
+              <MinInputContainer className={isDarkTheme ? "dark" : "light"}>
+                <MinInputLabelContainer>
+                  <input
+                    placeholder="Max"
+                    onChange={(e) => {
+                      if (
+                        e.target.value !== "" &&
+                        isNaN(parseInt(e.target.value))
+                      )
+                        return;
+                      debouncedMax(e.target.value);
+                    }}
+                    style={{
+                      color: isDarkTheme ? "white" : "black",
+                      width: "100%",
+                    }}
+                    type="text"
+                  />
+                </MinInputLabelContainer>
+              </MinInputContainer>
+            </Min>
+          </PriceRangeContainer>
+        </SidebarFilter>
+      </SidebarFilterContainer>
+      <SidebarFilterContainer>
+        <SidebarFilter>
+          <Stack
+            direction="row"
+            sx={{
+              justifyContent: "flex-start",
+              width: "100%",
+              gap: "12px",
+            }}
+          >
+            <LayersIcon />
+            <SidebarLabel className={isDarkTheme ? "dark" : "light"}>
+              Collection
+            </SidebarLabel>
+            {/*<svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <path
+                d="M5 12H19"
+                stroke={isDarkTheme ? "white" : "black"}
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+          </svg>*/}
+          </Stack>
+          <CollectionSelect
+            filter={(c: any) => {
+              return listCollectionIds.includes(c.contractId);
+            }}
+            onChange={(newValue: any) => {
+              if (!newValue) {
+                setCollection("");
+                return;
+              }
+              setCollection(`${newValue?.contractId}`);
+            }}
+          />
+        </SidebarFilter>
+      </SidebarFilterContainer>
+    </SidebarFilterRoot>
+  );
+
+  const renderHeading = (
+    <ListingHeading>
+      <HeadingContainer>
+        <HeadingTitle className={isDarkTheme ? "dark" : "light"}>
+          Buy
+        </HeadingTitle>
+        <HeadingDescriptionContainer>
+          <HeadingDescription>
+            // {filteredListings.length} Results
+          </HeadingDescription>
+        </HeadingDescriptionContainer>
+      </HeadingContainer>
+    </ListingHeading>
+  );
+
+  return isLoading ? (
+    <Layout>
+      <ListingRoot>
+        {renderSidebar}
+        <ListingContainer>
+          {renderHeading}
+          <ListingGrid
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "100vh",
+              width: "100%",
+            }}
+          >
+            <Box sx={{ mt: 5 }}>
+              <CircularProgress size={100} />
+            </Box>
+          </ListingGrid>
+        </ListingContainer>
+      </ListingRoot>
+    </Layout>
+  ) : (
+    <Layout>
+      <ListingRoot>
+        {renderSidebar}
+        <ListingContainer>
+          {renderHeading}
+          <ListingGrid>
+            <Grid2 container spacing={2}>
+              {filteredListings.slice(0).map((el: NFTIndexerListingI) => {
                 const pk = `${el.mpContractId}-${el.mpListingId}`;
-                const nft = tokens.find(
-                  (t: TokenI) =>
-                    t.contractId === el.collectionId && t.tokenId === el.tokenId
-                );
-                console.log({ nft, filteredListings, el, tokens });
-                console.log(nft?.metadataURI);
-                const collectionsMissingImage = [35720076];
-                const url = !collectionsMissingImage.includes(nft?.contractId)
-                  ? `https://prod.cdn.highforge.io/i/${encodeURIComponent(
-                      nft?.metadataURI
-                    )}?w=400`
-                  : nft?.metadata?.image;
-                const currency = smartTokens.find(
-                  (st: TokenType) => `${st.contractId}` === `${el.currency}`
-                );
-                const currencySymbol =
-                  currency?.tokenId === "0" ? "VOI" : currency?.symbol || "VOI";
-                const currencyDecimals =
-                  currency?.decimals === 0 ? 0 : currency?.decimals || 6;
-                const price = formatter.format(
-                  new BigNumber(el.price)
-                    .div(new BigNumber(10).pow(currencyDecimals))
-                    .toNumber()
-                );
+                // const nft = tokens.find(
+                //   (t: TokenI) =>
+                //     t.contractId === el.collectionId && t.tokenId === el.tokenId
+                // );
+                // console.log({ nft, filteredListings, el, tokens });
+                // console.log(nft?.metadataURI);
+                // const collectionsMissingImage = [35720076];
+                // const url = !collectionsMissingImage.includes(nft?.contractId)
+                //   ? `https://prod.cdn.highforge.io/i/${encodeURIComponent(
+                //       nft?.metadataURI
+                //     )}?w=400`
+                //   : nft?.metadata?.image;
+                // const currency = smartTokens.find(
+                //   (st: TokenType) => `${st.contractId}` === `${el.currency}`
+                // );
+                // const currencySymbol =
+                //   currency?.tokenId === "0" ? "VOI" : currency?.symbol || "VOI";
+                // const currencyDecimals =
+                //   currency?.decimals === 0 ? 0 : currency?.decimals || 6;
+                // const price = formatter.format(
+                //   new BigNumber(el.price)
+                //     .div(new BigNumber(10).pow(currencyDecimals))
+                //     .toNumber()
+                // );
                 return (
-                  <Suspense fallback={<div>Loading...</div>}>
-                    <NFTCard
-                      key={pk}
-                      size="small"
-                      nftName={
-                        (nft?.metadata?.name || "").slice(0, 15)
-                        //+
-                        //(nft?.metadata?.name?.length || 0 > 13 ? "..." : "")
-                      }
-                      price={price}
-                      currency={currencySymbol}
-                      image={url}
-                      onClick={() => {
-                        navigate(
-                          `/collection/${el.collectionId}/token/${el.tokenId}`
-                        );
-                      }}
-                    />
-                  </Suspense>
+                  <Grid2 key={pk}>
+                    <CartNftCard token={el.token} listing={el} />
+                  </Grid2>
                 );
               })}
-            </ListingGrid>
-          </ListingContainer>
-        </ListingRoot>
-        {/*!isLoading ? (
-          <div>
-            <SectionHeading>
-              <SectionTitle className={isDarkTheme ? "dark" : "light"}>
-                Listings
-              </SectionTitle>
-              <SectionDescription>
-                // {filteredListings.length} results
-              </SectionDescription>
-            </SectionHeading>
-            <NFTListingTable
-              listings={normalListings}
-              tokens={tokens}
-              collections={collections}
-            />
-          </div>
-        ) : (
-          <div>
-            <SectionHeading>
-              <Skeleton variant="rounded" width={240} height={40} />
-              <Skeleton variant="rounded" width={120} height={40} />
-            </SectionHeading>
-            <Grid container spacing={2} sx={{ mt: 5 }}>
-              {Array.from({ length: 12 }).map((_, i) => (
-                <Grid item xs={6} sm={4} md={3}>
-                  <Skeleton
-                    sx={{ borderRadius: 10 }}
-                    variant="rounded"
-                    width="100%"
-                    height={469}
-                  />
-                </Grid>
-              ))}
-            </Grid>
-            <Grid container spacing={2} sx={{ mt: 5 }}>
-              <Grid item xs={12} sm={6}>
-                <Skeleton variant="rounded" width="100%" height={240} />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Skeleton variant="rounded" width="100%" height={240} />
-              </Grid>
-            </Grid>
-          </div>
-              )*/}
-      </Layout>
-    </>
+            </Grid2>
+          </ListingGrid>
+        </ListingContainer>
+      </ListingRoot>
+    </Layout>
   );
 };

@@ -15,31 +15,42 @@ import { getAlgorandClients } from "../../../wallets";
 import { useDispatch, useSelector } from "react-redux";
 import { UnknownAction } from "@reduxjs/toolkit";
 import { getSmartTokens } from "../../../store/smartTokenSlice";
-import { TokenType } from "../../../types";
+import { NFTIndexerListingI, TokenType } from "../../../types";
 import { BigNumber } from "bignumber.js";
+import axios from "axios";
+
+const formatter = Intl.NumberFormat("en", { notation: "compact" });
+
+export const multiplier = 1.02;
 
 interface BuySaleModalProps {
+  listing: NFTIndexerListingI;
   open: boolean;
   loading: boolean;
   handleClose: () => void;
-  onSave: () => Promise<void>;
+  onSave: (pool?: any, discount?: any) => Promise<void>;
   title?: string;
   buttonText?: string;
   image: string;
   price: string;
+  priceNormal?: string;
   currency: string;
   priceAU?: string;
   paymentTokenId?: number;
   paymentAltTokenId?: string;
+  seller?: string;
 }
 
 const BuySaleModal: React.FC<BuySaleModalProps> = ({
+  listing,
+  seller,
   open,
   loading,
   handleClose,
   onSave,
   image,
   price,
+  priceNormal,
   currency,
   title = "Enter Address",
   buttonText = "Send",
@@ -47,20 +58,97 @@ const BuySaleModal: React.FC<BuySaleModalProps> = ({
   paymentTokenId = 0,
   paymentAltTokenId = "0",
 }) => {
-  console.log({ paymentAltTokenId });
-  const dispatch = useDispatch();
   const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
   const smartTokenStatus = useSelector(
     (state: any) => state.smartTokens.status
   );
+
+  const [highestSale, setHighestSale] = useState<number>(0);
   useEffect(() => {
-    dispatch(getSmartTokens() as unknown as UnknownAction);
-  }, [dispatch]);
+    axios
+      .get(
+        `https://arc72-idx.nautilus.sh/nft-indexer/v1/mp/sales?collectionId=${listing.collectionId}&tokenId=${listing.tokenId}`
+      )
+      .then(({ data }) => {
+        console.log({ data });
+        const highestSale = data.sales
+          .map((sale: any) => {
+            const smartToken = smartTokens.find(
+              (token: TokenType) => `${token.contractId}` === `${sale.currency}`
+            );
+            console.log({ smartToken });
+            const unitPriceStr =
+              sale.currency === 0 ? "1" : smartToken?.price || "0";
+            const decimals =
+              sale.currency === 0 ? 6 : smartToken?.decimals || 6;
+            const unitPriceBn = new BigNumber(unitPriceStr);
+            const tokenPriceBn = new BigNumber(sale?.price).div(
+              new BigNumber(10).pow(decimals)
+            );
+            const normalPrice = unitPriceBn
+              .multipliedBy(tokenPriceBn)
+              .toNumber();
+            return normalPrice;
+          })
+          .reduce((acc: any, val: any) => Math.max(acc, val), 0);
+        setHighestSale(highestSale);
+      });
+  }, [smartTokens]);
+
+  const [currencyPrice, setCurrencyPrice] = useState<number>(0);
+  const [poolPrice, setPoolPrice] = useState<number>(0);
+  const [pool, setPool] = useState<any>();
+  useEffect(() => {
+    if (currency === "VOI") return;
+    axios
+      .get(
+        `https://arc72-idx.nautilus.sh/nft-indexer/v1/dex/pools?tokenId=${paymentTokenId}`
+      )
+      .then(({ data }) => {
+        const pool = data.pools
+          .filter(
+            (pool: any) =>
+              pool.providerId === "01" && pool.poolId.match(/(-0$)|(^0-)/)
+          )
+          .reduce(
+            (acc: any, val: any) => {
+              if (acc.mintRound < val.mintRound) {
+                return acc;
+              }
+              return val;
+            },
+            { mintRound: Number.MAX_SAFE_INTEGER }
+          );
+        const priceSUBn = new BigNumber(priceAU).div(
+          new BigNumber(10).pow(
+            smartTokens.find(
+              (token: TokenType) =>
+                `${token.contractId}` === `${paymentTokenId}`
+            )?.decimals || 0
+          )
+        );
+        const { tokAId, poolBalA, poolBalB } = pool;
+        if (tokAId === `${paymentTokenId}`) {
+          const currencyPrice = new BigNumber(poolBalB).div(
+            new BigNumber(poolBalA)
+          );
+          setPoolPrice(priceSUBn.multipliedBy(currencyPrice).toNumber());
+          setCurrencyPrice(currencyPrice.toNumber());
+        } else {
+          const currencyPrice = new BigNumber(poolBalA).div(
+            new BigNumber(poolBalB)
+          );
+          setPoolPrice(priceSUBn.multipliedBy(currencyPrice).toNumber());
+          setCurrencyPrice(currencyPrice.toNumber());
+        }
+        setPool(pool);
+      });
+  }, []);
 
   const { activeAccount } = useWallet();
   const [netBalance, setNetBalance] = useState("0");
   useEffect(() => {
-    if (!activeAccount || paymentAltTokenId !== "0") return;
+    if (!activeAccount || paymentAltTokenId !== "0" || !open) return;
     const { algodClient } = getAlgorandClients();
     algodClient
       .accountInformation(activeAccount.address)
@@ -68,11 +156,11 @@ const BuySaleModal: React.FC<BuySaleModalProps> = ({
       .then((res: any) => {
         setNetBalance(res.amount.toString());
       });
-  }, [activeAccount]);
-  console.log({ netBalance });
+  }, [activeAccount, open]);
+
   const [balance, setBalance] = useState("0");
   useEffect(() => {
-    if (!activeAccount) return;
+    if (!activeAccount || !open) return;
     const { algodClient, indexerClient } = getAlgorandClients();
     new arc200(Number(paymentTokenId), algodClient, indexerClient)
       .arc200_balanceOf(activeAccount.address)
@@ -81,7 +169,7 @@ const BuySaleModal: React.FC<BuySaleModalProps> = ({
           setBalance(res.returnValue.toString());
         }
       });
-  }, [activeAccount]);
+  }, [activeAccount, open]);
   const displayBalance = useMemo(() => {
     const smartToken = smartTokens.find(
       (token: TokenType) => `${token.contractId}` === `${paymentTokenId}`
@@ -89,17 +177,35 @@ const BuySaleModal: React.FC<BuySaleModalProps> = ({
     if (paymentTokenId === 0) {
       return new BigNumber(netBalance).div(new BigNumber(10).pow(6)).toFixed(6);
     } else if (smartToken) {
-      const decimals = smartToken.decimals;
+      const decimals = smartToken?.decimals;
       return smartToken?.tokenId === "0"
         ? new BigNumber(balance)
             .plus(new BigNumber(netBalance))
             .div(new BigNumber(10).pow(decimals))
-            .toFixed(decimals)
+            .toFixed(Math.min(decimals, 6))
         : new BigNumber(balance)
             .div(new BigNumber(10).pow(decimals))
-            .toFixed(decimals);
+            .toFixed(Math.min(decimals, 6));
     }
   }, [balance, netBalance, smartTokens, smartTokenStatus]);
+
+  const discount = useMemo(() => {
+    const smartToken = smartTokens.find(
+      (token: TokenType) => `${token.contractId}` === `${paymentTokenId}`
+    );
+
+    const priceSUB = new BigNumber(priceAU).dividedBy(
+      new BigNumber(10).pow(smartToken?.decimals)
+    );
+
+    return priceSUB
+      .minus(new BigNumber(displayBalance || 0))
+      .multipliedBy(new BigNumber(smartToken?.price || 0))
+      .multipliedBy(multiplier)
+      .toFixed(6);
+  }, [displayBalance]);
+
+  console.log({ discount, price, currency });
 
   const canBuy = useMemo(() => {
     return new BigNumber(balance)
@@ -107,8 +213,8 @@ const BuySaleModal: React.FC<BuySaleModalProps> = ({
       .gte(new BigNumber(priceAU));
   }, [balance, netBalance]);
 
-  const handleSave = async () => {
-    await onSave();
+  const handleSave = async (pool: any, discount: any) => {
+    await onSave(pool, discount);
     handleClose();
   };
 
@@ -152,9 +258,40 @@ const BuySaleModal: React.FC<BuySaleModalProps> = ({
                 >
                   <InputLabel htmlFor="price">Price</InputLabel>
                   <Typography variant="h5" gutterBottom>
-                    {price} {currency}
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{ alignItems: "baseline" }}
+                    >
+                      {price} {currency}
+                    </Stack>
                   </Typography>
                 </Box>
+                <Box
+                  sx={{
+                    p: 1,
+                  }}
+                >
+                  <InputLabel htmlFor="balance">Seller</InputLabel>
+                  <Typography variant="h5" gutterBottom>
+                    {seller?.slice(0, 4)}...{seller?.slice(-4)}
+                  </Typography>
+                </Box>
+
+                {currency !== "VOI" ? (
+                  <Box
+                    sx={{
+                      p: 1,
+                    }}
+                  >
+                    <InputLabel htmlFor="balance">VOI Balance</InputLabel>
+                    <Typography variant="h5" gutterBottom>
+                      {new BigNumber(netBalance)
+                        .div(new BigNumber(10).pow(6))
+                        .toFixed(6)}
+                    </Typography>
+                  </Box>
+                ) : null}
                 <Box
                   sx={{
                     p: 1,
@@ -165,18 +302,71 @@ const BuySaleModal: React.FC<BuySaleModalProps> = ({
                     {displayBalance}
                   </Typography>
                 </Box>
+                {poolPrice > 0 ? (
+                  <Box
+                    sx={{
+                      p: 1,
+                    }}
+                  >
+                    <InputLabel htmlFor="balance">{currency} Price</InputLabel>
+                    <Typography variant="h5" gutterBottom>
+                      {Number(currencyPrice).toFixed(6)} VOI
+                    </Typography>
+                  </Box>
+                ) : null}
+                {highestSale > 0 ? (
+                  <Box
+                    sx={{
+                      p: 1,
+                    }}
+                  >
+                    <InputLabel htmlFor="balance">Highest Sale</InputLabel>
+                    <Typography variant="h5" gutterBottom>
+                      {formatter.format(highestSale)} VOI
+                    </Typography>
+                  </Box>
+                ) : null}
               </Grid>
               <Grid item xs={12}>
                 <Stack sx={{ mt: 3 }} gap={2}>
+                  {pool ? (
+                    <Button
+                      color="secondary"
+                      size="large"
+                      fullWidth
+                      variant="contained"
+                      onClick={() => {
+                        handleSave(pool, 0);
+                      }}
+                    >
+                      Buy {(Number(poolPrice) * multiplier).toFixed(6)} VOI
+                    </Button>
+                  ) : null}
                   <Button
                     disabled={!canBuy}
                     size="large"
                     fullWidth
                     variant="contained"
-                    onClick={handleSave}
+                    onClick={() => handleSave(undefined, 0)}
                   >
-                    {buttonText}
+                    Buy {price} {currency}
                   </Button>
+                  {false && pool && Number(discount) > 0 ? (
+                    <Button
+                      disabled={Number(discount) > Number(netBalance) / 10 ** 6}
+                      size="large"
+                      fullWidth
+                      variant="contained"
+                      onClick={() =>
+                        handleSave(
+                          pool,
+                          new BigNumber(displayBalance || 0).toNumber()
+                        )
+                      }
+                    >
+                      Buy {discount} VOI + {displayBalance} {currency}
+                    </Button>
+                  ) : null}
                   <Button
                     size="large"
                     fullWidth

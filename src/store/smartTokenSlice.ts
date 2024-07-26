@@ -3,9 +3,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import db from "../db";
 import { RootState } from "./store";
-import { NFTIndexerToken, Token, TokenType } from "../types";
-import { decodeRoyalties } from "../utils/hf";
-import { ARC72_INDEXER_API } from "../config/arc72-idx";
+import { TokenType } from "../types";
 
 export interface SmartTokensState {
   tokens: TokenType[];
