@@ -1,0 +1,264 @@
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Modal,
+  Button,
+  TextField,
+  CircularProgress,
+  Stack,
+  InputLabel,
+  Box,
+  Grid,
+  FormControl,
+  Typography,
+  Unstable_Grid2 as Grid2,
+} from "@mui/material";
+import PaymentCurrencyRadio, {
+  defaultCurrencies,
+} from "../../PaymentCurrencyRadio";
+import { collections } from "../../../contants/games";
+import axios from "axios";
+import { Token } from "@mui/icons-material";
+import TokenSelect from "../../TokenSelect";
+import RoyaltyCheckbox from "../../checkboxes/RoyaltyCheckbox";
+import { NFTIndexerTokenI, TokenType } from "../../../types";
+import BigNumber from "bignumber.js";
+import { useSelector } from "react-redux";
+import { formatter } from "../../../utils/number";
+import CartNftCard from "../../CartNFTCard";
+import { TOKEN_WVOI2 } from "../../../contants/tokens";
+
+// function to split array into chunks
+
+const chunkArray = (arr: any[], chunkSize: number) => {
+  const chunkedArray = [];
+  for (let i = 0; i < arr.length; i += chunkSize) {
+    chunkedArray.push(arr.slice(i, i + chunkSize));
+  }
+  return chunkedArray;
+};
+
+type BatchAction = "list-sale";
+
+interface ListBatchModalProps {
+  action: BatchAction;
+  open: boolean;
+  loading: boolean;
+  handleClose: () => void;
+  onSave: any;
+  title?: string;
+  buttonText?: string;
+  nfts: NFTIndexerTokenI[];
+}
+
+const ListBatchModal: React.FC<ListBatchModalProps> = ({
+  action,
+  open,
+  loading,
+  handleClose,
+  onSave,
+  title = "Enter Address",
+  buttonText = "List for Sale",
+  nfts,
+}) => {
+  const [price, setPrice] = useState("");
+  const [royalties, setRoyalties] = useState<boolean>(true);
+  const [token, setToken] = useState<any>();
+
+  const defaultCurrency: string = "0";
+  const [currency, setCurrency] = useState<string>(defaultCurrency);
+
+  const [showDefaultButton, setShowDefaultButton] = useState<boolean>(true);
+
+  console.log({ currency });
+
+  useEffect(() => {
+    if (currency === "0") {
+      setToken(
+        smartTokens.find((token: TokenType) => token.contractId === TOKEN_WVOI2)
+      );
+    } else {
+      setToken(
+        smartTokens.find(
+          (token: TokenType) => token.contractId === Number(currency)
+        )
+      );
+    }
+  });
+
+  const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
+  const smartTokenStatus = useSelector(
+    (state: any) => state.smartTokens.status
+  );
+  console.log({ smartTokens, smartTokenStatus, currency });
+
+  const [progress, setProgress] = useState<number>(0);
+
+  /* Modal */
+
+  const handleSave = async () => {
+    await onSave(price, currency, token, setProgress);
+    setShowDefaultButton(false);
+  };
+
+  const onClose = () => {
+    setPrice("");
+    setCurrency("0");
+    setShowDefaultButton(true);
+    handleClose();
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      aria-labelledby="address-modal-title"
+      aria-describedby="address-modal-description"
+    >
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          background: "white",
+          padding: "40px",
+          minHeight: "300px",
+          minWidth: "400px",
+          width: "50vw",
+          borderRadius: "25px",
+        }}
+      >
+        <h2 id="address-modal-title">{title}</h2>
+        {true || !loading ? (
+          <>
+            <Grid2 container spacing={2} gap={2}>
+              {chunkArray(nfts, 3).map((nft: NFTIndexerTokenI[], index) => (
+                <Grid2
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    flexDirection: "column",
+                    padding: "10px",
+                    border: `4px solid ${
+                      progress > index ? "green" : "lightgray"
+                    }`,
+                    borderRadius: "20px",
+                  }}
+                  key={`${index}`}
+                >
+                  {nft.map((nft: NFTIndexerTokenI) => (
+                    <CartNftCard token={nft} imageOnly={true} size="small" />
+                  ))}
+                </Grid2>
+              ))}
+            </Grid2>
+            <Stack sx={{ mt: 3 }} gap={2}>
+              <Box>
+                {!loading && progress === 0 ? (
+                  <>
+                    <InputLabel htmlFor="price">Price</InputLabel>
+                    <TextField
+                      id="price"
+                      label="Price"
+                      variant="outlined"
+                      value={price}
+                      fullWidth
+                      margin="normal"
+                      onChange={(e) => setPrice(e.target.value)}
+                    />
+                  </>
+                ) : null}
+              </Box>
+              <Box>
+                {!loading && progress === 0 ? (
+                  <TokenSelect
+                    disabled={true}
+                    filter={(t: TokenType) =>
+                      !["LPT", "ARC200LT"].includes(t.symbol)
+                    }
+                    onChange={(newValue: any) => {
+                      if (!newValue) {
+                        setCurrency("");
+                        return;
+                      }
+                      const currency = `${newValue?.contractId || "0"}`;
+                      // if (currency === "0") {
+                      //   const CTC_INFO_WVOI = 34099056;
+                      //   setCurrency(`0,${CTC_INFO_WVOI}`);
+                      // } else {
+                      setCurrency(`${newValue?.contractId}`);
+                      // }
+                    }}
+                  />
+                ) : null}
+              </Box>
+              <Box>
+                <RoyaltyCheckbox
+                  defaultChecked={royalties}
+                  onChange={(e) => {
+                    setRoyalties(e.target.checked);
+                  }}
+                />
+              </Box>
+              <Box>
+                <Typography variant="caption">
+                  {price ? (
+                    <>
+                      <span>
+                        Listing {nfts.length} assets for sale at price {price}{" "}
+                        {token?.contractId === TOKEN_WVOI2
+                          ? "VOI"
+                          : token?.symbol}
+                        .
+                      </span>{" "}
+                      {royalties ? (
+                        <span>
+                          Royalties will be applied. Proceeds of sales may vary.
+                        </span>
+                      ) : null}{" "}
+                      <span>Reject transaction in wallet to cancel.</span>
+                    </>
+                  ) : null}
+                </Typography>
+              </Box>
+              {showDefaultButton ? (
+                <Button
+                  disabled={loading}
+                  size="large"
+                  fullWidth
+                  variant="contained"
+                  onClick={handleSave}
+                >
+                  {loading ? "Pending transaction..." : buttonText}
+                </Button>
+              ) : null}
+              <Button
+                size="large"
+                fullWidth
+                variant="outlined"
+                onClick={handleClose}
+              >
+                Close
+              </Button>
+            </Stack>
+          </>
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              flexDirection: "column",
+              padding: "20px",
+            }}
+          >
+            <CircularProgress size={200} />
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+};
+
+export default ListBatchModal;

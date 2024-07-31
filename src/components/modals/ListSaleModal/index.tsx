@@ -215,6 +215,9 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
                 </Box>*/}
                   <Box sx={{ mt: 2 }}>
                     <TokenSelect
+                      filter={(t: TokenType) =>
+                        !["LPT", "ARC200LT"].includes(t.symbol)
+                      }
                       onChange={(newValue: any) => {
                         if (!newValue) {
                           setCurrency("");

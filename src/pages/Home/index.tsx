@@ -213,15 +213,9 @@ export const Home: React.FC = () => {
     (state: RootState) => state.theme.isDarkTheme
   );
 
-  const isLoading = !listings || !smartTokens || listingsStatus !== "succeeded";
+  const navigate = useNavigate();
 
-  console.log({
-    listings,
-    smartTokens,
-    listingsStatus,
-    smartTokenStatus,
-    isLoading,
-  });
+  const isLoading = !listings || !smartTokens || listingsStatus !== "succeeded";
 
   return (
     <Layout>
@@ -255,7 +249,15 @@ export const Home: React.FC = () => {
                 {listings.slice(0, showing).map((el: NFTIndexerListingI) => {
                   return (
                     <Grid2 key={el.transactionId}>
-                      <CartNftCard token={el.token} listing={el} />
+                      <CartNftCard
+                        token={el.token}
+                        listing={el}
+                        onClick={() => {
+                          navigate(
+                            `/collection/${el.token.contractId}/token/${el.token.tokenId}`
+                          );
+                        }}
+                      />
                     </Grid2>
                   );
                 })}

@@ -289,6 +289,16 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
     (state: RootState) => state.theme.isDarkTheme
   );
 
+  const [manager, setManager] = useState<string>("");
+  useEffect(() => {
+    if (!nft.listing) return;
+    new mp(nft.listing.mpContractId, algodClient, indexerClient)
+      .manager()
+      .then((r: any) => {
+        setManager(r.returnValue);
+      });
+  }, [nft.listing]);
+
   const dispatch = useDispatch();
 
   const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
@@ -1261,6 +1271,30 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
     }
   };
 
+  const handleMangerDelete = useCallback(async () => {
+    if (!activeAccount || !manager || !nft.listing) return;
+    const ci = new mp(nft.listing.mpContractId, algodClient, indexerClient, {
+      acc: {
+        addr: activeAccount.address,
+        sk: new Uint8Array(0),
+      },
+    });
+    const res = await ci.deleteListing(nft.listing.mpListingId);
+    if (!res.success) throw new Error("failed to delete listing");
+    await toast.promise(
+      signTransactions(
+        res.txns.map(
+          (txn: string) => new Uint8Array(Buffer.from(txn, "base64"))
+        )
+      ).then(sendTransactions),
+      {
+        pending: "Transaction pending...",
+        success: "Listing deleted!",
+        error: "Failed to delete listing",
+      }
+    );
+  }, [activeAccount, manager, nft.listing]);
+
   // handleBuy
   const handleBuyClick = async (pool: any, discount: any) => {
     if (!activeAccount) {
@@ -1750,6 +1784,11 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
                   {false && (
                     <OfferButton src={ButtonOffer} alt="Offer Button" />
                   )}
+                  {activeAccount?.address === manager ? (
+                    <Button color="warning" onClick={handleMangerDelete}>
+                      Delete
+                    </Button>
+                  ) : null}
                 </Stack>
                 {false ? (
                   <AuctionContainer direction="row">

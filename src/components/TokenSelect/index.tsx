@@ -1,12 +1,11 @@
 import * as React from "react";
 import { TokenType } from "../../types";
-import CryptoIconPlaceholder from "../CryptoIconPlaceholder";
-import { intToColorCode } from "../../utils/string";
 import Autocomplete from "../Autocomplete";
 
 interface SelectProps {
   onChange: (event: any, newValue: any, reason: any) => void;
   filter?: (c: any) => boolean;
+  disabled?: boolean;
 }
 const Select: React.FC<SelectProps> = ({ onChange, filter = () => true }) => {
   return (

@@ -12,13 +12,17 @@ export interface CollectionTokenI extends TokenI {
   metadata: string;
 }
 
-export interface NFTIndexerToken extends CollectionTokenI {
+export interface NFTIndexerTokenI extends CollectionTokenI {
   ["mint-round"]: number;
+}
+
+export interface MListedNFTTokenI extends NFTIndexerTokenI {
+  listing?: NFTIndexerListingI;
 }
 
 export interface NFTIndexerTokenResponse {
   currentRound: number;
-  tokens: NFTIndexerToken[];
+  tokens: NFTIndexerTokenI[];
   ["next-token"]: string;
 }
 
@@ -106,7 +110,6 @@ export interface ListingI {
   collectionId: number;
   endTimestamp: number | null;
   royalty: number | null;
-  // nftindexerlistingi
   transactionId: string;
   createTimestamp: number;
   token?: Token;

@@ -329,7 +329,7 @@ const BuySaleModal: React.FC<BuySaleModalProps> = ({
               </Grid>
               <Grid item xs={12}>
                 <Stack sx={{ mt: 3 }} gap={2}>
-                  {pool ? (
+                  {pool?.contractId ? (
                     <Button
                       color="secondary"
                       size="large"

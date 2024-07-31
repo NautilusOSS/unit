@@ -3,7 +3,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import db from "../db";
 import { RootState } from "./store";
-import { NFTIndexerToken, Token } from "../types";
+import { NFTIndexerTokenI, Token } from "../types";
 import { decodeRoyalties } from "../utils/hf";
 import { ARC72_INDEXER_API } from "../config/arc72-idx";
 
@@ -34,10 +34,10 @@ export const getTokens = createAsyncThunk<
       }
     );
     const newTokens = response.data.tokens.filter(
-      (token: NFTIndexerToken) => token["mint-round"] > lastRound
+      (token: NFTIndexerTokenI) => token["mint-round"] > lastRound
     );
     await db.table("tokens").bulkPut(
-      newTokens.map((token: NFTIndexerToken) => {
+      newTokens.map((token: NFTIndexerTokenI) => {
         return {
           pk: `${token.contractId}-${token.tokenId}`,
           owner: token.owner,

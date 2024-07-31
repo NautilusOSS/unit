@@ -24,6 +24,8 @@ import { getSales } from "../../store/saleSlice";
 import { getSmartTokens } from "../../store/smartTokenSlice";
 import { TokenType } from "../../types";
 import { BigNumber } from "bignumber.js";
+import CartNftCard from "../../components/CartNFTCard";
+import { ARC72_INDEXER_API } from "../../config/arc72-idx";
 
 const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
@@ -545,6 +547,25 @@ export const Token: React.FC = () => {
   }, [id, tid, collection, collectionInfo, collectionListings, activeAccount]);
   console.log({ nft });
 
+  /* NFT Navigator Listings */
+  const [listings2, setListings] = React.useState<any>([]);
+  React.useEffect(() => {
+    try {
+      const res = axios
+        .get(`${ARC72_INDEXER_API}/nft-indexer/v1/mp/listings`, {
+          params: {
+            active: true,
+            collectionId: id,
+          },
+        })
+        .then(({ data }) => {
+          setListings(data.listings);
+        });
+    } catch (e) {
+      console.log(e);
+    }
+  }, []);
+
   const listedNfts = useMemo(() => {
     const listedNfts =
       collection
@@ -709,7 +730,21 @@ export const Token: React.FC = () => {
                   </svg>
                 </div>
               </div>
-              {moreNfts.map((el: any) => {
+              {listings2.reverse().map((el: any) => {
+                return (
+                  <CartNftCard
+                    token={el.token}
+                    listing={el}
+                    onClick={() => {
+                      navigate(
+                        `/collection/${el.token.contractId}/token/${el.token.tokenId}`
+                      );
+                      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+                    }}
+                  />
+                );
+              })}
+              {/*moreNfts.map((el: any) => {
                 const collectionsMissingImage = [35720076];
                 const url = !collectionsMissingImage.includes(el.contractId)
                   ? `https://prod.cdn.highforge.io/i/${encodeURIComponent(
@@ -748,7 +783,7 @@ export const Token: React.FC = () => {
                     }}
                   />
                 );
-              })}
+              })*/}
             </NFTCards>
           </Stack>
         </Container>

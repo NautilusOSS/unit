@@ -927,7 +927,15 @@ export const Listings: React.FC = () => {
                 // );
                 return (
                   <Grid2 key={pk}>
-                    <CartNftCard token={el.token} listing={el} />
+                    <CartNftCard
+                      token={el.token}
+                      listing={el}
+                      onClick={() => {
+                        navigate(
+                          `/collection/${el.token.contractId}/token/${el.token.tokenId}`
+                        );
+                      }}
+                    />
                   </Grid2>
                 );
               })}

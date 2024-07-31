@@ -8,6 +8,7 @@ import {
   ListedToken,
   ListingTokenI,
   NFTIndexerListingI,
+  NFTIndexerTokenI,
   TokenType,
 } from "../../types";
 import { useNavigate } from "react-router-dom";
@@ -66,10 +67,6 @@ const NFTCardWrapper = styled.div`
   flex-direction: column;
   position: relative;
   transition: all 0.1s ease;
-  /*
-  height: 481px;
-  width: 305px;
-  */
   overflow: hidden;
   cursor: pointer;
   &:hover {
@@ -77,7 +74,6 @@ const NFTCardWrapper = styled.div`
   }
   & .image {
     align-self: stretch;
-    //height: 305px;
     position: relative;
     width: 100%;
     height: 200px;
@@ -253,13 +249,17 @@ const NFTCardWrapper = styled.div`
 `;
 
 interface NFTCardProps {
-  token: ListingTokenI;
+  token: ListingTokenI | NFTIndexerTokenI;
   listing?: NFTIndexerListingI;
   onClick?: () => void;
   selected?: boolean;
+  size?: "small" | "medium" | "large";
+  imageOnly?: boolean;
 }
 
 const CartNftCard: React.FC<NFTCardProps> = ({
+  imageOnly = false,
+  size = "medium",
   token,
   listing,
   onClick,
@@ -270,6 +270,8 @@ const CartNftCard: React.FC<NFTCardProps> = ({
   const metadata = JSON.parse(token.metadata || "{}");
 
   const navigate = useNavigate();
+
+  const [display, setDisplay] = React.useState(true);
 
   const [isBuying, setIsBuying] = React.useState(false);
   const [openBuyModal, setOpenBuyModal] = React.useState(false);
@@ -296,12 +298,7 @@ const CartNftCard: React.FC<NFTCardProps> = ({
     const price = priceBn.multipliedBy(new BigNumber(currency.price));
     return formatter.format(price.toNumber());
   }, [currency, priceBn]);
-
-  interface SwapBuyOptionsI {
-    paymentTokenId: number;
-    wrappedNetworkTokenId: number;
-    extraTxns: any[];
-  }
+  console.log({ currency, priceBn, priceNormal });
 
   const handleBuyButtonClick = async () => {
     try {
@@ -408,80 +405,86 @@ const CartNftCard: React.FC<NFTCardProps> = ({
       // -------------------------------------
       const { algodClient, indexerClient } = getAlgorandClients();
       let customR;
-      if (pool) {
-        const { contractId: poolId, tokAId, tokBId, poolBalA, poolBalB } = pool;
-        // -------------------------------------
-        const tokA: TokenType = smartTokens.find(
-          (el: any) => `${el.contractId}` === tokAId
-        );
-        const tokB: TokenType = smartTokens.find(
-          (el: any) => `${el.contractId}` === tokBId
-        );
-        const inToken = tokA?.tokenId === "0" ? tokA : tokB;
-        const outToken = tokA?.tokenId !== "0" ? tokA : tokB;
-        const ratio =
-          inToken === tokA
-            ? new BigNumber(poolBalA).div(poolBalB).toNumber()
-            : new BigNumber(poolBalB).div(poolBalA).toNumber();
-        // figure out how much to swap
-        const swapR: any = await new swap(
-          poolId,
-          algodClient,
-          indexerClient
-        ).swap(
-          activeAccount.address,
-          poolId,
-          {
-            amount: new BigNumber(ratio)
-              .times(priceBn.minus(new BigNumber(discount || 0)))
-              .times(multiplier)
-              .toFixed(6),
-            contractId: inToken?.contractId,
-            tokenId: "0",
-            symbol: "VOI",
-          },
-          {
-            contractId: outToken?.contractId,
-            symbol: outToken?.symbol,
-            decimals: `${outToken?.decimals}`,
-          }
-        );
-        if (!swapR.success) throw new Error("swap failed");
-        const returnValue = swapR.response.txnGroups[0].txnResults
-          .slice(-1)[0]
-          .txnResult.logs.slice(-1)[0];
-        const selector = returnValue.slice(0, 4).toString("hex");
-        const outA = algosdk.bytesToBigInt(returnValue.slice(4, 36));
-        const outB = algosdk.bytesToBigInt(returnValue.slice(36, 68));
-        customR = await mp.buy(activeAccount.address, listing, currency, {
-          paymentTokenId:
-            listing.currency === 0 ? TOKEN_WVOI2 : listing.currency,
-          wrappedNetworkTokenId: TOKEN_WVOI2,
-          extraTxns: swapR.objs,
-          algodClient,
-          indexerClient,
-        });
-        // customR = await handleBuy(activeAccount.address, el, currency, {
-        //   paymentTokenId: el.currency === 0 ? TOKEN_WVOI2 : el.currency,
-        //   wrappedNetworkTokenId: TOKEN_WVOI2,
-        //   extraTxns: swapR.objs,
-        // });
-      } else {
-        customR = await mp.buy(activeAccount.address, listing, currency, {
-          paymentTokenId:
-            listing.currency === 0 ? TOKEN_WVOI2 : listing.currency,
-          wrappedNetworkTokenId: TOKEN_WVOI2,
-          extraTxns: [],
-          algodClient,
-          indexerClient,
-        });
-        // customR = await handleBuy(activeAccount.address, el, currency, {
-        //   paymentTokenId: el.currency === 0 ? TOKEN_WVOI2 : el.currency,
-        //   wrappedNetworkTokenId: TOKEN_WVOI2,
-        //   extraTxns: [],
-        // });
+      for (const p1 of /* skip ensure */ [0, 1]) {
+        const skipEnsure = p1 === 0;
+        console.log({ skipEnsure, pool });
+        if (pool) {
+          const {
+            contractId: poolId,
+            tokAId,
+            tokBId,
+            poolBalA,
+            poolBalB,
+          } = pool;
+          // -------------------------------------
+          const tokA: TokenType = smartTokens.find(
+            (el: any) => `${el.contractId}` === tokAId
+          );
+          const tokB: TokenType = smartTokens.find(
+            (el: any) => `${el.contractId}` === tokBId
+          );
+          const inToken = tokA?.tokenId === "0" ? tokA : tokB;
+          const outToken = tokA?.tokenId !== "0" ? tokA : tokB;
+          const ratio =
+            inToken === tokA
+              ? new BigNumber(poolBalA).div(poolBalB).toNumber()
+              : new BigNumber(poolBalB).div(poolBalA).toNumber();
+          // figure out how much to swap
+          const swapR: any = await new swap(
+            poolId,
+            algodClient,
+            indexerClient
+          ).swap(
+            activeAccount.address,
+            poolId,
+            {
+              amount: new BigNumber(ratio)
+                .times(priceBn.minus(new BigNumber(discount || 0)))
+                .times(multiplier)
+                .toFixed(6),
+              contractId: inToken?.contractId,
+              tokenId: "0",
+              symbol: "VOI",
+            },
+            {
+              contractId: outToken?.contractId,
+              symbol: outToken?.symbol,
+              decimals: `${outToken?.decimals}`,
+            }
+          );
+          if (!swapR.success) throw new Error("swap failed");
+          const returnValue = swapR.response.txnGroups[0].txnResults
+            .slice(-1)[0]
+            .txnResult.logs.slice(-1)[0];
+          const selector = returnValue.slice(0, 4).toString("hex");
+          const outA = algosdk.bytesToBigInt(returnValue.slice(4, 36));
+          const outB = algosdk.bytesToBigInt(returnValue.slice(36, 68));
+
+          customR = await mp.buy(activeAccount.address, listing, currency, {
+            paymentTokenId:
+              listing.currency === 0 ? TOKEN_WVOI2 : listing.currency,
+            wrappedNetworkTokenId: TOKEN_WVOI2,
+            extraTxns: swapR.objs,
+            algodClient,
+            indexerClient,
+            skipEnsure,
+          });
+        } else {
+          customR = await mp.buy(activeAccount.address, listing, currency, {
+            paymentTokenId:
+              listing.currency === 0 ? TOKEN_WVOI2 : listing.currency,
+            wrappedNetworkTokenId: TOKEN_WVOI2,
+            extraTxns: [],
+            algodClient,
+            indexerClient,
+            skipEnsure,
+          });
+        }
+
+        if (customR.success) break;
       }
-      if (!customR.success) throw new Error("custed failed at end"); // abort
+      console.log({ customR });
+      if (!customR.success) throw new Error("custom failed at end"); // abort
       // -------------------------------------
       // SIGM HERE
       // -------------------------------------
@@ -529,7 +532,7 @@ const CartNftCard: React.FC<NFTCardProps> = ({
         token.metadataURI
       )}?w=400`
     : metadata.image;
-  return (
+  return display ? (
     <Box
       style={{
         border: `4px solid ${selected ? "green" : "transparent"}`,
@@ -539,10 +542,9 @@ const CartNftCard: React.FC<NFTCardProps> = ({
       <Box
         style={{
           cursor: "pointer",
-          width: "305px",
-          height: "305px",
+          width: size === "medium" ? "305px" : "100px",
+          height: size === "medium" ? "305px" : "100px",
           flexShrink: 0,
-          border: "2px solid #000",
           borderRadius: "20px",
           background: `linear-gradient(0deg, rgba(0, 0, 0, 0.50) 10.68%, rgba(0, 0, 0, 0.00) 46.61%), 
             url(${url}), 
@@ -560,52 +562,54 @@ const CartNftCard: React.FC<NFTCardProps> = ({
         }*/
         }
       >
-        <Stack
-          direction="row"
-          spacing={2}
-          sx={{
-            alignItems: "center",
-            justifyContent: "space-between",
-            color: "#fff",
-            width: "90%",
-            height: "52px",
-            marginBottom: "27px",
-          }}
-        >
-          <Stack gap={1}>
-            <CollectionName>{metadata.name}</CollectionName>
-            <CollectionVolume>
-              {price !== "0" ? (
-                <Stack direction="row" gap={1} sx={{ alignItems: "center" }}>
-                  <span>
-                    {`${priceNormal || price} ${
-                      priceNormal ? "VOI" : currencySymbol
-                    }`}
-                  </span>
-                  {priceNormal && currencySymbol !== "VOI" ? (
-                    <Chip
-                      sx={{ background: "#fff" }}
-                      label={`${price} ${currencySymbol}`}
-                    />
-                  ) : null}
-                </Stack>
-              ) : null}
-            </CollectionVolume>
+        {!imageOnly ? (
+          <Stack
+            direction="row"
+            spacing={2}
+            sx={{
+              alignItems: "center",
+              justifyContent: "space-between",
+              color: "#fff",
+              width: "90%",
+              height: "52px",
+              marginBottom: "27px",
+            }}
+          >
+            <Stack gap={1}>
+              <CollectionName>{metadata.name}</CollectionName>
+              <CollectionVolume>
+                {price !== "0" ? (
+                  <Stack direction="row" gap={1} sx={{ alignItems: "center" }}>
+                    <span>
+                      {`${priceNormal || price} ${
+                        priceNormal ? "VOI" : currencySymbol
+                      }`}
+                    </span>
+                    {priceNormal && currencySymbol !== "VOI" ? (
+                      <Chip
+                        sx={{ background: "#fff" }}
+                        label={`${price} ${currencySymbol}`}
+                      />
+                    ) : null}
+                  </Stack>
+                ) : null}
+              </CollectionVolume>
+            </Stack>
+            {price !== "0" ? (
+              <img
+                style={{ zIndex: 1000 }}
+                height="40"
+                width="40"
+                src="/static/icon-cart.png"
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevents the outer onClick handler from triggering
+                  e.preventDefault();
+                  handleBuyButtonClick();
+                }}
+              />
+            ) : null}
           </Stack>
-          {price !== "0" ? (
-            <img
-              style={{ zIndex: 1000 }}
-              height="40"
-              width="40"
-              src="/static/icon-cart.png"
-              onClick={(e) => {
-                e.stopPropagation(); // Prevents the outer onClick handler from triggering
-                e.preventDefault();
-                handleBuyButtonClick();
-              }}
-            />
-          ) : null}
-        </Stack>
+        ) : null}
       </Box>
       {activeAccount && openBuyModal && listing ? (
         <BuySaleModal
@@ -626,7 +630,7 @@ const CartNftCard: React.FC<NFTCardProps> = ({
         />
       ) : null}
     </Box>
-  );
+  ) : null;
 };
 
 export default CartNftCard;

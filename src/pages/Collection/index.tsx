@@ -18,7 +18,7 @@ import axios from "axios";
 import styled from "styled-components";
 import { getSales } from "../../store/saleSlice";
 import { UnknownAction } from "@reduxjs/toolkit";
-import { ListingI, RankingI, TokenType } from "../../types";
+import { ListingI, NFTIndexerListingI, RankingI, TokenType } from "../../types";
 import { getCollections } from "../../store/collectionSlice";
 import NFTListingTable from "../../components/NFTListingTable";
 import ViewListIcon from "@mui/icons-material/ViewList";
@@ -31,6 +31,9 @@ import { getTokens } from "../../store/tokenSlice";
 import { BigNumber } from "bignumber.js";
 import { getSmartTokens } from "../../store/smartTokenSlice";
 import { getRankings } from "../../utils/mp";
+import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
+import CartNftCard from "../../components/CartNFTCard";
+import { ARC72_INDEXER_API } from "../../config/arc72-idx";
 
 const StatContainer = styled(Stack)`
   display: flex;
@@ -98,11 +101,11 @@ const formatter = Intl.NumberFormat("en", { notation: "compact" });
 export const Collection: React.FC = () => {
   const dispatch = useDispatch();
   /* Listings */
-  const listings = useSelector((state: any) => state.listings.listings);
-  const listingsStatus = useSelector((state: any) => state.listings.status);
-  useEffect(() => {
-    dispatch(getListings() as unknown as UnknownAction);
-  }, [dispatch]);
+  // const listings = useSelector((state: any) => state.listings.listings);
+  // const listingsStatus = useSelector((state: any) => state.listings.status);
+  // useEffect(() => {
+  //   dispatch(getListings() as unknown as UnknownAction);
+  // }, [dispatch]);
   /* Tokens */
   const tokens = useSelector((state: any) => state.tokens.tokens);
   const tokenStatus = useSelector((state: any) => state.tokens.status);
@@ -155,19 +158,65 @@ export const Collection: React.FC = () => {
     (state: RootState) => state.theme.isDarkTheme
   );
 
+  /* NFT Navigator Listings */
+  const [listings, setListings] = React.useState<any>([]);
+  React.useEffect(() => {
+    try {
+      const res = axios
+        .get(`${ARC72_INDEXER_API}/nft-indexer/v1/mp/listings`, {
+          params: {
+            active: true,
+            collectionId: id,
+          },
+        })
+        .then(({ data }) => {
+          setListings(data.listings);
+        });
+    } catch (e) {
+      console.log(e);
+    }
+  }, []);
+
+  const normalListings = useMemo(() => {
+    return listings?.map((listing: NFTIndexerListingI) => {
+      const smartToken = smartTokens.find(
+        (token: TokenType) => `${token.contractId}` === `${listing.currency}`
+      );
+      const currencyDecimals =
+        smartToken?.decimals === 0 ? 0 : smartToken?.decimals || 6;
+      const unitPriceBn = new BigNumber(
+        listing.currency === 0 ? "1" : smartToken?.price || "0"
+      );
+      const tokenPriceBn = new BigNumber(listing.price).div(
+        new BigNumber(10).pow(currencyDecimals)
+      );
+      const normalPriceBn = unitPriceBn.multipliedBy(tokenPriceBn);
+      return {
+        ...listing,
+        normalPrice: normalPriceBn.toNumber(),
+      };
+    });
+  }, [listings, smartTokens]);
+
+  const sortedListings = useMemo(() => {
+    return normalListings?.sort((a: any, b: any) => {
+      return a.normalPrice - b.normalPrice;
+    });
+  }, [normalListings]);
+
   const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid");
 
   const stats: any = useMemo(() => {
     if (
       tokenStatus !== "succeeded" ||
-      listingsStatus !== "succeeded" ||
+      //listingsStatus !== "succeeded" ||
       salesStatus !== "succeeded" ||
       collectionStatus !== "succeeded" ||
       smartTokenStatus !== "succeeded" ||
       !tokens ||
       !collections ||
       !sales ||
-      !listings ||
+      //!listings ||
       !smartTokens
     )
       return null;
@@ -184,92 +233,92 @@ export const Collection: React.FC = () => {
     sales,
     tokens,
     collections,
-    listings,
+    //listings,
     smartTokens,
     id,
     tokenStatus,
-    listingsStatus,
+    //listingsStatus,
     salesStatus,
     collectionStatus,
     smartTokenStatus,
   ]);
 
-  const [tokenPrices, setTokenPrices] = React.useState<Map<number, string>>();
-  useEffect(() => {
-    const tokenPrices = new Map();
-    for (const token of smartTokens) {
-      if (!token?.price) {
-        tokenPrices.set(token.contractId, token?.price || "0");
-      }
-    }
-    setTokenPrices(tokenPrices);
-  }, [smartTokens]);
+  // const [tokenPrices, setTokenPrices] = React.useState<Map<number, string>>();
+  // useEffect(() => {
+  //   const tokenPrices = new Map();
+  //   for (const token of smartTokens) {
+  //     if (!token?.price) {
+  //       tokenPrices.set(token.contractId, token?.price || "0");
+  //     }
+  //   }
+  //   setTokenPrices(tokenPrices);
+  // }, [smartTokens]);
 
-  const normalListings = useMemo(() => {
-    if (!listings || !exchangeRate) return [];
-    return listings.map((listing: ListingI) => {
-      return {
-        ...listing,
-        normalPrice:
-          listing.currency === 0 ? listing.price : listing.price * exchangeRate,
-      };
-    });
-  }, [listings, exchangeRate]);
+  // const normalListings = useMemo(() => {
+  //   if (!listings || !exchangeRate) return [];
+  //   return listings.map((listing: ListingI) => {
+  //     return {
+  //       ...listing,
+  //       normalPrice:
+  //         listing.currency === 0 ? listing.price : listing.price * exchangeRate,
+  //     };
+  //   });
+  // }, [listings, exchangeRate]);
 
   const nfts = useMemo(() => {
     return tokens?.filter((token: any) => `${token.contractId}` === `${id}`);
   }, [tokens]);
 
-  const listedNfts = useMemo(() => {
-    const listedNfts =
-      nfts
-        ?.filter((nft: any) => {
-          return normalListings?.some(
-            (listing: any) =>
-              `${listing.collectionId}` === `${nft.contractId}` &&
-              `${listing.tokenId}` === `${nft.tokenId}`
-          );
-        })
-        ?.map((nft: any) => {
-          const listing = normalListings.find(
-            (l: any) =>
-              `${l.collectionId}` === `${nft.contractId}` &&
-              `${l.tokenId}` === `${nft.tokenId}`
-          );
-          return {
-            ...nft,
-            listing,
-          };
-        }) || [];
-    listedNfts.sort(
-      (a: any, b: any) => a.listing.normalPrice - b.listing.normalPrice
-    );
-    return listedNfts;
-  }, [nfts, normalListings]);
+  // const listedNfts = useMemo(() => {
+  //   const listedNfts =
+  //     nfts
+  //       ?.filter((nft: any) => {
+  //         return normalListings?.some(
+  //           (listing: any) =>
+  //             `${listing.collectionId}` === `${nft.contractId}` &&
+  //             `${listing.tokenId}` === `${nft.tokenId}`
+  //         );
+  //       })
+  //       ?.map((nft: any) => {
+  //         const listing = normalListings.find(
+  //           (l: any) =>
+  //             `${l.collectionId}` === `${nft.contractId}` &&
+  //             `${l.tokenId}` === `${nft.tokenId}`
+  //         );
+  //         return {
+  //           ...nft,
+  //           listing,
+  //         };
+  //       }) || [];
+  //   listedNfts.sort(
+  //     (a: any, b: any) => a.listing.normalPrice - b.listing.normalPrice
+  //   );
+  //   return listedNfts;
+  // }, [nfts, normalListings]);
 
-  const listedCollections = useMemo(() => {
-    const listedCollections =
-      collections
-        ?.filter((c: any) => {
-          return listedNfts?.some(
-            (nft: any) => `${nft.contractId}` === `${c.contractId}`
-          );
-        })
-        .map((c: any) => {
-          return {
-            ...c,
-            tokens: listedNfts?.filter(
-              (nft: any) => `${nft.contractId}` === `${c.contractId}`
-            ),
-          };
-        }) || [];
-    listedCollections.sort(
-      (a: any, b: any) =>
-        b.tokens[0].listing.createTimestamp -
-        a.tokens[0].listing.createTimestamp
-    );
-    return listedCollections;
-  }, [collections, listedNfts]);
+  // const listedCollections = useMemo(() => {
+  //   const listedCollections =
+  //     collections
+  //       ?.filter((c: any) => {
+  //         return listedNfts?.some(
+  //           (nft: any) => `${nft.contractId}` === `${c.contractId}`
+  //         );
+  //       })
+  //       .map((c: any) => {
+  //         return {
+  //           ...c,
+  //           tokens: listedNfts?.filter(
+  //             (nft: any) => `${nft.contractId}` === `${c.contractId}`
+  //           ),
+  //         };
+  //       }) || [];
+  //   listedCollections.sort(
+  //     (a: any, b: any) =>
+  //       b.tokens[0].listing.createTimestamp -
+  //       a.tokens[0].listing.createTimestamp
+  //   );
+  //   return listedCollections;
+  // }, [collections, listedNfts]);
 
   const collectionSales = useMemo(() => {
     return (
@@ -280,7 +329,7 @@ export const Collection: React.FC = () => {
   const isLoading = useMemo(
     () =>
       tokenStatus !== "succeeded" ||
-      listingsStatus !== "succeeded" ||
+      //listingsStatus !== "succeeded" ||
       salesStatus !== "succeeded" ||
       collectionStatus !== "succeeded" ||
       smartTokenStatus !== "succeeded" ||
@@ -288,17 +337,23 @@ export const Collection: React.FC = () => {
       !collectionSales ||
       !collections ||
       !nfts ||
-      !listings ||
-      !listedNfts ||
-      !listedCollections ||
+      //!listings ||
+      //!listedNfts ||
+      //!listedCollections ||
       !sales,
-    [collections, nfts, listings, listedNfts, listedCollections, stats]
+    [
+      collections,
+      nfts,
+      //listings,
+      //listedNfts, listedCollections,
+      stats,
+    ]
   );
 
   return (
     <Layout>
       {!isLoading ? (
-        <Container sx={{ pt: 5 }} maxWidth="xl">
+        <div>
           <BannerContainer
             style={{
               backgroundImage: `url(${nfts[0].metadata.image})`,
@@ -340,9 +395,9 @@ export const Collection: React.FC = () => {
                     {
                       name: "Listed",
                       displayValue:
-                        ((listedNfts.length / nfts.length) * 100).toFixed(2) +
+                        ((listings.length / nfts.length) * 100).toFixed(2) +
                         "%",
-                      value: listedNfts.length,
+                      value: listings.length,
                     },
                     {
                       name: "Sales",
@@ -426,62 +481,82 @@ export const Collection: React.FC = () => {
                   />
                 ) : null*/}
                 {viewMode === "grid" ? (
-                  listedNfts.length > 0 ? (
-                    <Grid container spacing={2}>
-                      {listedNfts.map((el: any) => {
-                        const currency: any =
-                          `${el.listing.currency}` === "0"
-                            ? "VOI"
-                            : smartTokens.find(
-                                (t: TokenType) =>
-                                  `${t.contractId}` === `${el.listing.currency}`
-                              );
-
-                        const currencySymbol =
-                          currency?.tokenId === "0"
-                            ? "VOI"
-                            : currency?.symbol || "VOI";
-                        const currencyDecimals =
-                          currency?.decimals === 0
-                            ? 0
-                            : currency?.decimals || 6;
-                        const price = new BigNumber(el.listing.price)
-                          .dividedBy(new BigNumber(10).pow(currencyDecimals))
-                          .toNumber()
-                          .toLocaleString();
-                        return (
-                          <Grid
-                            key={`${el.contractId}-${el.tokenId}`}
-                            item
-                            xs={6}
-                            md={4}
-                            xl={2}
-                          >
-                            <NftCard
-                              nftName={el.metadata.name}
-                              image={
-                                "https://prod.cdn.highforge.io/i/" +
-                                encodeURIComponent(el.metadataURI) +
-                                "?w=240"
-                              }
-                              owner={el.owner}
-                              price={price}
-                              currency={currencySymbol}
-                              onClick={() => {
-                                navigate(
-                                  `/collection/${el.contractId}/token/${el.tokenId}`
+                  sortedListings?.length > 0 ? (
+                    <>
+                      <Grid2 container spacing={2}>
+                        {sortedListings?.map((el: NFTIndexerListingI) => {
+                          return (
+                            <Grid2 key={el.transactionId}>
+                              <CartNftCard
+                                token={el.token}
+                                listing={el}
+                                onClick={() => {
+                                  navigate(
+                                    `/collection/${el.collectionId}/token/${el.tokenId}`
+                                  );
+                                }}
+                              />
+                            </Grid2>
+                          );
+                        })}
+                      </Grid2>
+                      {/*<Grid container spacing={2}>
+                        {listedNfts.map((el: any) => {
+                          const currency: any =
+                            `${el.listing.currency}` === "0"
+                              ? "VOI"
+                              : smartTokens.find(
+                                  (t: TokenType) =>
+                                    `${t.contractId}` ===
+                                    `${el.listing.currency}`
                                 );
-                                window.scrollTo({
-                                  top: 0,
-                                  left: 0,
-                                  behavior: "smooth",
-                                });
-                              }}
-                            />
-                          </Grid>
-                        );
-                      })}
-                    </Grid>
+
+                          const currencySymbol =
+                            currency?.tokenId === "0"
+                              ? "VOI"
+                              : currency?.symbol || "VOI";
+                          const currencyDecimals =
+                            currency?.decimals === 0
+                              ? 0
+                              : currency?.decimals || 6;
+                          const price = new BigNumber(el.listing.price)
+                            .dividedBy(new BigNumber(10).pow(currencyDecimals))
+                            .toNumber()
+                            .toLocaleString();
+                          return (
+                            <Grid
+                              key={`${el.contractId}-${el.tokenId}`}
+                              item
+                              xs={6}
+                              md={4}
+                              xl={2}
+                            >
+                              <NftCard
+                                nftName={el.metadata.name}
+                                image={
+                                  "https://prod.cdn.highforge.io/i/" +
+                                  encodeURIComponent(el.metadataURI) +
+                                  "?w=240"
+                                }
+                                owner={el.owner}
+                                price={price}
+                                currency={currencySymbol}
+                                onClick={() => {
+                                  navigate(
+                                    `/collection/${el.contractId}/token/${el.tokenId}`
+                                  );
+                                  window.scrollTo({
+                                    top: 0,
+                                    left: 0,
+                                    behavior: "smooth",
+                                  });
+                                }}
+                              />
+                            </Grid>
+                          );
+                        })}
+                      </Grid>*/}
+                    </>
                   ) : (
                     <Box sx={{ mt: 5 }}>
                       <Typography variant="body2">
@@ -493,7 +568,7 @@ export const Collection: React.FC = () => {
               </Stack>
             </Grid>
           </Grid>
-        </Container>
+        </div>
       ) : (
         <Container maxWidth="lg">
           <Stack sx={{ mt: 5 }} gap={2}>
