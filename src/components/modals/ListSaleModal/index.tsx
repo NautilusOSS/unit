@@ -23,6 +23,7 @@ import { TokenType } from "../../../types";
 import BigNumber from "bignumber.js";
 import { useSelector } from "react-redux";
 import { formatter } from "../../../utils/number";
+import CartNftCard from "../../CartNFTCard";
 
 interface ListSaleModalProps {
   open: boolean;
@@ -91,8 +92,6 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
   const smartTokenStatus = useSelector(
     (state: any) => state.smartTokens.status
   );
-  console.log({ smartTokens, smartTokenStatus });
-
   const [highestSale, setHighestSale] = useState<number>(0);
   useEffect(() => {
     axios
@@ -100,13 +99,11 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
         `https://arc72-idx.nautilus.sh/nft-indexer/v1/mp/sales?collectionId=${nft.contractId}&tokenId=${nft.tokenId}`
       )
       .then(({ data }) => {
-        console.log({ data });
         const highestSale = data.sales
           .map((sale: any) => {
             const smartToken = smartTokens.find(
               (token: TokenType) => `${token.contractId}` === `${sale.currency}`
             );
-            console.log({ smartToken });
             const unitPriceStr =
               sale.currency === 0 ? "1" : smartToken?.price || "0";
             const decimals =
@@ -118,14 +115,12 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
             const normalPrice = unitPriceBn
               .multipliedBy(tokenPriceBn)
               .toNumber();
-            console.log({ normalPrice });
             return normalPrice;
           })
           .reduce((acc: any, val: any) => Math.max(acc, val), 0);
         setHighestSale(highestSale);
       });
   }, [smartTokens, smartTokenStatus, nft]);
-  console.log({ highestSale });
 
   const royaltyPercent = useMemo(() => {
     return royalties ? nft?.royalties?.royaltyPercent || 0 : 0;
@@ -177,11 +172,7 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
           <>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
-                <img
-                  src={nft?.metadata?.image || ""}
-                  alt="NFT"
-                  style={{ width: "100%", borderRadius: "25px" }}
-                />
+                <CartNftCard token={nft} imageOnly={true} />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Box
@@ -243,7 +234,7 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
                     </Box>*/}
                 </Box>
               </Grid>
-              <Grid xs={12}>
+              {/*<Grid xs={12}>
                 <Box
                   sx={{
                     p: 1,
@@ -262,7 +253,7 @@ const ListSaleModal: React.FC<ListSaleModalProps> = ({
                     disabled
                   />
                 </Box>
-              </Grid>
+                  </Grid>*/}
             </Grid>
             <Stack sx={{ mt: 3 }} gap={2}>
               <Button

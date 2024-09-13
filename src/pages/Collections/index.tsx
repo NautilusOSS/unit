@@ -70,6 +70,20 @@ const StyledLink = styled(Link)`
 `;
 
 export const Collections: React.FC = () => {
+  /* Collection Info */
+  const [collectionInfo, setCollectionInfo] = React.useState<any>(null);
+  useEffect(() => {
+    try {
+      axios
+        .get(`https://test-voi.api.highforge.io/projects`)
+        .then((res: any) => res.data.results)
+        .then(setCollectionInfo);
+    } catch (e) {
+      console.log(e);
+    }
+  }, []);
+  console.log({ collectionInfo });
+
   /* Dispatch */
   const dispatch = useDispatch();
   /* Dex */
@@ -172,7 +186,10 @@ export const Collections: React.FC = () => {
           </SectionTitle>
           <SectionDescription>// {rankings.length} results</SectionDescription>
         </SectionHeading>
-        <NFTCollectionTable rankings={rankings} />
+        <NFTCollectionTable
+          rankings={rankings}
+          collectionInfo={collectionInfo}
+        />
       </Container>
     </Layout>
   ) : null;

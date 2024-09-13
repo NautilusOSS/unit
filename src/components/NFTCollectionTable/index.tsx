@@ -24,10 +24,6 @@ const StyledImage = styled(Box)`
   background-size: cover;
 `;
 
-interface Props {
-  rankings: RankingI[];
-}
-
 const StyledTableCell = mstyled(TableCell)(({ theme }) => {
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
@@ -39,7 +35,12 @@ const StyledTableCell = mstyled(TableCell)(({ theme }) => {
   };
 });
 
-const NFTCollectionTable: React.FC<Props> = ({ rankings }) => {
+interface Props {
+  rankings: RankingI[];
+  collectionInfo: any[];
+}
+
+const NFTCollectionTable: React.FC<Props> = ({ rankings, collectionInfo }) => {
   return (
     <TableContainer>
       <Table aria-label="rankings table">
@@ -63,42 +64,52 @@ const NFTCollectionTable: React.FC<Props> = ({ rankings }) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {rankings.map((player, index) => (
-            <TableRow key={index}>
-              <StyledTableCell component="th" scope="row">
-                {index + 1}
-              </StyledTableCell>
-              <StyledTableCell>
-                <StyledImage sx={{ backgroundImage: `url(${player.image})` }} />
-              </StyledTableCell>
-              <StyledTableCell>
-                <Link
-                  style={{ textDecoration: "none", color: "inherit" }}
-                  to={`/collection/${player.collectionId}`}
-                >
-                  {player.name}
-                </Link>
-              </StyledTableCell>
-              <StyledTableCell>
-                {player.floorPrice === 0
-                  ? "-"
-                  : player.floorPrice.toLocaleString() + " VOI"}
-              </StyledTableCell>
-              <StyledTableCell>
-                {player.volume === 0
-                  ? "-"
-                  : player.volume.toLocaleString() + " VOI"}
-              </StyledTableCell>
-              <StyledTableCell>{player.listings}</StyledTableCell>
-              <StyledTableCell>{player.sales}</StyledTableCell>
-              <StyledTableCell>
-                {player.items === 0 ? "-" : player.items}
-              </StyledTableCell>
-              <StyledTableCell>
-                {player.owners === 0 ? "-" : player.owners}
-              </StyledTableCell>
-            </TableRow>
-          ))}
+          {rankings.map((player, index) => {
+            const ranking = player;
+            const collection = collectionInfo?.find(
+              (el) => `${el.applicationID}` === `${ranking.collectionId}`
+            );
+            const collectionName =
+              collection?.title || ranking?.name || "Collection Name";
+            return (
+              <TableRow key={index}>
+                <StyledTableCell component="th" scope="row">
+                  {index + 1}
+                </StyledTableCell>
+                <StyledTableCell>
+                  <StyledImage
+                    sx={{ backgroundImage: `url(${player.image})` }}
+                  />
+                </StyledTableCell>
+                <StyledTableCell>
+                  <Link
+                    style={{ textDecoration: "none", color: "inherit" }}
+                    to={`/collection/${player.collectionId}`}
+                  >
+                    {collectionName}
+                  </Link>
+                </StyledTableCell>
+                <StyledTableCell>
+                  {player.floorPrice === 0
+                    ? "-"
+                    : player.floorPrice.toLocaleString() + " VOI"}
+                </StyledTableCell>
+                <StyledTableCell>
+                  {player.volume === 0
+                    ? "-"
+                    : player.volume.toLocaleString() + " VOI"}
+                </StyledTableCell>
+                <StyledTableCell>{player.listings}</StyledTableCell>
+                <StyledTableCell>{player.sales}</StyledTableCell>
+                <StyledTableCell>
+                  {player.items === 0 ? "-" : player.items}
+                </StyledTableCell>
+                <StyledTableCell>
+                  {player.owners === 0 ? "-" : player.owners}
+                </StyledTableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </TableContainer>

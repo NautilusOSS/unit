@@ -62,7 +62,9 @@ const BannerContainer = styled.div`
 
 const BannerTitleContainer = styled.div`
   display: flex;
+  /*
   width: 400px;
+  */
   height: 80px;
   padding: 28px;
   flex-direction: column;
@@ -100,18 +102,21 @@ const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
 export const Collection: React.FC = () => {
   const dispatch = useDispatch();
+
   /* Listings */
   // const listings = useSelector((state: any) => state.listings.listings);
   // const listingsStatus = useSelector((state: any) => state.listings.status);
   // useEffect(() => {
   //   dispatch(getListings() as unknown as UnknownAction);
   // }, [dispatch]);
+
   /* Tokens */
   const tokens = useSelector((state: any) => state.tokens.tokens);
   const tokenStatus = useSelector((state: any) => state.tokens.status);
   useEffect(() => {
     dispatch(getTokens() as unknown as UnknownAction);
   }, [dispatch]);
+
   /* Smart Tokens */
   const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
   const smartTokenStatus = useSelector(
@@ -120,6 +125,7 @@ export const Collection: React.FC = () => {
   useEffect(() => {
     dispatch(getSmartTokens() as unknown as UnknownAction);
   }, [dispatch]);
+
   /* Dex */
   const prices = useSelector((state: RootState) => state.dex.prices);
   const dexStatus = useSelector((state: RootState) => state.dex.status);
@@ -133,13 +139,15 @@ export const Collection: React.FC = () => {
     if (!voiPrice) return 0;
     return voiPrice.rate;
   }, [prices, dexStatus]);
-  *
+  */
+
   /* Sales */
   const sales = useSelector((state: any) => state.sales.sales);
   const salesStatus = useSelector((state: any) => state.sales.status);
   useEffect(() => {
     dispatch(getSales() as unknown as UnknownAction);
   }, [dispatch]);
+
   /* Collections */
   const collections = useSelector(
     (state: any) => state.collections.collections
@@ -150,9 +158,24 @@ export const Collection: React.FC = () => {
   useEffect(() => {
     dispatch(getCollections() as unknown as UnknownAction);
   }, [dispatch]);
+
   /* Router */
   const { id } = useParams();
   const navigate = useNavigate();
+
+  /* Collection Info */
+  const [collectionInfo, setCollectionInfo] = React.useState<any>(null);
+  useEffect(() => {
+    try {
+      axios
+        .get(`https://test-voi.api.highforge.io/projects/info/${id}`)
+        .then((res: any) => res.data)
+        .then(setCollectionInfo);
+    } catch (e) {
+      console.log(e);
+    }
+  }, [id]);
+
   /* Theme */
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
@@ -362,7 +385,8 @@ export const Collection: React.FC = () => {
           >
             <BannerTitleContainer>
               <BannerTitle>
-                {nfts[0].metadata.name.replace(/[0-9]*$/, "")}
+                {collectionInfo?.project?.title ||
+                  nfts[0].metadata.name.replace(/[0-9]*$/, "")}
               </BannerTitle>
             </BannerTitleContainer>
           </BannerContainer>

@@ -30,6 +30,8 @@ import { UnknownAction } from "@reduxjs/toolkit";
 import { BigNumber } from "bignumber.js";
 import CryptoIconPlaceholder from "../CryptoIconPlaceholder";
 import { intToColorCode } from "../../utils/string";
+import { getToken } from "../../store/tokenSlice";
+import axios from "axios";
 
 const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
@@ -79,6 +81,88 @@ const StyledTableRow = mstyled(TableRow)(({ theme }) => {
   };
 });
 
+interface NFTTableRowProps {
+  key: any;
+  relativeTime: string;
+  contractId: number;
+  tokenId: number;
+  activity: string;
+  price: string;
+  currency: number;
+  symbol: string;
+  seller?: string;
+  buyer?: string;
+}
+
+const NFTTableRow: React.FC<NFTTableRowProps> = ({
+  key,
+  relativeTime,
+  contractId,
+  tokenId,
+  activity,
+  price,
+  currency,
+  symbol,
+  seller,
+  buyer,
+}) => {
+  const [token, setToken] = React.useState<Token | null>(null);
+  useEffect(() => {
+    getToken(contractId, tokenId).then((token) => {
+      const metadata = JSON.parse(token.metadata || "{}");
+      setToken({ ...token, metadata });
+    });
+  }, []);
+  return (
+    <StyledTableRow hover={true} key={key}>
+      <StyledTableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+        {relativeTime}
+      </StyledTableCell>
+      <StyledTableCell>
+        <Link to={`/collection/${contractId}/token/${tokenId}`}>
+          <StyledImage
+            sx={{
+              backgroundImage: `url(${token?.metadata?.image || ""})`,
+            }}
+          />
+        </Link>
+      </StyledTableCell>
+      <StyledTableCell>
+        <Link to={`/collection/${contractId}/token/${tokenId}`}>
+          {token?.metadata?.name || ""}
+        </Link>
+      </StyledTableCell>
+      <StyledTableCell>{activity}</StyledTableCell>
+      <StyledTableCell>
+        {seller ? (
+          <Link to={`/account/${seller}`}>{compactAddress(seller)}</Link>
+        ) : null}
+      </StyledTableCell>
+      <StyledTableCell>
+        {buyer ? (
+          <Link to={`/account/${buyer}`}>{compactAddress(buyer)}</Link>
+        ) : (
+          "-"
+        )}
+      </StyledTableCell>
+      <StyledTableCell>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <CryptoIconPlaceholder color={intToColorCode(currency)} />
+          <span>
+            {price} {symbol}
+          </span>
+        </Box>
+      </StyledTableCell>
+    </StyledTableRow>
+  );
+};
+
 interface Props {
   sales: Sale[];
   listings: ListingI[];
@@ -97,10 +181,12 @@ const NFTCollectionTable: React.FC<Props> = ({
   limit = 0,
 }) => {
   const dispatch = useDispatch();
+
+  /* Smart Tokens */
   const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
-  const smartTokenStatus = useSelector(
-    (state: any) => state.smartTokens.status
-  );
+  // const smartTokenStatus = useSelector(
+  //   (state: any) => state.smartTokens.status
+  // );
   useEffect(() => {
     dispatch(getSmartTokens() as unknown as UnknownAction);
   }, [dispatch]);
@@ -146,17 +232,18 @@ const NFTCollectionTable: React.FC<Props> = ({
         </TableHead>
         <TableBody>
           {sortedList.map((sale, index) => {
+            console.log({ sale });
             const token =
               tokens.find(
                 (token) =>
                   token.tokenId === sale.tokenId &&
                   token.contractId === sale.collectionId
               ) || ({} as Token);
+            console.log({ token });
             const collection =
               collections.find(
                 (collection) => collection.contractId === sale.collectionId
               ) || ({} as CollectionI);
-
             const collectionsMissingImage = [35720076];
             const url = !collectionsMissingImage.includes(sale.collectionId)
               ? `https://prod.cdn.highforge.io/i/${encodeURIComponent(
@@ -177,68 +264,22 @@ const NFTCollectionTable: React.FC<Props> = ({
                 .toNumber()
             );
             return (
-              <StyledTableRow hover={true} key={index}>
-                <StyledTableCell
-                  sx={{ display: { xs: "none", md: "table-cell" } }}
-                >
-                  {moment.unix(sale.timestamp).fromNow()}
-                </StyledTableCell>
-                <StyledTableCell>
-                  <Link
-                    to={`/collection/${collection.contractId}/token/${token.tokenId}`}
-                  >
-                    <StyledImage
-                      sx={{
-                        backgroundImage: `url(${url})`,
-                      }}
-                    />
-                  </Link>
-                </StyledTableCell>
-                <StyledTableCell>
-                  <Link
-                    to={`/collection/${collection.contractId}/token/${token.tokenId}`}
-                  >
-                    {token?.metadata?.name || ""}
-                  </Link>
-                </StyledTableCell>
-                <StyledTableCell>
-                  {sale.activity[0].toUpperCase() + sale.activity.slice(1)}
-                </StyledTableCell>
-                <StyledTableCell>
-                  <Link to={`/account/${sale.seller}`}>
-                    {compactAddress(sale.seller)}
-                  </Link>
-                </StyledTableCell>
-                <StyledTableCell>
-                  {sale.buyer ? (
-                    <Link to={`/account/${sale?.buyer}`}>
-                      {compactAddress(sale?.buyer)}
-                    </Link>
-                  ) : (
-                    "-"
-                  )}
-                </StyledTableCell>
-                <StyledTableCell>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <CryptoIconPlaceholder
-                      color={intToColorCode(
-                        currency?.tokenId === "0"
-                          ? 0
-                          : currency?.contractId || 0
-                      )}
-                    />
-                    <span>
-                      {price} {currencySymbol}
-                    </span>
-                  </Box>
-                </StyledTableCell>
-              </StyledTableRow>
+              <NFTTableRow
+                key={index}
+                relativeTime={moment.unix(sale.timestamp).fromNow()}
+                contractId={sale.collectionId}
+                tokenId={sale.tokenId}
+                activity={
+                  sale.activity[0].toUpperCase() + sale.activity.slice(1)
+                }
+                seller={sale.seller}
+                buyer={sale.buyer}
+                price={price}
+                currency={
+                  currency?.tokenId === "0" ? 0 : currency?.contractId || 0
+                }
+                symbol={currencySymbol}
+              />
             );
           })}
         </TableBody>

@@ -13,6 +13,26 @@ export interface TokensState {
   error: string | null;
 }
 
+export const getToken = async (contractId: number, tokenId: number) => {
+  const token = await db.table("tokens").get(`${contractId}-${tokenId}`);
+  if (token) return token;
+  const response = await axios.get(
+    `${ARC72_INDEXER_API}/nft-indexer/v1/tokens/${contractId}/${tokenId}`
+  );
+  const newToken = response.data;
+  await db.table("tokens").put({
+    pk: `${newToken.contractId}-${newToken.tokenId}`,
+    owner: newToken.owner,
+    approved: newToken.approved,
+    tokenId: newToken.tokenId,
+    contractId: newToken.contractId,
+    mintRound: newToken["mint-round"],
+    metadataURI: newToken?.metadataURI || "",
+    metadata: newToken?.metadata,
+  });
+  return newToken;
+};
+
 export const getTokens = createAsyncThunk<
   Token[],
   void,

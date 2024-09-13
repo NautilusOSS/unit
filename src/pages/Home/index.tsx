@@ -22,6 +22,7 @@ import { getRankings } from "../../utils/mp";
 import { getSmartTokens } from "../../store/smartTokenSlice";
 import Grid2 from "@mui/material/Unstable_Grid2"; // Grid version 2
 import LazyLoad from "react-lazy-load";
+import axios from "axios";
 
 const ActivityFilterContainer = styled.div`
   display: flex;
@@ -167,9 +168,23 @@ const SectionBanners = styled.div`
   margin-top: 45px;
 `;
 
-const pageSize = 24;
+const pageSize = 8;
 
 export const Home: React.FC = () => {
+  /* Collection Info */
+  const [collectionInfo, setCollectionInfo] = React.useState<any>(null);
+  useEffect(() => {
+    try {
+      axios
+        .get(`https://test-voi.api.highforge.io/projects`)
+        .then((res: any) => res.data.results)
+        .then(setCollectionInfo);
+    } catch (e) {
+      console.log(e);
+    }
+  }, []);
+  console.log({ collectionInfo });
+
   const [showing, setShowing] = useState<number>(pageSize);
 
   /* Activity */
@@ -212,6 +227,42 @@ export const Home: React.FC = () => {
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
   );
+
+  /* Tokens */
+  const tokens = useSelector((state: any) => state.tokens.tokens);
+  const tokenStatus = useSelector((state: any) => state.tokens.status);
+  useEffect(() => {
+    dispatch(getTokens() as unknown as UnknownAction);
+  }, [dispatch]);
+  /* Sales */
+  const sales = useSelector((state: any) => state.sales.sales);
+  const salesStatus = useSelector((state: any) => state.sales.status);
+  useEffect(() => {
+    dispatch(getSales() as unknown as UnknownAction);
+  }, [dispatch]);
+  /* Collections */
+  const collections = useSelector(
+    (state: any) => state.collections.collections
+  );
+  const collectionStatus = useSelector(
+    (state: any) => state.collections.status
+  );
+  useEffect(() => {
+    dispatch(getCollections() as unknown as UnknownAction);
+  }, [dispatch]);
+  /* Rankings */
+  const rankings: any = useMemo(() => {
+    if (
+      !tokens ||
+      !sales ||
+      !listings ||
+      tokenStatus !== "succeeded" ||
+      salesStatus !== "succeeded" ||
+      collectionStatus !== "succeeded"
+    )
+      return null;
+    return getRankings(tokens, collections, sales, listings, 1, smartTokens);
+  }, [sales, tokens, collections, listings]);
 
   const navigate = useNavigate();
 
@@ -261,28 +312,48 @@ export const Home: React.FC = () => {
                     </Grid2>
                   );
                 })}
-              </Grid2>
-              <SectionButtonContainer sx={{ mt: 5 }}>
-                <SectionButton
-                  onClick={() => setShowing(showing + pageSize)}
-                  className={isDarkTheme ? "button-dark" : "button-light"}
-                >
-                  <SectionMoreButtonText
-                    className={
-                      isDarkTheme ? "button-text-dark" : "button-text-light"
-                    }
+                <Grid2>
+                  <SectionButtonContainer
+                    sx={{ height: "305px", width: "305px" }}
                   >
-                    View More
-                  </SectionMoreButtonText>
-                </SectionButton>
-              </SectionButtonContainer>
+                    <SectionButton
+                      onClick={() => setShowing(showing + pageSize * 2)}
+                      className={isDarkTheme ? "button-dark" : "button-light"}
+                    >
+                      <SectionMoreButtonText
+                        className={
+                          isDarkTheme ? "button-text-dark" : "button-text-light"
+                        }
+                      >
+                        View More
+                      </SectionMoreButtonText>
+                    </SectionButton>
+                  </SectionButtonContainer>
+                </Grid2>
+              </Grid2>
+              {/*
+                <SectionButtonContainer sx={{ mt: 5 }}>
+                  <SectionButton
+                    onClick={() => setShowing(showing + pageSize * 2)}
+                    className={isDarkTheme ? "button-dark" : "button-light"}
+                  >
+                    <SectionMoreButtonText
+                      className={
+                        isDarkTheme ? "button-text-dark" : "button-text-light"
+                      }
+                    >
+                      View More
+                    </SectionMoreButtonText>
+                  </SectionButton>
+                </SectionButtonContainer>
+                    */}
             </>
           ) : (
             <div>"No NFTs available for sale."</div>
           )}
 
           {/* Top Collections */}
-          {false ? (
+          {true ? (
             <>
               <SectionHeading>
                 <SectionTitle className={isDarkTheme ? "dark" : "light"}>
@@ -312,14 +383,19 @@ export const Home: React.FC = () => {
                   </SectionMoreButtonContainer>
                 </Stack>
               </SectionHeading>
-              {/*<RankingList
-                rankings={rankings}
-                selectedOption={selectedOption}
-                        />*/}
+              {rankings ? (
+                <RankingList
+                  rankings={rankings}
+                  selectedOption="all"
+                  collectionInfo={collectionInfo}
+                />
+              ) : (
+                "Loading..."
+              )}
             </>
           ) : null}
           {/* Activity */}
-          {false ? (
+          {true ? (
             <>
               <SectionHeading>
                 <Stack
@@ -330,7 +406,7 @@ export const Home: React.FC = () => {
                   <SectionTitle className={isDarkTheme ? "dark" : "light"}>
                     Activity
                   </SectionTitle>
-                  <ActivityFilterContainer>
+                  {/*<ActivityFilterContainer>
                     {[
                       {
                         label: "All",
@@ -362,14 +438,14 @@ export const Home: React.FC = () => {
                         </Filter>
                       );
                     })}
-                  </ActivityFilterContainer>
+                  </ActivityFilterContainer>*/}
                 </Stack>
                 <Stack
                   direction="row"
                   spacing={2}
                   sx={{ alignItems: "center" }}
                 >
-                  <SectionMoreButtonContainer>
+                  {/*<SectionMoreButtonContainer>
                     <SectionMoreButton
                       className={isDarkTheme ? "button-dark" : "button-light"}
                     >
@@ -385,17 +461,19 @@ export const Home: React.FC = () => {
                         </SectionMoreButtonText>
                       </Link>
                     </SectionMoreButton>
-                  </SectionMoreButtonContainer>
+                        </SectionMoreButtonContainer>*/}
                 </Stack>
               </SectionHeading>
-              {/*<NFTSaleActivityTable
-                sales={sales}
-                tokens={tokens}
-                collections={collections}
-                listings={listings}
-                activeFilter={activeFilter}
-                limit={10}
-                        />*/}
+              {
+                <NFTSaleActivityTable
+                  sales={sales}
+                  tokens={tokens}
+                  collections={collections}
+                  listings={listings}
+                  activeFilter={activeFilter}
+                  limit={10}
+                />
+              }
             </>
           ) : null}
           {/* Banners */}

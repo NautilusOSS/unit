@@ -298,7 +298,6 @@ const CartNftCard: React.FC<NFTCardProps> = ({
     const price = priceBn.multipliedBy(new BigNumber(currency.price));
     return formatter.format(price.toNumber());
   }, [currency, priceBn]);
-  console.log({ currency, priceBn, priceNormal });
 
   const handleBuyButtonClick = async () => {
     try {
@@ -405,9 +404,7 @@ const CartNftCard: React.FC<NFTCardProps> = ({
       // -------------------------------------
       const { algodClient, indexerClient } = getAlgorandClients();
       let customR;
-      for (const p1 of /* skip ensure */ [0, 1]) {
-        const skipEnsure = p1 === 0;
-        console.log({ skipEnsure, pool });
+      for (const skipEnsure of [true, false]) {
         if (pool) {
           const {
             contractId: poolId,
@@ -483,7 +480,6 @@ const CartNftCard: React.FC<NFTCardProps> = ({
 
         if (customR.success) break;
       }
-      console.log({ customR });
       if (!customR.success) throw new Error("custom failed at end"); // abort
       // -------------------------------------
       // SIGM HERE

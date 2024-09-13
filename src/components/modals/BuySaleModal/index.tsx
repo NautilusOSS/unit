@@ -10,7 +10,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useWallet } from "@txnlab/use-wallet";
-import { arc200 } from "ulujs";
+import { CONTRACT, abi, arc200 } from "ulujs";
 import { getAlgorandClients } from "../../../wallets";
 import { useDispatch, useSelector } from "react-redux";
 import { UnknownAction } from "@reduxjs/toolkit";
@@ -18,6 +18,7 @@ import { getSmartTokens } from "../../../store/smartTokenSlice";
 import { NFTIndexerListingI, TokenType } from "../../../types";
 import { BigNumber } from "bignumber.js";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
@@ -145,7 +146,7 @@ const BuySaleModal: React.FC<BuySaleModalProps> = ({
       });
   }, []);
 
-  const { activeAccount } = useWallet();
+  const { activeAccount, signTransactions, sendTransactions } = useWallet();
   const [netBalance, setNetBalance] = useState("0");
   useEffect(() => {
     if (!activeAccount || paymentAltTokenId !== "0" || !open) return;
@@ -205,7 +206,26 @@ const BuySaleModal: React.FC<BuySaleModalProps> = ({
       .toFixed(6);
   }, [displayBalance]);
 
-  console.log({ discount, price, currency });
+  const [manager, setManager] = useState<string>();
+  useEffect(() => {
+    if (!activeAccount) return;
+    const { algodClient, indexerClient } = getAlgorandClients();
+    const ci = new CONTRACT(
+      Number(listing.mpContractId),
+      algodClient,
+      indexerClient,
+      abi.mp,
+      {
+        addr: activeAccount.address,
+        sk: new Uint8Array(0),
+      }
+    );
+    ci.manager().then((res: any) => {
+      if (res.success) {
+        setManager(res.returnValue);
+      }
+    });
+  }, [activeAccount]);
 
   const canBuy = useMemo(() => {
     return new BigNumber(balance)
@@ -216,6 +236,36 @@ const BuySaleModal: React.FC<BuySaleModalProps> = ({
   const handleSave = async (pool: any, discount: any) => {
     await onSave(pool, discount);
     handleClose();
+  };
+
+  const handleDelete = async () => {
+    if (!activeAccount) return;
+    const { algodClient, indexerClient } = getAlgorandClients();
+    const ci = new CONTRACT(
+      Number(listing.mpContractId),
+      algodClient,
+      indexerClient,
+      abi.mp,
+      {
+        addr: activeAccount.address,
+        sk: new Uint8Array(0),
+      }
+    );
+    ci.setFee(2000);
+    const res = await ci.a_sale_deleteListing(listing.mpListingId);
+    if (res.success) {
+      await toast.promise(
+        signTransactions(
+          res.txns.map((t: string) => new Uint8Array(Buffer.from(t, "base64")))
+        )
+          .then(sendTransactions)
+          .then(() => handleClose()),
+        {
+          pending: "Transaction pending...",
+          success: "Transaction successful!",
+        }
+      );
+    }
   };
 
   return (
@@ -365,6 +415,17 @@ const BuySaleModal: React.FC<BuySaleModalProps> = ({
                       }
                     >
                       Buy {discount} VOI + {displayBalance} {currency}
+                    </Button>
+                  ) : null}
+                  {activeAccount?.address === manager ? (
+                    <Button
+                      size="large"
+                      fullWidth
+                      variant="outlined"
+                      color="warning"
+                      onClick={handleDelete}
+                    >
+                      Delete
                     </Button>
                   ) : null}
                   <Button

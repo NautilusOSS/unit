@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { styled as mstyled } from "@mui/system";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -15,6 +15,7 @@ import styled from "styled-components";
 import { collections } from "../../contants/games";
 import { Link, useNavigate } from "react-router-dom";
 import { Style } from "@mui/icons-material";
+import axios from "axios";
 
 export interface Player {
   collectionId: number;
@@ -23,11 +24,6 @@ export interface Player {
   score: number;
   scoreUnit: string;
   floorPrice: number;
-}
-
-interface Props {
-  rankings: Player[];
-  selectedOption: string | null;
 }
 
 const StyledGrid = styled(Grid)`
@@ -149,7 +145,18 @@ const filterGames = (ranking: Player) =>
     .map((el) => el.applicationID)
     .some((id) => id === ranking.collectionId);
 
-const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
+interface Props {
+  rankings: Player[];
+  selectedOption: string | null;
+  collectionInfo: any[];
+}
+
+const RankingsTable: React.FC<Props> = ({
+  rankings,
+  selectedOption,
+  collectionInfo,
+}) => {
+  console.log({ collectionInfo });
   const navigate = useNavigate();
   /* Theme */
   const isDarkTheme = useSelector(
@@ -167,7 +174,7 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
   };
   const filteredRankings = useMemo(() => {
     return rankings.filter(filter());
-  }, [rankings, filter]);
+  }, [rankings, filter, collectionInfo]);
   return (
     <Grid container spacing={5}>
       <Grid item xs={12} lg={6}>
@@ -183,8 +190,16 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
               </VolumeContainer>
             </Stack>
           </StyledGrid2>
-          {[0, 1, 2, 3, 4].map((index) =>
-            filteredRankings[index] ? (
+          {[0, 1, 2, 3, 4].map((index) => {
+            const ranking = filteredRankings[index];
+            const collection = collectionInfo?.find(
+              (el) => `${el.applicationID}` === `${ranking.collectionId}`
+            );
+            const collectionName =
+              collection?.title ||
+              filteredRankings[index]?.name ||
+              "Collection Name";
+            return filteredRankings[index] ? (
               <StyledGrid
                 item
                 xs={12}
@@ -224,9 +239,7 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                         to={`/collection/${filteredRankings[index]?.collectionId}`}
                       >
                         <AccountName className={isDarkTheme ? "dark" : "light"}>
-                          {filteredRankings[index]?.name
-                            ? filteredRankings[index].name
-                            : "Collection Name"}
+                          {collectionName}
                         </AccountName>
                       </Link>
                       {filteredRankings[index]?.floorPrice > 0 ? (
@@ -269,8 +282,8 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                   <AccountMetricSubtext>VOI</AccountMetricSubtext>
                 </VolumeContainer>
               </StyledGrid>
-            ) : null
-          )}
+            ) : null;
+          })}
         </Grid>
       </Grid>
       <Grid item xs={12} lg={6} sx={{ display: { xs: "none", lg: "block" } }}>
@@ -286,8 +299,16 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
               </VolumeContainer>
             </Stack>
           </StyledGrid2>
-          {[5, 6, 7, 8, 9].map((index) =>
-            filteredRankings[index] ? (
+          {[5, 6, 7, 8, 9].map((index) => {
+            const ranking = filteredRankings[index];
+            const collection = collectionInfo?.find(
+              (el) => `${el.applicationID}` === `${ranking.collectionId}`
+            );
+            const collectionName =
+              collection?.title ||
+              filteredRankings[index]?.name ||
+              "Collection Name";
+            return filteredRankings[index] ? (
               <StyledGrid
                 item
                 xs={12}
@@ -323,9 +344,7 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                     />
                     <AccountInfo>
                       <AccountName className={isDarkTheme ? "dark" : "light"}>
-                        {filteredRankings[index]?.name
-                          ? filteredRankings[index].name
-                          : "Collection Name"}
+                        {collectionName}
                       </AccountName>
                       {filteredRankings[index]?.floorPrice > 0 ? (
                         <AccountMetric>
@@ -362,8 +381,10 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
                   <AccountMetricSubtext>VOI</AccountMetricSubtext>
                 </VolumeContainer>
               </StyledGrid>
-            ) : null
-          )}
+            ) : (
+              "Loading..."
+            );
+          })}
         </Grid>
       </Grid>
     </Grid>

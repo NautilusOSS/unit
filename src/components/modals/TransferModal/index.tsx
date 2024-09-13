@@ -69,7 +69,6 @@ const AddressModal: React.FC<AddressModalProps> = ({
       console.error(error);
     }
   }, [address]);
-  console.log({ address, balance });
 
   return (
     <Modal
