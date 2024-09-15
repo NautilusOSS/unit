@@ -229,40 +229,41 @@ export const Home: React.FC = () => {
   );
 
   /* Tokens */
-  const tokens = useSelector((state: any) => state.tokens.tokens);
-  const tokenStatus = useSelector((state: any) => state.tokens.status);
-  useEffect(() => {
-    dispatch(getTokens() as unknown as UnknownAction);
-  }, [dispatch]);
+  // const tokens = useSelector((state: any) => state.tokens.tokens);
+  // const tokenStatus = useSelector((state: any) => state.tokens.status);
+  // useEffect(() => {
+  //   dispatch(getTokens() as unknown as UnknownAction);
+  // }, [dispatch]);
   /* Sales */
-  const sales = useSelector((state: any) => state.sales.sales);
-  const salesStatus = useSelector((state: any) => state.sales.status);
-  useEffect(() => {
-    dispatch(getSales() as unknown as UnknownAction);
-  }, [dispatch]);
+  // const sales = useSelector((state: any) => state.sales.sales);
+  // const salesStatus = useSelector((state: any) => state.sales.status);
+  // useEffect(() => {
+  //   dispatch(getSales() as unknown as UnknownAction);
+  // }, [dispatch]);
   /* Collections */
-  const collections = useSelector(
-    (state: any) => state.collections.collections
-  );
-  const collectionStatus = useSelector(
-    (state: any) => state.collections.status
-  );
-  useEffect(() => {
-    dispatch(getCollections() as unknown as UnknownAction);
-  }, [dispatch]);
+  // const collections = useSelector(
+  //   (state: any) => state.collections.collections
+  // );
+  // const collectionStatus = useSelector(
+  //   (state: any) => state.collections.status
+  // );
+  // useEffect(() => {
+  //   dispatch(getCollections() as unknown as UnknownAction);
+  // }, [dispatch]);
+
   /* Rankings */
-  const rankings: any = useMemo(() => {
-    if (
-      !tokens ||
-      !sales ||
-      !listings ||
-      tokenStatus !== "succeeded" ||
-      salesStatus !== "succeeded" ||
-      collectionStatus !== "succeeded"
-    )
-      return null;
-    return getRankings(tokens, collections, sales, listings, 1, smartTokens);
-  }, [sales, tokens, collections, listings]);
+  // const rankings: any = useMemo(() => {
+  //   if (
+  //     !tokens ||
+  //     !sales ||
+  //     !listings ||
+  //     tokenStatus !== "succeeded" ||
+  //     salesStatus !== "succeeded" ||
+  //     collectionStatus !== "succeeded"
+  //   )
+  //     return null;
+  //   return getRankings(tokens, collections, sales, listings, 1, smartTokens);
+  // }, [sales, tokens, collections, listings]);
 
   const navigate = useNavigate();
 
@@ -353,7 +354,7 @@ export const Home: React.FC = () => {
           )}
 
           {/* Top Collections */}
-          {true ? (
+          {/*true ? (
             <>
               <SectionHeading>
                 <SectionTitle className={isDarkTheme ? "dark" : "light"}>
@@ -393,9 +394,9 @@ export const Home: React.FC = () => {
                 "Loading..."
               )}
             </>
-          ) : null}
+              ) : null*/}
           {/* Activity */}
-          {true ? (
+          {/*true ? (
             <>
               <SectionHeading>
                 <Stack
@@ -406,7 +407,7 @@ export const Home: React.FC = () => {
                   <SectionTitle className={isDarkTheme ? "dark" : "light"}>
                     Activity
                   </SectionTitle>
-                  {/*<ActivityFilterContainer>
+                  {<ActivityFilterContainer>
                     {[
                       {
                         label: "All",
@@ -438,14 +439,14 @@ export const Home: React.FC = () => {
                         </Filter>
                       );
                     })}
-                  </ActivityFilterContainer>*/}
+                  </ActivityFilterContainer>}
                 </Stack>
                 <Stack
                   direction="row"
                   spacing={2}
                   sx={{ alignItems: "center" }}
                 >
-                  {/*<SectionMoreButtonContainer>
+                  {<SectionMoreButtonContainer>
                     <SectionMoreButton
                       className={isDarkTheme ? "button-dark" : "button-light"}
                     >
@@ -461,7 +462,7 @@ export const Home: React.FC = () => {
                         </SectionMoreButtonText>
                       </Link>
                     </SectionMoreButton>
-                        </SectionMoreButtonContainer>*/}
+                        </SectionMoreButtonContainer>}
                 </Stack>
               </SectionHeading>
               {
@@ -475,7 +476,7 @@ export const Home: React.FC = () => {
                 />
               }
             </>
-          ) : null}
+            ) : null*/}
           {/* Banners */}
           {false ? (
             <>
