@@ -1,6 +1,6 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import themeReducer, { ThemeState } from "./themeSlice";
-import tokenReducer, { TokensState } from "./tokenSlice";
+import tokenReducer, { type TokensState } from "./tokenSlice";
 import collectionReducer, { CollectionsState } from "./collectionSlice";
 import saleReducer, { SalesState } from "./saleSlice";
 import dexReducer, { DexState } from "./dexSlice";

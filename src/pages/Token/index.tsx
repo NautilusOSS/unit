@@ -70,7 +70,7 @@ const ProjectLinkLabel = styled.div`
 `;
 
 const AvatarWithName = styled(Stack)`
-  dsplay: flex;
+  display: flex;
   align-items: center;
   color: #68727d;
   & .owner-name {

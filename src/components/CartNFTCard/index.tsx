@@ -1,9 +1,9 @@
 import React from "react";
 import styled from "styled-components";
 import { Avatar, Box, Stack, Tooltip } from "@mui/material";
-import { stringToColorCode } from "../../utils/string";
-import VoiIcon from "../../static/crypto-icons/voi/0.svg";
-import ViaIcon from "../../static/crypto-icons/voi/6779767.svg";
+// import { stringToColorCode } from "../../utils/string";
+// import VoiIcon from "../../static/crypto-icons/voi/0.svg";
+// import ViaIcon from "../../static/crypto-icons/voi/6779767.svg";
 import { ListedToken } from "../../types";
 import { useNavigate } from "react-router-dom";
 import BuySaleModal from "../modals/BuySaleModal";
