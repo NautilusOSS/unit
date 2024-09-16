@@ -684,7 +684,7 @@ export const Token: React.FC = () => {
                       <path
                         d="M39.6667 49H58.3334M58.3334 49L49 39.6667M58.3334 49L49 58.3334"
                         stroke="#161717"
-                        stroke-width="2"
+                        strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       />
