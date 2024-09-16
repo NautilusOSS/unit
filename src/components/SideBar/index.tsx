@@ -17,11 +17,17 @@ import { RootState } from "@/store/store";
 import { Menu } from "@mui/icons-material";
 import ThemeSwitcher from "../ThemeSelector/light-dark-mode-switcher";
 import ConnectWallet from "../ConnectWallet";
+import { Profile } from "../Navbar/components";
+import { ActiveNavLink, NavLink, NavLinks } from "../Navbar/components.styled";
+import { linkLabels, navlinks } from "../Navbar/constants";
+import { useNavigate } from "react-router-dom";
 
 export function SideBar() {
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
   );
+  const navigate = useNavigate();
+
   const theme = isDarkTheme ? "dark" : "light";
   return (
     <Sheet>
@@ -41,12 +47,43 @@ export function SideBar() {
             Explore Nautilus
           </SheetDescription>
         </SheetHeader>
-        <ul className="flex flex-col gap-4 py-4">
-            <li></li>
-        </ul>
+        <NavLinks className="!flex !flex-col !items-start !justify-start !gap-2 !my-8">
+            {navlinks.map((item, key) =>
+              linkLabels[location.pathname] === item.label ? (
+                <SheetClose asChild>
+                    <ActiveNavLink
+                    className="w-full text-start flex items-start flex-col"
+                      key={`${key}_${item?.label}`}
+                      onClick={() => {
+                        navigate(item.href);
+                      }}
+                    >
+                      {item.label}
+                      <div className={`divide-solid divide-x w-full h-[1px] bg-primary rounded`}></div>
+                    </ActiveNavLink>
+                </SheetClose>
+              ) : (
+                <SheetClose asChild>
+                    <NavLink
+                    className="w-full text-start flex items-start flex-col"
+                      key={`${key}_${item?.label}`}
+                      style={{ color: isDarkTheme ? "#717579" : undefined }}
+                      onClick={() => {
+                        navigate(item.href);
+                      }}
+                    >
+                      {item.label}
+                      <div className={`divide-solid divide-x w-full h-[1px] bg-primary rounded`}></div>
+                    </NavLink>
+                </SheetClose>
+              )
+            )}
+          </NavLinks>
         <SheetFooter>
           <SheetClose asChild>
-            <ConnectWallet  />
+            <Profile>
+              <ConnectWallet />
+            </Profile>
           </SheetClose>
         </SheetFooter>
       </SheetContent>

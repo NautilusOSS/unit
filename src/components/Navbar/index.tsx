@@ -20,14 +20,24 @@ import ConnectWallet from "../ConnectWallet";
 // import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 // import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
-import { arc200 } from "ulujs";
-import { TOKEN_VIA } from "../../contants/tokens";
-import { getAlgorandClients } from "../../wallets";
-import { arc200_balanceOf } from "ulujs/types/arc200";
+
 import VOIIcon from "/src/static/crypto-icons/voi/0.svg";
 import VIAIcon from "/src/static/crypto-icons/voi/6779767.svg";
 import { SideBar } from "../SideBar";
-import { LgIconLink } from "./components.styled";
+import {
+  AccountContainer,
+  AccountIconContainer,
+  ActiveNavLink,
+  LgIconLink,
+  NavContainer,
+  NavLink,
+  NavLinks,
+  NavLogo,
+  NavRoot,
+  StyledLink,
+} from "./components.styled";
+import { useAccountInfo } from "./hooks";
+import { linkLabels, navlinks } from "./constants";
 
 const AccountIcon = () => {
   return (
@@ -49,107 +59,6 @@ const AccountIcon = () => {
   );
 };
 
-const StyledLink = styled(Link)`
-  text-decoration: none;
-  color: inherit;
-`;
-
-const AccountContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 13px;
-`;
-
-const Button = styled.div`
-  cursor: pointer;
-`;
-
-const AccountIconContainer = styled(Button)`
-  display: flex;
-  width: 45px;
-  height: 45px;
-  /*
-  padding: var(--Main-System-8px, 8px);
-  */
-  justify-content: center;
-  align-items: center;
-  gap: var(--Main-System-10px, 10px);
-  border-radius: 100px;
-  border: 1px solid #93f;
-`;
-
-const NavRoot = styled.nav`
-  color: black;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  padding: 20px 0px;
-  border-bottom: 1px solid #eaebf0;
-  backdrop-filter: blur(32px);
-`;
-
-const NavContainer = styled.div`
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0px 10px;
-  @media screen and (min-width: 640px) {
-    padding: 0px 20px;
-  }
-  /* @media screen and (min-width: 960px) {
-    padding: 0px 20px;
-  } */
-`;
-
-const NavLogo = styled.img``;
-
-const NavLinks = styled.ul`
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
-  display: none;
-  align-items: center;
-  gap: 24px;
-  @media screen and (min-width: 960px) {
-    display: inline-flex;
-  }
-`;
-
-const NavLink = styled.a`
-  font-family: Nohemi, sans-serif;
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 22px;
-  letter-spacing: 0.1px;
-  text-align: left;
-  text-decoration: none;
-  color: #161717;
-  cursor: pointer;
-  &:hover {
-    color: #9933ff !important;
-  }
-  text-align: center;
-  padding-left: 6px;
-  padding-right: 6px;
-`;
-
-const ActiveNavLink = styled(NavLink)`
-  color: #9933ff;
-  border-bottom: 3px solid #9933ff;
-`;
-
-
-
-const ConnectButton = styled.svg`
-  cursor: pointer;
-`;
-
-const linkLabels: any = {
-  "/collection": "Collections",
-  "/listing": "Buy",
-};
 
 const Navbar = () => {
   const location = useLocation();
@@ -171,19 +80,13 @@ const Navbar = () => {
 
   /* Wallet */
 
-  const { providers, activeAccount, connectedAccounts, getAccountInfo } =
-    useWallet();
+  const { activeAccount, providers } = useWallet();
 
-  const [accInfo, setAccInfo] = React.useState<any>(null);
+  // const [accInfo, setAccInfo] = React.useState<any>(null);
   const [balance, setBalance] = React.useState<any>(null);
 
-  // EFFECT: get voi balance
-  useEffect(() => {
-    if (activeAccount && providers && providers.length >= 3) {
-      getAccountInfo().then(setAccInfo);
-    }
-  }, [activeAccount, providers]);
-
+  // EFFECT: get voi account info
+  const { data: accInfo, isLoading: isBalanceLoading } = useAccountInfo();
   // EFFECT: get via balance
   // useEffect(() => {
   //   if (activeAccount && providers && providers.length >= 3) {
@@ -247,16 +150,7 @@ const Navbar = () => {
           }}
         >
           <NavLinks>
-            {[
-              {
-                label: "Buy",
-                href: "/listing",
-              },
-              {
-                label: "Collections",
-                href: "/collection",
-              },
-            ].map((item, key) =>
+            {navlinks.map((item, key) =>
               linkLabels[location.pathname] === item.label ? (
                 <ActiveNavLink
                   key={`${key}_${item?.label}`}

@@ -10,6 +10,7 @@ import { getProviderInit } from "./wallets";
 import { ToastContainer } from "react-toastify";
 import styled from "styled-components";
 import "react-toastify/dist/ReactToastify.css";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const BackgroundLayer = styled.div`
   width: 100%;
@@ -44,25 +45,29 @@ const AppContainer: React.FC<AppContainerProps> = ({ children }) => {
   );
 };
 
+const queryClient = new QueryClient();
+
 const App: React.FC = () => {
   const providers = useInitializeProviders(getProviderInit());
   return (
     <WalletProvider value={providers}>
-      <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor}>
-          <AppContainer>
-            <Router>
-              <Navbar />
-              <Routes>
-                {routes.map((el,key) => (
-                  <Route key={key} path={el.path} Component={el.Component} />
-                ))}
-              </Routes>
-            </Router>
-          </AppContainer>
-        </PersistGate>
-      </Provider>
-      <ToastContainer />
+      <QueryClientProvider client={queryClient}>
+        <Provider store={store}>
+          <PersistGate loading={null} persistor={persistor}>
+            <AppContainer>
+              <Router>
+                <Navbar />
+                <Routes>
+                  {routes.map((el, key) => (
+                    <Route key={key} path={el.path} Component={el.Component} />
+                  ))}
+                </Routes>
+              </Router>
+            </AppContainer>
+          </PersistGate>
+        </Provider>
+        <ToastContainer />
+      </QueryClientProvider>
     </WalletProvider>
   );
 };

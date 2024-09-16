@@ -17,7 +17,6 @@ const LayoutRoot = styled.div`
 interface LayoutProps {
   children: React.ReactNode;
 }
-const queryClient = new QueryClient();
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isDarkTheme = useSelector(
@@ -31,10 +30,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         className={`${theme}`}
         style={{ background: isDarkTheme ? "rgb(22, 23, 23)" : undefined }}
       >
-        <QueryClientProvider client={queryClient}>
           <header></header>
           <main>{children}</main>
-        </QueryClientProvider>
       </LayoutRoot>
       <Footer />
     </>
