@@ -273,8 +273,8 @@ export const Home: React.FC = () => {
     <Layout>
       {!isLoading ? (
         <div>
-          <SectionHeading>
-            <SectionTitle className={isDarkTheme ? "dark" : "light"}>
+          <SectionHeading className="flex flex-col justify-items-start !items-start gap-2 sm:flex-row ">
+            <SectionTitle className={`${isDarkTheme ? "dark" : "light"} `}>
               New Listings
             </SectionTitle>
             <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>

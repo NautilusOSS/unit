@@ -26,6 +26,8 @@ import { getAlgorandClients } from "../../wallets";
 import { arc200_balanceOf } from "ulujs/types/arc200";
 import VOIIcon from "/src/static/crypto-icons/voi/0.svg";
 import VIAIcon from "/src/static/crypto-icons/voi/6779767.svg";
+import { SideBar } from "../SideBar";
+import { LgIconLink } from "./components.styled";
 
 const AccountIcon = () => {
   return (
@@ -92,10 +94,13 @@ const NavContainer = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0px 80px;
-  @media screen and (min-width: 960px) {
+  padding: 0px 10px;
+  @media screen and (min-width: 640px) {
     padding: 0px 20px;
   }
+  /* @media screen and (min-width: 960px) {
+    padding: 0px 20px;
+  } */
 `;
 
 const NavLogo = styled.img``;
@@ -135,16 +140,7 @@ const ActiveNavLink = styled(NavLink)`
   border-bottom: 3px solid #9933ff;
 `;
 
-const LgIconLink = styled.a`
-  display: none;
-  cursor: pointer;
-  &:hover {
-    color: #9933ff;
-  }
-  @media screen and (min-width: 600px) {
-    display: inline-flex;
-  }
-`;
+
 
 const ConnectButton = styled.svg`
   cursor: pointer;
@@ -238,7 +234,10 @@ const Navbar = () => {
     >
       <NavContainer>
         <Link to="/">
-          <NavLogo className="w-40 lg:w-48 " src={isDarkTheme ? DarkLogo : LightLogo} />
+          <NavLogo
+            className="w-40 lg:w-48 "
+            src={isDarkTheme ? DarkLogo : LightLogo}
+          />
         </Link>
         <div
           style={{
@@ -269,8 +268,7 @@ const Navbar = () => {
                 </ActiveNavLink>
               ) : (
                 <NavLink
-                key={`${key}_${item?.label}`}
-
+                  key={`${key}_${item?.label}`}
                   style={{ color: isDarkTheme ? "#717579" : undefined }}
                   onClick={() => {
                     navigate(item.href);
@@ -414,8 +412,13 @@ const Navbar = () => {
                 </AccountIconContainer>
               </Link>
             ) : null}
-            <ConnectWallet />
+            <div className="hidden md:block">
+              <ConnectWallet />
+            </div>
           </AccountContainer>
+          <div className="md:hidden">
+            <SideBar />
+          </div>
         </div>
       </NavContainer>
     </NavRoot>

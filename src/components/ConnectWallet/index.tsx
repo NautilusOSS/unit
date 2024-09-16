@@ -57,6 +57,7 @@ const AccountDropdown = styled(Button)`
   gap: 16px;
   border-radius: 32px;
   border: 1px solid #93f;
+  width: fit-content;
   /* Shadow/XSM */
   box-shadow: 0px 1px 2px 0px rgba(16, 24, 40, 0.04);
   &:hover {
@@ -155,7 +156,7 @@ const AccountContainer = styled.div`
 
 const AccountNameContainer = styled.span`
   display: flex;
-  width: 200px
+  width: 200px;
   align-items: center;
   gap: var(--Main-System-10px, 10px);
   flex-shrink: 0;
@@ -491,7 +492,7 @@ function BasicMenu() {
             handleClick(e);
           }}
         >
-          <AccountDropdownLabel className="hidden sm:block">Connect</AccountDropdownLabel>
+          <AccountDropdownLabel className="">Connect</AccountDropdownLabel>
           <WalletIconContainer>
             <WalletIcon2 />
           </WalletIconContainer>

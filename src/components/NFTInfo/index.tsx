@@ -29,7 +29,7 @@ import algosdk from "algosdk";
 import { decodePrice, decodeTokenId } from "../../utils/mp";
 import NftCard from "../../components/NFTCard";
 import BuySaleModal from "../../components/modals/BuySaleModal";
-
+// @ts-ignore
 import { CONTRACT, arc72, arc200, mp, abi, swap } from "ulujs";
 import { getAlgorandClients } from "../../wallets";
 import { ListingBoxCost, ctcInfoMp206 } from "../../contants/mp";

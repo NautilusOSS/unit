@@ -17,19 +17,15 @@ import { toast } from "react-toastify";
 import { useWallet } from "@txnlab/use-wallet";
 import algosdk from "algosdk";
 import { getAlgorandClients } from "../../wallets";
-import { CONTRACT, abi, mp, swap } from "ulujs";
-import { ctcInfoMp206 } from "../../contants/mp";
-import { useDispatch, useSelector } from "react-redux";
-import { getSmartTokens } from "../../store/smartTokenSlice";
-import { UnknownAction } from "@reduxjs/toolkit";
+import { CONTRACT, abi, mp,   swap } from "ulujs";
 import { BigNumber } from "bignumber.js";
-import { decodeRoyalties } from "../../utils/hf";
 import { QUEST_ACTION, getActions, submitAction } from "../../config/quest";
 import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
 import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
 import { uluClient } from "../../utils/contract";
 import { zeroAddress } from "../../contants/accounts";
 import { TOKEN_WVOI2 } from "../../contants/tokens";
+import { useSelector } from "react-redux";
 
 const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
@@ -447,7 +443,7 @@ const CartNftCard: React.FC<NFTCardProps> = ({
               contractId: outToken?.contractId,
               symbol: outToken?.symbol,
               decimals: `${outToken?.decimals}`,
-            }
+            },
           );
           if (!swapR.success) throw new Error("swap failed");
           const returnValue = swapR.response.txnGroups[0].txnResults
