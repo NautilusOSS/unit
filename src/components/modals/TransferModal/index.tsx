@@ -11,6 +11,9 @@ import {
 } from "@mui/material";
 import { useWallet } from "@txnlab/use-wallet";
 import { getAlgorandClients } from "../../../wallets";
+import { MListedNFTTokenI } from "../../../types";
+import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
+import CartNftCard from "../../CartNFTCard";
 
 interface AddressModalProps {
   open: boolean;
@@ -19,9 +22,11 @@ interface AddressModalProps {
   onSave: (address: string, amount: string) => Promise<void>;
   title?: string;
   buttonText?: string;
+  nfts: MListedNFTTokenI[];
 }
 
 const AddressModal: React.FC<AddressModalProps> = ({
+  nfts,
   open,
   loading,
   handleClose,
@@ -64,7 +69,6 @@ const AddressModal: React.FC<AddressModalProps> = ({
       console.error(error);
     }
   }, [address]);
-  console.log({ address, balance });
 
   return (
     <Modal
@@ -90,7 +94,24 @@ const AddressModal: React.FC<AddressModalProps> = ({
         <h2 id="address-modal-title">{title}</h2>
         {!loading ? (
           <>
-            <Box
+            <Box>
+              <Grid2
+                container
+                spacing={2}
+                sx={{
+                  height: "300px",
+                  overflow: "hidden",
+                  overflowY: "scroll",
+                }}
+              >
+                {nfts.map((t: MListedNFTTokenI) => (
+                  <Grid2>
+                    <CartNftCard token={t} size="small" imageOnly={true} />
+                  </Grid2>
+                ))}
+              </Grid2>
+            </Box>
+            {/*<Box
               sx={{
                 p: 5,
                 mt: 2,
@@ -108,19 +129,19 @@ const AddressModal: React.FC<AddressModalProps> = ({
                 disabled
                 margin="normal"
               />
-            </Box>
+            </Box>*/}
             <Box
               sx={{
-                p: 5,
+                //p: 5,
                 mt: 2,
-                border: "1px solid lightgray",
-                borderRadius: "25px",
+                //border: "1px solid lightgray",
+                // borderRadius: "25px",
               }}
             >
-              <InputLabel htmlFor="address-input">Recipient Address</InputLabel>
+              {/*<InputLabel htmlFor="address-input">Recipient Address</InputLabel>*/}
               <TextField
                 id="address-input"
-                label="Address"
+                label="Recipient Address"
                 variant="outlined"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}

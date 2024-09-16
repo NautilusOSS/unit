@@ -21,6 +21,13 @@ import NFTCard2 from "../../components/NFTCard2";
 import { getListings } from "../../store/listingSlice";
 import { getTokens } from "../../store/tokenSlice";
 import { getSales } from "../../store/saleSlice";
+import { getSmartTokens } from "../../store/smartTokenSlice";
+import { TokenType } from "../../types";
+import { BigNumber } from "bignumber.js";
+import CartNftCard from "../../components/CartNFTCard";
+import { ARC72_INDEXER_API } from "../../config/arc72-idx";
+
+const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
 const CryptoIcon = styled.img`
   width: 16px;
@@ -350,6 +357,15 @@ export const Token: React.FC = () => {
   useEffect(() => {
     dispatch(getTokens() as unknown as UnknownAction);
   }, [dispatch]);
+  /* Smart Tokens */
+  const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
+  const smartTokenStatus = useSelector(
+    (state: any) => state.smartTokens.status
+  );
+  useEffect(() => {
+    dispatch(getSmartTokens() as unknown as UnknownAction);
+  }, [dispatch]);
+  console.log({ smartTokens, smartTokenStatus });
   /* Listings */
   const listings = useSelector((state: any) => state.listings.listings);
   const listingsStatus = useSelector((state: any) => state.listings.status);
@@ -420,11 +436,33 @@ export const Token: React.FC = () => {
       console.log(e);
     }
   }, [id]);
+  console.log({ collectionInfo });
 
   const [nft, setNft] = React.useState<any>(null);
   useEffect(() => {
-    if (!collection || !tid || !collectionListings || !listings) return;
+    if (
+      !collection ||
+      !collectionInfo ||
+      !tid ||
+      !collectionListings ||
+      !listings
+    )
+      return;
     (async () => {
+      const {
+        data: {
+          tokens: [nftData],
+        },
+      } = await axios.get(
+        //`https://arc72-idx.nautilus.sh/nft-indexer/v1/tokens?contractId=${id}&tokenId=${tid}`
+        `https://arc72-idx.nftnavigator.xyz/nft-indexer/v1/tokens?contractId=${id}&tokenId=${tid}`
+      );
+      // TODO handle missing data
+
+      const metadata = JSON.parse(nftData.metadata || "{}");
+
+      if (!nftData) throw new Error("NFT not found");
+
       const { algodClient, indexerClient } = getAlgorandClients();
       const ciARC72 = new arc72(Number(id), algodClient, indexerClient, {
         acc: {
@@ -496,7 +534,8 @@ export const Token: React.FC = () => {
         ? decodeRoyalties(nft?.metadata?.royalties || "")
         : {};
       const displayNft = {
-        ...nft,
+        ...nftData,
+        metadata,
         royalties,
         approved: arc72_getApproved,
         owner: arc72_ownerOf,
@@ -507,7 +546,27 @@ export const Token: React.FC = () => {
       console.log(e);
       toast.error(e.message);
     });
-  }, [id, tid, collection, collectionListings, activeAccount]);
+  }, [id, tid, collection, collectionInfo, collectionListings, activeAccount]);
+  console.log({ nft });
+
+  /* NFT Navigator Listings */
+  const [listings2, setListings] = React.useState<any>([]);
+  React.useEffect(() => {
+    try {
+      const res = axios
+        .get(`${ARC72_INDEXER_API}/nft-indexer/v1/mp/listings`, {
+          params: {
+            active: true,
+            collectionId: id,
+          },
+        })
+        .then(({ data }) => {
+          setListings(data.listings);
+        });
+    } catch (e) {
+      console.log(e);
+    }
+  }, []);
 
   const listedNfts = useMemo(() => {
     const listedNfts =
@@ -574,7 +633,6 @@ export const Token: React.FC = () => {
               nft={nft}
               loading={isLoading}
             />
-
             <HeadingContainer>
               <HeadingText
                 className={isDarkTheme ? "dark" : "light"}
@@ -674,13 +732,40 @@ export const Token: React.FC = () => {
                   </svg>
                 </div>
               </div>
-              {moreNfts.map((el: any) => {
+              {listings2.reverse().map((el: any) => {
+                return (
+                  <CartNftCard
+                    token={el.token}
+                    listing={el}
+                    onClick={() => {
+                      navigate(
+                        `/collection/${el.token.contractId}/token/${el.token.tokenId}`
+                      );
+                      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+                    }}
+                  />
+                );
+              })}
+              {/*moreNfts.map((el: any) => {
                 const collectionsMissingImage = [35720076];
                 const url = !collectionsMissingImage.includes(el.contractId)
                   ? `https://prod.cdn.highforge.io/i/${encodeURIComponent(
                       el.metadataURI
                     )}?w=400`
                   : el.metadata.image;
+                const currency = smartTokens.find(
+                  (t: TokenType) =>
+                    `${t.contractId}` === `${el.listing.currency}`
+                );
+                const currencySymbol =
+                  currency?.tokenId === "0" ? "VOI" : currency?.symbol || "VOI";
+                const currencyDecimals =
+                  currency?.decimals === 0 ? 0 : currency?.decimals || 6;
+                const price = formatter.format(
+                  new BigNumber(el.listing.price)
+                    .dividedBy(new BigNumber(10).pow(currencyDecimals))
+                    .toNumber()
+                );
                 return (
                   <NFTCard2
                     style={{
@@ -690,8 +775,8 @@ export const Token: React.FC = () => {
                     }}
                     nftName={el?.metadata?.name}
                     image={url}
-                    price={(el.listing.price / 1e6).toLocaleString()}
-                    currency={"VIA"}
+                    price={price}
+                    currency={currencySymbol}
                     onClick={() => {
                       navigate(
                         `/collection/${el.contractId}/token/${el.tokenId}`
@@ -700,7 +785,7 @@ export const Token: React.FC = () => {
                     }}
                   />
                 );
-              })}
+              })*/}
             </NFTCards>
           </Stack>
         </Container>

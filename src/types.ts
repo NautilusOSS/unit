@@ -12,13 +12,17 @@ export interface CollectionTokenI extends TokenI {
   metadata: string;
 }
 
-export interface NFTIndexerToken extends CollectionTokenI {
+export interface NFTIndexerTokenI extends CollectionTokenI {
   ["mint-round"]: number;
+}
+
+export interface MListedNFTTokenI extends NFTIndexerTokenI {
+  listing?: NFTIndexerListingI;
 }
 
 export interface NFTIndexerTokenResponse {
   currentRound: number;
-  tokens: NFTIndexerToken[];
+  tokens: NFTIndexerTokenI[];
   ["next-token"]: string;
 }
 
@@ -62,6 +66,17 @@ export interface NFTIndexerCollectionResponse {
 
 /* Listing */
 
+export interface ListingTokenI {
+  approved: string;
+  contractId: string;
+  metadata: string;
+  metadataURI: string;
+  mintRound: number;
+  owner: string;
+  tokenId: string;
+  tokenIndex: number;
+}
+
 export interface NFTIndexerListingI {
   transactionId: string;
   mpContractId: number;
@@ -75,7 +90,7 @@ export interface NFTIndexerListingI {
   endTimestamp: number | null;
   royalty: number | null;
   collectionId: number;
-  token?: any;
+  token: ListingTokenI;
   delete?: any;
   sale?: any;
 }
@@ -95,9 +110,9 @@ export interface ListingI {
   collectionId: number;
   endTimestamp: number | null;
   royalty: number | null;
-  // nftindexerlistingi
   transactionId: string;
   createTimestamp: number;
+  token?: Token;
 }
 
 export interface ListingActivityI extends ListingI {
@@ -158,6 +173,8 @@ export interface RankingI {
   owners: number;
   items: number;
   sales: number;
+  listings: number;
+  //price: string | null;
 }
 
 /* Activity */
@@ -169,4 +186,19 @@ export interface ActivityI {
   seller: string;
   buyer: string;
   price: number;
+}
+
+/* Types for arc200 indexer api tokens */
+
+export interface TokenType {
+  contractId: number;
+  name: string;
+  symbol: string;
+  decimals: number;
+  totalSupply: string;
+  creator: string;
+  mintRound: number;
+  globalState: Record<string, unknown>;
+  tokenId: string | null;
+  price?: string | null;
 }

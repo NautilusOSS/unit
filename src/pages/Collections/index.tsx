@@ -15,6 +15,7 @@ import NFTCollectionTable from "../../components/NFTCollectionTable";
 import { getPrices } from "../../store/dexSlice";
 import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
 import { ARC72_INDEXER_API } from "../../config/arc72-idx";
+import { getSmartTokens } from "../../store/smartTokenSlice";
 
 const SectionHeading = styled.div`
   display: flex;
@@ -69,6 +70,20 @@ const StyledLink = styled(Link)`
 `;
 
 export const Collections: React.FC = () => {
+  /* Collection Info */
+  const [collectionInfo, setCollectionInfo] = React.useState<any>(null);
+  useEffect(() => {
+    try {
+      axios
+        .get(`https://test-voi.api.highforge.io/projects`)
+        .then((res: any) => res.data.results)
+        .then(setCollectionInfo);
+    } catch (e) {
+      console.log(e);
+    }
+  }, []);
+  console.log({ collectionInfo });
+
   /* Dispatch */
   const dispatch = useDispatch();
   /* Dex */
@@ -106,6 +121,16 @@ export const Collections: React.FC = () => {
   useEffect(() => {
     dispatch(getSales() as unknown as UnknownAction);
   }, [dispatch]);
+
+  /* Smart Tokens */
+  const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
+  const smartTokenStatus = useSelector(
+    (state: any) => state.smartTokens.status
+  );
+  useEffect(() => {
+    dispatch(getSmartTokens() as unknown as UnknownAction);
+  }, [dispatch]);
+
   /* Theme */
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
@@ -139,7 +164,7 @@ export const Collections: React.FC = () => {
       collectionStatus !== "succeeded"
     )
       return new Map();
-    return getRankings(tokens, collections, sales, listings, exchangeRate);
+    return getRankings(tokens, collections, sales, listings, 1, smartTokens);
   }, [sales, tokens, collections, listings]);
 
   const isLoading = useMemo(
@@ -161,7 +186,10 @@ export const Collections: React.FC = () => {
           </SectionTitle>
           <SectionDescription>// {rankings?.length} results</SectionDescription>
         </SectionHeading>
-        <NFTCollectionTable rankings={rankings} />
+        <NFTCollectionTable
+          rankings={rankings}
+          collectionInfo={collectionInfo}
+        />
       </Container>
     </Layout>
   ) : null;
