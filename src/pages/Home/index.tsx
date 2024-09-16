@@ -196,7 +196,7 @@ export const Home: React.FC = () => {
   const dexStatus = useSelector((state: RootState) => state.dex.status);
   useEffect(() => {
     dispatch(getPrices() as unknown as UnknownAction);
-  }, [dispatch])
+  }, [dispatch]);
   const exchangeRate = useMemo(() => {
     // if (!prices || dexStatus !== "succeeded") return 0;
     // const voiPrice = prices.find((p) => p.contractId === CTCINFO_LP_WVOI_VOI);
@@ -449,10 +449,11 @@ export const Home: React.FC = () => {
                     label: "Sale",
                     value: "sale",
                   },
-                ].map((filter) => {
+                ].map((filter, key) => {
                   if (activeFilter.includes(filter.value)) {
                     return (
                       <ActiveFilter
+                        key={key}
                         onClick={() => handleFilterClick(filter.value)}
                       >
                         <ActiveFilterLabel>{filter.label}</ActiveFilterLabel>

@@ -58,7 +58,7 @@ const NFTCollectionTable: React.FC<Props> = ({ rankings }) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {rankings.map((player, index) => (
+          {rankings?.map((player, index) => (
             <TableRow key={index}>
               <StyledTableCell component="th" scope="row">
                 {index + 1}

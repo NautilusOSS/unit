@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import { useWallet } from "@txnlab/use-wallet";
 import PaymentCurrencyRadio from "../../PaymentCurrencyRadio";
-import VoiIcon from "static/crypto-icons/0.svg";
+import VoiIcon from"/src/static/crypto-icons/0.svg";
 
 interface BuySaleModalProps {
   open: boolean;

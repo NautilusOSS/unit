@@ -165,7 +165,7 @@ const RankingsTable: React.FC<Props> = ({ rankings, selectedOption }) => {
     }
   };
   const filteredRankings = useMemo(() => {
-    return rankings.filter(filter());
+    return [...rankings]?.filter(filter());
   }, [rankings, filter]);
   return (
     <Grid container spacing={5}>

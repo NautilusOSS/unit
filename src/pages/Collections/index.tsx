@@ -159,7 +159,7 @@ export const Collections: React.FC = () => {
           <SectionTitle className={isDarkTheme ? "dark" : "light"}>
             Collections
           </SectionTitle>
-          <SectionDescription>// {rankings.length} results</SectionDescription>
+          <SectionDescription>// {rankings?.length} results</SectionDescription>
         </SectionHeading>
         <NFTCollectionTable rankings={rankings} />
       </Container>

@@ -8,8 +8,8 @@ import Navbar from "./components/Navbar";
 import { routes } from "./routes";
 import { getProviderInit } from "./wallets";
 import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import styled from "styled-components";
+import "react-toastify/dist/ReactToastify.css";
 
 const BackgroundLayer = styled.div`
   width: 100%;
@@ -54,8 +54,8 @@ const App: React.FC = () => {
             <Router>
               <Navbar />
               <Routes>
-                {routes.map((el) => (
-                  <Route path={el.path} Component={el.Component} />
+                {routes.map((el,key) => (
+                  <Route key={key} path={el.path} Component={el.Component} />
                 ))}
               </Routes>
             </Router>
