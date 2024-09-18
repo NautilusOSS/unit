@@ -163,6 +163,7 @@ const Footer: React.FC = () => {
   );
   return (
     <FooterRoot
+    className=""
       style={{ background: isDarkTheme ? "rgb(22, 23, 23)" : undefined }}
     >
       <Grid container spacing={3}>

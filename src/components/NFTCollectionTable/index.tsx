@@ -12,7 +12,6 @@ import styled from "styled-components";
 import { Box } from "@mui/material";
 import { RankingI } from "../../types";
 import { Link } from "react-router-dom";
-import { BigNumber } from "bignumber.js";
 
 const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
@@ -44,7 +43,7 @@ const NFTCollectionTable: React.FC<Props> = ({ rankings, collectionInfo }) => {
   return (
     <TableContainer>
       <Table aria-label="rankings table">
-        <TableHead>
+        <TableHead className="border-b">
           <TableRow>
             {[
               "#",
@@ -59,7 +58,7 @@ const NFTCollectionTable: React.FC<Props> = ({ rankings, collectionInfo }) => {
               "Items",
               "Owners",
             ].map((header, index) => (
-              <StyledTableCell key={index}>{header}</StyledTableCell>
+              <StyledTableCell className=" " key={index}>{header}</StyledTableCell>
             ))}
           </TableRow>
         </TableHead>

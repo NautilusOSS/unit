@@ -1,6 +1,5 @@
-import React, { Suspense, useEffect, useMemo, useState } from "react";
+import React, { ReactNode, Suspense, useEffect, useMemo, useState } from "react";
 import Layout from "../../layouts/Default";
-import Section from "../../components/Section";
 import {
   Box,
   CircularProgress,
@@ -42,7 +41,7 @@ import { getPrices } from "../../store/dexSlice";
 import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
 import { getListings } from "../../store/listingSlice";
 //import NFTCard from "../../components/NFTCard2";
-import { Search } from "@mui/icons-material";
+import { Search, SearchOutlined } from "@mui/icons-material";
 import { useDebounceCallback } from "usehooks-ts";
 import { lazy } from "react";
 import { getSmartTokens } from "../../store/smartTokenSlice";
@@ -53,6 +52,12 @@ import LazyLoad from "react-lazy-load";
 import TokenSelect from "../../components/TokenSelect";
 import CollectionSelect from "../../components/CollectionSelect";
 import LayersIcon from "@mui/icons-material/Layers";
+import {
+  useListings,
+  useSmartTokens,
+} from "@/components/Navbar/hooks/collections";
+import { GridLoader } from "react-spinners";
+import { Dialog, DialogContent, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 
 const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
@@ -225,7 +230,7 @@ const ListingRoot = styled.div`
 
 const SidebarFilterRoot = styled(Stack)`
   display: flex;
-  width: 220px;
+  width: 270px;
   padding: var(--Main-System-24px, 24px);
   /*
   flex-direction: column;
@@ -272,7 +277,7 @@ const HeadingContainer = styled.div`
 const HeadingTitle = styled.div`
   text-align: center;
   font-family: Nohemi;
-  font-size: 48px;
+  /* font-size: 48px; */
   font-style: normal;
   font-weight: 700;
   line-height: 40px; /* 83.333% */
@@ -442,13 +447,15 @@ function shuffleArray<T>(array: T[]): T[] {
 
 export const Listings: React.FC = () => {
   /* Dispatch */
-  const dispatch = useDispatch();
+  // const dispatch = useDispatch();
   /* Listings */
-  const listings = useSelector((state: any) => state.listings.listings);
-  const listingsStatus = useSelector((state: any) => state.listings.status);
-  useEffect(() => {
-    dispatch(getListings() as unknown as UnknownAction);
-  }, [dispatch]);
+  const { data: listings, status: listingsStatus } = useListings();
+
+  // const listings = useSelector((state: any) => state.listings.listings);
+  // const listingsStatus = useSelector((state: any) => state.listings.status);
+  // useEffect(() => {
+  //   dispatch(getListings() as unknown as UnknownAction);
+  // }, [dispatch]);
   /* Dex */
   // const prices = useSelector((state: RootState) => state.dex.prices);
   // const dexStatus = useSelector((state: RootState) => state.dex.status);
@@ -492,13 +499,15 @@ export const Listings: React.FC = () => {
   // }, [dispatch]);
 
   /* Smart Tokens */
-  const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
-  const smartTokenStatus = useSelector(
-    (state: any) => state.smartTokens.status
-  );
-  useEffect(() => {
-    dispatch(getSmartTokens() as unknown as UnknownAction);
-  }, [dispatch]);
+  const { status: smartTokenStatus, data: smartTokens } = useSmartTokens();
+
+  // const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
+  // const smartTokenStatus = useSelector(
+  //   (state: any) => state.smartTokens.status
+  // );
+  // useEffect(() => {
+  //   dispatch(getSmartTokens() as unknown as UnknownAction);
+  // }, [dispatch]);
 
   /* Theme */
   const isDarkTheme = useSelector(
@@ -521,66 +530,70 @@ export const Listings: React.FC = () => {
   };
 
   const [search, setSearch] = useState<string>("");
+  const [searchValue, setSearchValue] = useState<string>("");
   const [min, setMin] = useState<string>("");
   const [max, setMax] = useState<string>("");
   const [currency, setCurrency] = useState<string>("");
   const [collection, setCollection] = useState<string>("");
-
-  console.log({ collection });
+  const [showing, setShowing] = useState(50);
 
   const debouncedSearch = useDebounceCallback(setSearch, 500);
   const debouncedMin = useDebounceCallback(setMin, 500);
   const debouncedMax = useDebounceCallback(setMax, 500);
 
-  const listCollections = useMemo(() => {
-    const collectionIds: number[] = Array.from(
-      new Set(listings.map((listing: ListingI) => listing.collectionId))
-    );
-    const collections: ListingI[] = collectionIds.map(
-      (collectionId: number) => {
-        const collection = listings.find(
-          (l: ListingI) => l.collectionId || 0 === collectionId
-        );
-        return collection as ListingI;
-      }
-    );
-    return collections;
-  }, [listings]);
+  // const listCollections = useMemo(() => {
+  //   const collectionIds: number[] = Array.from(
+  //     new Set(listings.map((listing: ListingI) => listing.collectionId))
+  //   );
+  //   const collections: ListingI[] = collectionIds.map(
+  //     (collectionId: number) => {
+  //       const collection = listings.find(
+  //         (l: ListingI) => l.collectionId || 0 === collectionId
+  //       );
+  //       return collection as ListingI;
+  //     }
+  //   );
+  //   return collections;
+  // }, [listings]);
 
   const listCollectionIds: number[] = useMemo(() => {
     return Array.from(
-      new Set(listings.map((collection: ListingI) => collection.collectionId))
+      new Set(
+        listings?.map((collection: ListingI) => collection.collectionId) ?? []
+      )
     );
   }, [listings]);
 
-  const listTokens = useMemo(() => {
-    return listings.map((listing: ListingI) => {
-      const { token } = listing;
-      return {
-        ...token,
-      };
-    });
-  }, [listings]);
+  // const listTokens = useMemo(() => {
+  //   return listings.map((listing: ListingI) => {
+  //     const { token } = listing;
+  //     return {
+  //       ...token,
+  //     };
+  //   });
+  // }, [listings]);
 
   const listCurencies: number[] = useMemo(() => {
     const tokenIds = new Set();
-    for (const listing of listings) {
+    for (const listing of listings ?? []) {
       tokenIds.add(listing.currency);
     }
     return Array.from(tokenIds) as number[];
   }, [listings]);
 
   const normalListings = useMemo(() => {
-    return listings.map((listing: ListingI) => {
-      const paymentCurrency = smartTokens.find(
-        (st: TokenType) => `${st.contractId}` === `${listing.currency}`
-      );
-      return {
-        ...listing,
-        paymentCurrency,
-        normalPrice: 0,
-      };
-    });
+    return (
+      listings?.map((listing: ListingI) => {
+        const paymentCurrency = smartTokens.find(
+          (st: TokenType) => `${st.contractId}` === `${listing.currency}`
+        );
+        return {
+          ...listing,
+          paymentCurrency,
+          normalPrice: 0,
+        };
+      }) ?? []
+    );
   }, [listings, smartTokens]);
 
   const filteredListings = useMemo(() => {
@@ -624,7 +637,7 @@ export const Listings: React.FC = () => {
       };
     });
     if (search === "") {
-      listings.sort((a: any, b: any) => b.round - a.round);
+      listings?.sort((a: any, b: any) => b.round - a.round);
       return listings.filter(
         (el: any) =>
           (`${currency}` === "" ||
@@ -635,8 +648,8 @@ export const Listings: React.FC = () => {
           el.price / 1e6 <= (max ? parseInt(max) : Number.MAX_SAFE_INTEGER)
       );
     } else {
-      listings.sort((a: any, b: any) => b.relevancy - a.relevancy);
-      return listings.filter(
+      listings?.sort((a: any, b: any) => b.relevancy - a.relevancy);
+      return listings?.filter(
         (el: any) =>
           (`${currency}` === "" ||
             currency.split(",").map(Number).includes(el.currency)) &&
@@ -650,18 +663,17 @@ export const Listings: React.FC = () => {
   }, [normalListings, search, min, max, currency, collection]);
 
   const isLoading = useMemo(
-    () => !listings || !smartTokens || listingsStatus !== "succeeded",
+    () => !listings || !smartTokens || listingsStatus !== "success",
     [listings, smartTokens, listingsStatus]
   );
-
   const renderSidebar = (
     <SidebarFilterRoot
-      className={isDarkTheme ? "dark" : "light"}
-      sx={{
-        display: { xs: "none", md: "block" },
-      }}
+      className={`${isDarkTheme ? "dark" : "light"} p-3  md:!block `}
+      // sx={{
+      //   display: { xs: "none", md: "block" },
+      // }}
     >
-      <SearchContainer>
+      <SearchContainer className="">
         <SearchInput className={isDarkTheme ? "dark" : "light"}>
           <SearchIcon
             xmlns="http://www.w3.org/2000/svg"
@@ -691,9 +703,13 @@ export const Listings: React.FC = () => {
               isDarkTheme ? "dark" : "light",
             ].join(" ")}
             placeholder="Search"
+            value={searchValue}
             onChange={(e) => {
-              if (e.target.value === "") setSearch("");
+              if (e.target.value === "") {setSearch("");
+                setSearchValue("")
+              }
               debouncedSearch(e.target.value);
+              setSearchValue(e.target.value);
             }}
           />
         </SearchInput>
@@ -854,52 +870,64 @@ export const Listings: React.FC = () => {
     </SidebarFilterRoot>
   );
 
+
   const renderHeading = (
     <ListingHeading>
-      <HeadingContainer>
-        <HeadingTitle className={isDarkTheme ? "dark" : "light"}>
+      <HeadingContainer className="my-4 flex items-center">
+        <HeadingTitle
+          className={`${isDarkTheme ? "dark" : "light"} !text-4xl sm:text-5xl `}
+        >
           Buy
         </HeadingTitle>
         <HeadingDescriptionContainer>
-          <HeadingDescription>
-            // {filteredListings.length} Results
-          </HeadingDescription>
+          <HeadingDescription>// {showing} Results</HeadingDescription>
         </HeadingDescriptionContainer>
       </HeadingContainer>
     </ListingHeading>
   );
 
-  return isLoading ? (
-    <Layout>
-      <ListingRoot>
+  if (isLoading) {
+    return (
+      <Layout>
+        <ListingRoot className="!flex !flex-col lg:!flex-row !items-center md:!items-start">
+        <div className="!hidden sm:!block">{renderSidebar}</div>
+        <div className="sm:!hidden w-full"><DialogSearch >
         {renderSidebar}
+          </DialogSearch></div>
+          <div className="w-full">
+            {renderHeading}
+            <div className="w-full h-[max(70vh,20rem)]  flex items-center justify-center">
+              <GridLoader
+                size={30}
+                color={isDarkTheme ? "#fff" : "#000"}
+                className="sm:!hidden !text-primary "
+              />
+              <GridLoader
+                size={50}
+                color={isDarkTheme ? "#fff" : "#000"}
+                className="!hidden sm:!block !text-primary "
+              />
+            </div>
+          </div>
+        </ListingRoot>
+      </Layout>
+    );
+  }
+  return (
+    <Layout>
+      <ListingRoot className="!flex !flex-col lg:!flex-row !items-center md:!items-start">
+        <div className="!hidden sm:!block">{renderSidebar}</div>
+        <div className="sm:!hidden w-full"><DialogSearch >
+        {renderSidebar}
+          </DialogSearch></div>
         <ListingContainer>
           {renderHeading}
-          <ListingGrid
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              height: "100vh",
-              width: "100%",
-            }}
-          >
-            <Box sx={{ mt: 5 }}>
-              <CircularProgress size={100} />
-            </Box>
-          </ListingGrid>
-        </ListingContainer>
-      </ListingRoot>
-    </Layout>
-  ) : (
-    <Layout>
-      <ListingRoot>
-        {renderSidebar}
-        <ListingContainer>
-          {renderHeading}
-          <ListingGrid>
-            <Grid2 container spacing={2}>
-              {filteredListings.slice(0).map((el: NFTIndexerListingI) => {
+
+          {/* <ListingGrid> */}
+          <div className=" items-center flex flex-col sm:grid md:grid-cols-2 xl:grid-cols-3 sm:w-fit gap-4 sm:gap-2">
+            {filteredListings
+              .slice(0, showing)
+              .map((el: NFTIndexerListingI) => {
                 const pk = `${el.mpContractId}-${el.mpListingId}`;
                 // const nft = tokens.find(
                 //   (t: TokenI) =>
@@ -939,10 +967,47 @@ export const Listings: React.FC = () => {
                   </Grid2>
                 );
               })}
+            <Grid2>
+              <div
+                onClick={() => setShowing(showing + 50)}
+                className={`${
+                  isDarkTheme ? "button-dark" : "button-light"
+                } cursor-pointer`}
+              >
+                <div
+                  className={
+                    isDarkTheme ? "button-text-dark" : "button-text-light"
+                  }
+                >
+                  View More
+                </div>
+              </div>
             </Grid2>
-          </ListingGrid>
+          </div>
+          {/* </ListingGrid> */}
         </ListingContainer>
       </ListingRoot>
     </Layout>
+  );
+};
+
+const DialogSearch = ({children}:{children:ReactNode}) => {
+  return (
+    <Dialog >
+      <DialogTrigger className="w-full"><div className="rounded p-2 border w-full">Search <SearchOutlined /></div></DialogTrigger>
+      <DialogContent>
+        {/* <DialogHeader>
+      <DialogTitle>Are you absolutely sure?</DialogTitle>
+      <DialogDescription>
+        This action cannot be undone. This will permanently delete your account
+        and remove your data from our servers.
+      </DialogDescription>
+    </DialogHeader> */}
+    {/* <DialogDescription> */}
+ 
+        <div className="flex items-center mx-auto">{children}</div>
+      {/* </DialogDescription> */}
+      </DialogContent>
+    </Dialog>
   );
 };

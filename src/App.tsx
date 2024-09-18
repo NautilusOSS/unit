@@ -38,7 +38,7 @@ const AppContainer: React.FC<AppContainerProps> = ({ children }) => {
           background: isDarkTheme ? "#161717" : "#FFFFFF",
         }}
       ></BackgroundLayer>
-      <div className="content-layer" style={{ width: "100%", height: "100%" }}>
+      <div className="relati overflow-x-hidden h-fi" style={{   }}>
         {children}
       </div>
     </div>

@@ -27,7 +27,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <>
       <LayoutRoot
-        className={`${theme}`}
+        className={`${theme} min-h-screen h-fit`}
         style={{ background: isDarkTheme ? "rgb(22, 23, 23)" : undefined }}
       >
           <header></header>

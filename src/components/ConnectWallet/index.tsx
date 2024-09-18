@@ -156,7 +156,7 @@ const AccountContainer = styled.div`
 
 const AccountNameContainer = styled.span`
   display: flex;
-  width: 200px;
+  width: fit-content;
   align-items: center;
   gap: var(--Main-System-10px, 10px);
   flex-shrink: 0;
@@ -189,8 +189,6 @@ const ActiveButtonContainer = styled.div`
 const ActiveButton = styled(Button)`
   color: #93f;
   text-align: center;
-  leading-trim: both;
-  text-edge: cap;
   font-feature-settings: "clig" off, "liga" off;
   font-family: Nohemi;
   font-size: 16px;
@@ -198,6 +196,8 @@ const ActiveButton = styled(Button)`
   font-weight: 600;
   line-height: 20px; /* 125% */
   text-decoration-line: underline;
+  display: flex;
+  width:max-content;
 `;
 
 const WalletIcon = styled.div`
@@ -452,6 +452,7 @@ const OuterConnectButton: React.FC<OuterConnectButtonProps> = ({ theme }) => {
 
 function BasicMenu() {
   const { activeAccount, providers, connectedAccounts } = useWallet();
+  console.log({providers})
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -522,54 +523,66 @@ function BasicMenu() {
       )}
 
       <AccountMenu
+// className="!bg-background !text-primary"
         id="basic-menu"
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
+        className="overflow-hidden"
+        
         MenuListProps={{
           "aria-labelledby": "basic-button",
-        }}
-        PaperProps={{
-          elevation: 0,
+          className:`${isDarkTheme?"dark":""} !bg-secondary !text-primary !rounded-lg !overflow-hidden`,
           sx: {
-            display: "inline-flex",
-            padding: "18px",
-            flexDirection: "column",
-            alignItems: "flex-start",
-            gap: "24px",
-            borderRadius: "16px",
-            overflow: "visible",
-            filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
-            mt: 2,
-            "& .MuiAvatar-root": {
-              width: 32,
-              height: 32,
-              ml: -0.5,
-              mr: 1,
-            },
-            /*
-            "&::before": {
-              content: '""',
-              display: "block",
-              position: "absolute",
-              top: 0,
-              right: 20,
-              width: 20,
-              height: 20,
-              bgcolor: "background.paper",
-              transform: "translateY(-50%) rotate(45deg)",
-              zIndex: 0,
-            },
-            */
-          },
+          }
         }}
-        transformOrigin={{ horizontal: "right", vertical: "top" }}
-        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+        slotProps={{
+          paper:{
+            className:`${isDarkTheme?"dark":""} !bg-secondary !text-primary!overflow-hidden !rounded-lg `
+          }
+        }}
+        // PaperProps={{
+        //   elevation: 0,
+        //   sx: {
+        //     display: "inline-flex",
+        //     padding: "18px",
+        //     flexDirection: "column",
+        //     alignItems: "flex-start",
+        //     gap: "24px",
+        //     borderRadius: "16px",
+        //     overflow: "visible",
+        //     filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
+        //     mt: 2,
+        //     "& .MuiAvatar-root": {
+        //       width: 32,
+        //       height: 32,
+        //       ml: -0.5,
+        //       mr: 1,
+        //     },
+        //     /*
+        //     "&::before": {
+        //       content: '""',
+        //       display: "block",
+        //       position: "absolute",
+        //       top: 0,
+        //       right: 20,
+        //       width: 20,
+        //       height: 20,
+        //       bgcolor: "background.paper",
+        //       transform: "translateY(-50%) rotate(45deg)",
+        //       zIndex: 0,
+        //     },
+        //     */
+        //   },
+        // }}
+        // transformOrigin={{ horizontal: "right", vertical: "top" }}
+        // anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       >
-        <WalletContainer>
+        <WalletContainer
+        className="">
           {providers?.map((provider) => {
             return (
-              <ProviderContainer>
+              <ProviderContainer className={`${isDarkTheme?"dark":""} !bg-secondary !text-primary`}>
                 <ProviderIconContainer>
                   <ProviderName>
                     <WalletIcon
@@ -577,7 +590,7 @@ function BasicMenu() {
                         background: `url(${provider.metadata.icon}) lightgray 50% / cover no-repeat`,
                       }}
                     />
-                    <ProviderNameLabel>
+                    <ProviderNameLabel className={`${isDarkTheme?"dark":""} !bg-secondary !text-primary`}>
                       {provider.metadata.name}
                     </ProviderNameLabel>
                     <Wallet />
@@ -608,16 +621,21 @@ function BasicMenu() {
                     </Box>
                   )}
                 </ProviderIconContainer>
-                <ConnectedAccountContainer>
+                <ConnectedAccountContainer
+                className={`${isDarkTheme?"dark":""} !bg-secondary !text-primary`}
+                //  className="!bg-background !text-primary"
+                 >
                   {connectedAccounts
                     ?.filter((a) => a.providerId === provider.metadata.id)
                     .map((account, key) => {
                       return (
                         <AccountContainer
+                        className="!flex gap-2 !bg-secondary !text-primary "
                           key={`${key}_${account?.address ?? "account"}`}
                         >
                           <AccountNameContainer>
-                            <AccountName>
+                            <AccountName
+                            className={`${isDarkTheme?"dark":""} !bg-secondary !text-primary`}>
                               {account.address.slice(0, 4)}
                             </AccountName>
                           </AccountNameContainer>

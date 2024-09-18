@@ -89,10 +89,14 @@ const SectionTitle = styled.h2`
   text-edge: cap;
   font-feature-settings: "clig" off, "liga" off;
   font-family: Nohemi;
-  font-size: 40px;
+  font-size: 36px;
   font-style: normal;
   font-weight: 700;
   line-height: 100%; /* 40px */
+  @media (min-width: 620px) {
+  font-size: 40px;
+    
+  } 
 `;
 
 const SectionButtonContainer = styled(Box)`
@@ -273,7 +277,7 @@ export const Home: React.FC = () => {
     <Layout>
       {!isLoading ? (
         <div>
-          <SectionHeading className="flex flex-col justify-items-start !items-start gap-2 sm:flex-row ">
+          <SectionHeading className="flex flex-col justify-items-start !items-start gap-2 sm:flex-row  mb-4 sm:mb-0">
             <SectionTitle className={`${isDarkTheme ? "dark" : "light"} `}>
               New Listings
             </SectionTitle>
@@ -297,7 +301,7 @@ export const Home: React.FC = () => {
           </SectionHeading>
           {listings ? (
             <>
-              <Grid2 container spacing={2}>
+              <div className=" items-center flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:w-fit gap-4 sm:gap-2">
                 {listings.slice(0, showing).map((el: NFTIndexerListingI) => {
                   return (
                     <Grid2 key={el.transactionId}>
@@ -331,7 +335,7 @@ export const Home: React.FC = () => {
                     </SectionButton>
                   </SectionButtonContainer>
                 </Grid2>
-              </Grid2>
+              </div>
               {/*
                 <SectionButtonContainer sx={{ mt: 5 }}>
                   <SectionButton
