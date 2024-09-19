@@ -6,7 +6,6 @@ import { Box } from "@mui/material";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import { Link } from "react-router-dom";
-import axios from "axios";
 import {
   QUEST_ACTION,
   QUEST_API,
