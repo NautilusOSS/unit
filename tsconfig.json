@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "target": "es5",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
@@ -14,6 +18,5 @@
     "isolatedModules": true,
     "jsx": "react"
   },
-  "include": ["src", "src/**/*"]
+  "include": ["src", "src/**/*", "tailwind.config.js", "vite.config.js"]
 }
-

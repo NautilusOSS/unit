@@ -55,6 +55,12 @@ import { BigNumber } from "bignumber.js";
 import { getSmartTokens } from "../../store/smartTokenSlice";
 import ListBatchModal from "../../components/modals/ListBatchModal";
 import { TOKEN_WVOI2 } from "../../contants/tokens";
+import {
+  useListings,
+  usePrices,
+  useSmartTokens,
+} from "@/components/Navbar/hooks/collections";
+import { GridLoader } from "react-spinners";
 
 const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
@@ -99,23 +105,18 @@ const AccountValue = styled.div`
 export const Account: React.FC = () => {
   const dispatch = useDispatch();
 
-  const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
-  const smartTokenStatus = useSelector(
-    (state: any) => state.smartTokens.status
-  );
-  useEffect(() => {
-    dispatch(getSmartTokens() as unknown as UnknownAction);
-  }, [dispatch]);
+  const { data: smartTokens, status: smartTokensStatus } = useSmartTokens();
 
   /* Dex */
-  const prices = useSelector((state: RootState) => state.dex.prices);
-  const dexStatus = useSelector((state: RootState) => state.dex.status);
-  useEffect(() => {
-    dispatch(getPrices() as unknown as UnknownAction);
-  }, [dispatch]);
+  const { data: prices, status: dexStatus } = usePrices();
+  // const prices = useSelector((state: RootState) => state.dex.prices);
+  // const dexStatus = useSelector((state: RootState) => state.dex.status);
+  // useEffect(() => {
+  //   dispatch(getPrices() as unknown as UnknownAction);
+  // }, [dispatch]);
   const exchangeRate = useMemo(() => {
-    if (!prices || dexStatus !== "succeeded") return 0;
-    const voiPrice = prices.find((p) => p.contractId === CTCINFO_LP_WVOI_VOI);
+    if (!prices || dexStatus !== "success") return 0;
+    const voiPrice = prices?.find((p) => p.contractId === CTCINFO_LP_WVOI_VOI);
     if (!voiPrice) return 0;
     return voiPrice.rate;
   }, [prices, dexStatus]);
@@ -133,13 +134,7 @@ export const Account: React.FC = () => {
   const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid");
 
   /* Wallet */
-  const {
-    activeAccount,
-    providers,
-    connectedAccounts,
-    signTransactions,
-    sendTransactions,
-  } = useWallet();
+  const { activeAccount, signTransactions, sendTransactions } = useWallet();
 
   /* Copy to clipboard */
 
@@ -162,27 +157,14 @@ export const Account: React.FC = () => {
   );
 
   /* NFT Navigator Listings */
-  const [listings, setListings] = React.useState<any>();
-  React.useEffect(() => {
-    try {
-      const res = axios
-        .get(`${ARC72_INDEXER_API}/nft-indexer/v1/mp/listings`, {
-          params: {
-            active: true,
-            seller: idArr,
-          },
-        })
-        .then(({ data }) => {
-          setListings(data.listings);
-        });
-    } catch (e) {
-      console.log(e);
-    }
-  }, []);
+
+  const { data: listings } = useListings({
+    seller: idArr,
+  });
 
   const normalListings = useMemo(() => {
     if (!listings || !smartTokens) return [];
-    return listings.map((listing: ListingI) => {
+    return listings?.map((listing: ListingI) => {
       const paymentCurrency = smartTokens.find(
         (st: TokenType) => `${st.contractId}` === `${listing.currency}`
       );
@@ -191,7 +173,7 @@ export const Account: React.FC = () => {
         paymentCurrency,
         normalPrice: 0,
       };
-    });
+    })??[];
   }, [listings, smartTokens]);
 
   const filteredListings = useMemo(() => {
@@ -273,7 +255,7 @@ export const Account: React.FC = () => {
           );
         })
         ?.map((nft: any) => {
-          const listing = listings.find(
+          const listing = listings?.find(
             (l: any) =>
               `${l.collectionId}` === `${nft.contractId}` &&
               `${l.tokenId}` === `${nft.tokenId}`
@@ -1123,7 +1105,6 @@ export const Account: React.FC = () => {
             error: "Unlist failed",
           }
         );
-        console.log({ res });
       }
     } catch (e: any) {
       console.log(e);
@@ -1133,9 +1114,7 @@ export const Account: React.FC = () => {
     }
   };
 
-  console.log({ nfts });
-
-  return !isLoading ? (
+  return  (
     <Layout>
       <div>
         <Stack spacing={2} direction="row">
@@ -1195,7 +1174,7 @@ export const Account: React.FC = () => {
                   {selected2.length} Selected
                 </Button>
               ) : null}
-              {filteredListings.length > 0 && selected2.length === 0 ? (
+              {filteredListings?.length > 0 && selected2.length === 0 ? (
                 <Button
                   onClick={() => {
                     setSelected2(
@@ -1712,47 +1691,62 @@ export const Account: React.FC = () => {
           </>
         ) : null}
       </div>
-      {openTransferBatch ? (
-        <TransferModal
-          nfts={nfts.filter((_, i) => selected.includes(i))}
-          title="Transfer NFT"
-          loading={isTransferring}
-          open={openTransferBatch}
-          handleClose={() => setOpenTransferBatch(false)}
-          onSave={handleTransfer}
-        />
-      ) : null}
-      {nft ? (
-        <ListSaleModal
-          title="List NFT for Sale"
-          loading={isListing}
-          open={openListSale}
-          handleClose={() => setOpenListSale(false)}
-          onSave={handleListSale}
-          nft={nft}
-        />
-      ) : null}
-      {selected.length && openListBatch ? (
-        <ListBatchModal
-          action="list-sale"
-          title="List NFT for Sale"
-          loading={isListing}
-          open={openListBatch}
-          handleClose={() => setOpenListBatch(false)}
-          onSave={handleListBatch}
-          nfts={nfts.filter((_, i) => selected.includes(i))}
-        />
-      ) : null}
-      {nft ? (
-        <ListAuctionModal
-          title="List NFT for Auction"
-          loading={isListing}
-          open={openListAuction}
-          handleClose={() => setOpenListAuction(false)}
-          onSave={handleListAuction}
-          nft={nft}
-        />
-      ) : null}
+
+     {!isLoading? <>
+        {openTransferBatch ? (
+          <TransferModal
+            nfts={nfts.filter((_, i) => selected.includes(i))}
+            title="Transfer NFT"
+            loading={isTransferring}
+            open={openTransferBatch}
+            handleClose={() => setOpenTransferBatch(false)}
+            onSave={handleTransfer}
+          />
+        ) : null}
+        {nft ? (
+          <ListSaleModal
+            title="List NFT for Sale"
+            loading={isListing}
+            open={openListSale}
+            handleClose={() => setOpenListSale(false)}
+            onSave={handleListSale}
+            nft={nft}
+          />
+        ) : null}
+        {selected?.length && openListBatch ? (
+          <ListBatchModal
+            action="list-sale"
+            title="List NFT for Sale"
+            loading={isListing}
+            open={openListBatch}
+            handleClose={() => setOpenListBatch(false)}
+            onSave={handleListBatch}
+            nfts={nfts.filter((_, i) => selected.includes(i))}
+          />
+        ) : null}
+        {nft ? (
+          <ListAuctionModal
+            title="List NFT for Auction"
+            loading={isListing}
+            open={openListAuction}
+            handleClose={() => setOpenListAuction(false)}
+            onSave={handleListAuction}
+            nft={nft}
+          />
+        ) : null}
+      </>:<>
+      <div className="w-full h-[max(70vh,20rem)]  flex items-center justify-center">
+          <GridLoader
+            size={30}
+            color={isDarkTheme ? "#fff" : "#000"}
+            className="sm:!hidden !text-primary "
+          />
+          <GridLoader
+            size={50}
+            color={isDarkTheme ? "#fff" : "#000"}
+            className="!hidden sm:!block !text-primary "
+          />
+        </div></>}
     </Layout>
-  ) : null;
+  ) ;
 };

@@ -3,21 +3,19 @@ import Layout from "../../layouts/Default";
 import {
   Avatar,
   Button,
-  Container,
   Grid,
   Skeleton,
   Stack,
-  Typography,
 } from "@mui/material";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import axios from "axios";
 import styled from "styled-components";
-import IconAlarm from "static/icon-alarm.svg";
-import ButtonBuy from "static/button-buy.svg";
-import ButtonOffer from "static/button-offer.svg";
-import ButtonBid from "static/button-bid.svg";
+import IconAlarm from"/src/static/icon-alarm.svg";
+import ButtonBuy from"/src/static/button-buy.svg";
+import ButtonOffer from"/src/static/button-offer.svg";
+import ButtonBid from"/src/static/button-bid.svg";
 import { stringToColorCode } from "../../utils/string";
 import RowingIcon from "@mui/icons-material/Rowing";
 
@@ -31,17 +29,17 @@ import algosdk from "algosdk";
 import { decodePrice, decodeTokenId } from "../../utils/mp";
 import NftCard from "../../components/NFTCard";
 import BuySaleModal from "../../components/modals/BuySaleModal";
-
+// @ts-ignore
 import { CONTRACT, arc72, arc200, mp, abi, swap } from "ulujs";
 import { getAlgorandClients } from "../../wallets";
 import { ListingBoxCost, ctcInfoMp206 } from "../../contants/mp";
 
-import VoiIcon from "static/crypto-icons/voi/0.svg";
-import ViaIcon from "static/crypto-icons/voi/6779767.svg";
+import VoiIcon from"/src/static/crypto-icons/voi/0.svg";
+import ViaIcon from"/src/static/crypto-icons/voi/6779767.svg";
 
-import XIcon from "static/icon/icon-x.svg";
-import DiscordIcon from "static/icon/icon-discord.svg";
-import LinkIcon from "static/icon/icon-link.svg";
+import XIcon from"/src/static/icon/icon-x.svg";
+import DiscordIcon from"/src/static/icon/icon-discord.svg";
+import LinkIcon from"/src/static/icon/icon-link.svg";
 import NFTTabs from "../../components/NFTTabs";
 import ListSaleModal from "../modals/ListSaleModal";
 import { QUEST_ACTION, getActions, submitAction } from "../../config/quest";

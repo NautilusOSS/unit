@@ -3,7 +3,6 @@ import { useAutocomplete } from "@mui/base/useAutocomplete";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import styled from "styled-components";
-import { Stack } from "@mui/material";
 
 const TextFieldContainer = styled.div`
   display: flex;

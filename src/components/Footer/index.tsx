@@ -9,11 +9,11 @@ import { Link } from "react-router-dom";
 
 const FooterRoot = styled.footer`
   position: absolute;
-  padding: 64px 80px;
+  /* padding: 64px 80px; */
   border-top: 1px solid #eaebf0; /* Border color set to #EAEBF0 */
   padding-bottom: 80px;
   padding-right: 0px;
-  padding-left: 80px;
+  /* padding-left: 80px; */
 `;
 
 const FooterContainer = styled.div`
@@ -148,13 +148,20 @@ const DiscordIcon = () => {
 };
 
 const IconContainer = styled.div`
-  display: flex;
+  display: grid;
+  place-content: center;
   padding: var(--Main-System-20px, 20px);
+  /* padding: 2px; */
   align-items: flex-start;
   gap: var(--Main-System-10px, 10px);
   border-radius: 100px;
-  background: #93f;
-  width: 30px;
+  background: rgb(153, 51, 255);
+  width: 50px;
+  height: 50px;
+  /* :hover{
+    background: hsl(var(--background));
+  } */
+  /* aspect-ratio: 1; */
 `;
 
 const Footer: React.FC = () => {
@@ -163,6 +170,7 @@ const Footer: React.FC = () => {
   );
   return (
     <FooterRoot
+    className="md:py-20 md:px-16 p-4"
       style={{ background: isDarkTheme ? "rgb(22, 23, 23)" : undefined }}
     >
       <Grid container spacing={3}>
@@ -176,10 +184,10 @@ const Footer: React.FC = () => {
             </Description>
             <SocialContainer>
               <SocialHeading>Join us</SocialHeading>
-              <SocialButtonGroup>
+              <SocialButtonGroup >
                 <Link to="https://x.com/NautilusNFTs" target="_blank">
                   <IconContainer>
-                    <XIcon />
+                    <XIcon  />
                   </IconContainer>
                 </Link>
                 <Link to="https://discord.gg/qp3FT47txs" target="_blank">
@@ -192,7 +200,7 @@ const Footer: React.FC = () => {
           </Container>
         </Grid>
         <Grid item xs={12} sm={12} md={4}>
-          <Grid container>
+          <Grid className="gap-3 md:gap-0" container>
             <Grid item xs={12} md={6}>
               <FooterHeading
                 style={{

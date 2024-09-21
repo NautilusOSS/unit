@@ -6,7 +6,6 @@ import { Box } from "@mui/material";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
 import { Link } from "react-router-dom";
-import axios from "axios";
 import {
   QUEST_ACTION,
   QUEST_API,
@@ -26,9 +25,9 @@ const WalletIcon2 = () => {
       <path
         d="M11 9.33333H11.0067M2 3.33333V12.6667C2 13.403 2.59695 14 3.33333 14H12.6667C13.403 14 14 13.403 14 12.6667V6C14 5.26362 13.403 4.66667 12.6667 4.66667L3.33333 4.66667C2.59695 4.66667 2 4.06971 2 3.33333ZM2 3.33333C2 2.59695 2.59695 2 3.33333 2H11.3333M11.3333 9.33333C11.3333 9.51743 11.1841 9.66667 11 9.66667C10.8159 9.66667 10.6667 9.51743 10.6667 9.33333C10.6667 9.14924 10.8159 9 11 9C11.1841 9 11.3333 9.14924 11.3333 9.33333Z"
         stroke="#161717"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
@@ -57,6 +56,7 @@ const AccountDropdown = styled(Button)`
   gap: 16px;
   border-radius: 32px;
   border: 1px solid #93f;
+  width: fit-content;
   /* Shadow/XSM */
   box-shadow: 0px 1px 2px 0px rgba(16, 24, 40, 0.04);
   &:hover {
@@ -155,7 +155,7 @@ const AccountContainer = styled.div`
 
 const AccountNameContainer = styled.span`
   display: flex;
-  width: 200px
+  width: fit-content;
   align-items: center;
   gap: var(--Main-System-10px, 10px);
   flex-shrink: 0;
@@ -188,8 +188,6 @@ const ActiveButtonContainer = styled.div`
 const ActiveButton = styled(Button)`
   color: #93f;
   text-align: center;
-  leading-trim: both;
-  text-edge: cap;
   font-feature-settings: "clig" off, "liga" off;
   font-family: Nohemi;
   font-size: 16px;
@@ -197,6 +195,8 @@ const ActiveButton = styled(Button)`
   font-weight: 600;
   line-height: 20px; /* 125% */
   text-decoration-line: underline;
+  display: flex;
+  width:max-content;
 `;
 
 const WalletIcon = styled.div`
@@ -229,9 +229,9 @@ const Wallet = () => {
       <path
         d="M19 17.8333H19.0067M10 11.8333V21.1667C10 21.903 10.597 22.5 11.3333 22.5H20.6667C21.403 22.5 22 21.903 22 21.1667V14.5C22 13.7636 21.403 13.1667 20.6667 13.1667L11.3333 13.1667C10.597 13.1667 10 12.5697 10 11.8333ZM10 11.8333C10 11.097 10.597 10.5 11.3333 10.5H19.3333M19.3333 17.8333C19.3333 18.0174 19.1841 18.1667 19 18.1667C18.8159 18.1667 18.6667 18.0174 18.6667 17.8333C18.6667 17.6492 18.8159 17.5 19 17.5C19.1841 17.5 19.3333 17.6492 19.3333 17.8333Z"
         stroke="#161717"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
@@ -269,9 +269,9 @@ const DisconnectButton = () => {
         <path
           d="M131 20L125 26M125 20L131 26M138 23C138 28.5228 133.523 33 128 33C122.477 33 118 28.5228 118 23C118 17.4772 122.477 13 128 13C133.523 13 138 17.4772 138 23Z"
           stroke="white"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         />
       </svg>
     </div>
@@ -303,9 +303,9 @@ const ConnectButton = () => {
       <path
         d="M128 18.5V26.5M124 22.5H132M138 22.5C138 28.0228 133.523 32.5 128 32.5C122.477 32.5 118 28.0228 118 22.5C118 16.9772 122.477 12.5 128 12.5C133.523 12.5 138 16.9772 138 22.5Z"
         stroke="white"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
@@ -334,9 +334,9 @@ const OuterConnectButton: React.FC<OuterConnectButtonProps> = ({ theme }) => {
         <path
           d="M137 25.3333H137.007M128 19.3333V28.6667C128 29.403 128.597 30 129.333 30H138.667C139.403 30 140 29.403 140 28.6667V22C140 21.2636 139.403 20.6667 138.667 20.6667L129.333 20.6667C128.597 20.6667 128 20.0697 128 19.3333ZM128 19.3333C128 18.597 128.597 18 129.333 18H137.333M137.333 25.3333C137.333 25.5174 137.184 25.6667 137 25.6667C136.816 25.6667 136.667 25.5174 136.667 25.3333C136.667 25.1492 136.816 25 137 25C137.184 25 137.333 25.1492 137.333 25.3333Z"
           stroke="black"
-          stroke-width="1.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         />
       </g>
       <defs>
@@ -403,9 +403,9 @@ const OuterConnectButton: React.FC<OuterConnectButtonProps> = ({ theme }) => {
         <path
           d="M126 25.3333H126.007M117 19.3333V28.6667C117 29.403 117.597 30 118.333 30H127.667C128.403 30 129 29.403 129 28.6667V22C129 21.2636 128.403 20.6667 127.667 20.6667L118.333 20.6667C117.597 20.6667 117 20.0697 117 19.3333ZM117 19.3333C117 18.597 117.597 18 118.333 18H126.333M126.333 25.3333C126.333 25.5174 126.184 25.6667 126 25.6667C125.816 25.6667 125.667 25.5174 125.667 25.3333C125.667 25.1492 125.816 25 126 25C126.184 25 126.333 25.1492 126.333 25.3333Z"
           stroke="#161717"
-          stroke-width="1.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         />
       </g>
       <defs>
@@ -451,6 +451,7 @@ const OuterConnectButton: React.FC<OuterConnectButtonProps> = ({ theme }) => {
 
 function BasicMenu() {
   const { activeAccount, providers, connectedAccounts } = useWallet();
+  console.log({providers})
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -491,7 +492,7 @@ function BasicMenu() {
             handleClick(e);
           }}
         >
-          <AccountDropdownLabel>Connect</AccountDropdownLabel>
+          <AccountDropdownLabel className="">Connect</AccountDropdownLabel>
           <WalletIconContainer>
             <WalletIcon2 />
           </WalletIconContainer>
@@ -521,54 +522,66 @@ function BasicMenu() {
       )}
 
       <AccountMenu
+// className="!bg-background !text-primary"
         id="basic-menu"
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
+        className="overflow-hidden"
+        
         MenuListProps={{
           "aria-labelledby": "basic-button",
-        }}
-        PaperProps={{
-          elevation: 0,
+          className:`${isDarkTheme?"dark":""} !bg-secondary !text-primary !rounded-lg !overflow-hidden`,
           sx: {
-            display: "inline-flex",
-            padding: "18px",
-            flexDirection: "column",
-            alignItems: "flex-start",
-            gap: "24px",
-            borderRadius: "16px",
-            overflow: "visible",
-            filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
-            mt: 2,
-            "& .MuiAvatar-root": {
-              width: 32,
-              height: 32,
-              ml: -0.5,
-              mr: 1,
-            },
-            /*
-            "&::before": {
-              content: '""',
-              display: "block",
-              position: "absolute",
-              top: 0,
-              right: 20,
-              width: 20,
-              height: 20,
-              bgcolor: "background.paper",
-              transform: "translateY(-50%) rotate(45deg)",
-              zIndex: 0,
-            },
-            */
-          },
+          }
         }}
-        transformOrigin={{ horizontal: "right", vertical: "top" }}
-        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+        slotProps={{
+          paper:{
+            className:`${isDarkTheme?"dark":""} !bg-secondary !text-primary!overflow-hidden !rounded-lg `
+          }
+        }}
+        // PaperProps={{
+        //   elevation: 0,
+        //   sx: {
+        //     display: "inline-flex",
+        //     padding: "18px",
+        //     flexDirection: "column",
+        //     alignItems: "flex-start",
+        //     gap: "24px",
+        //     borderRadius: "16px",
+        //     overflow: "visible",
+        //     filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
+        //     mt: 2,
+        //     "& .MuiAvatar-root": {
+        //       width: 32,
+        //       height: 32,
+        //       ml: -0.5,
+        //       mr: 1,
+        //     },
+        //     /*
+        //     "&::before": {
+        //       content: '""',
+        //       display: "block",
+        //       position: "absolute",
+        //       top: 0,
+        //       right: 20,
+        //       width: 20,
+        //       height: 20,
+        //       bgcolor: "background.paper",
+        //       transform: "translateY(-50%) rotate(45deg)",
+        //       zIndex: 0,
+        //     },
+        //     */
+        //   },
+        // }}
+        // transformOrigin={{ horizontal: "right", vertical: "top" }}
+        // anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       >
-        <WalletContainer>
+        <WalletContainer
+        className="">
           {providers?.map((provider) => {
             return (
-              <ProviderContainer>
+              <ProviderContainer className={`${isDarkTheme?"dark":""} !bg-secondary !text-primary`}>
                 <ProviderIconContainer>
                   <ProviderName>
                     <WalletIcon
@@ -576,7 +589,7 @@ function BasicMenu() {
                         background: `url(${provider.metadata.icon}) lightgray 50% / cover no-repeat`,
                       }}
                     />
-                    <ProviderNameLabel>
+                    <ProviderNameLabel className={`${isDarkTheme?"dark":""} !bg-secondary !text-primary`}>
                       {provider.metadata.name}
                     </ProviderNameLabel>
                     <Wallet />
@@ -607,14 +620,21 @@ function BasicMenu() {
                     </Box>
                   )}
                 </ProviderIconContainer>
-                <ConnectedAccountContainer>
+                <ConnectedAccountContainer
+                className={`${isDarkTheme?"dark":""} !bg-secondary !text-primary`}
+                //  className="!bg-background !text-primary"
+                 >
                   {connectedAccounts
                     ?.filter((a) => a.providerId === provider.metadata.id)
-                    .map((account) => {
+                    .map((account, key) => {
                       return (
-                        <AccountContainer>
+                        <AccountContainer
+                        className="!flex gap-2 !bg-secondary !text-primary "
+                          key={`${key}_${account?.address ?? "account"}`}
+                        >
                           <AccountNameContainer>
-                            <AccountName>
+                            <AccountName
+                            className={`${isDarkTheme?"dark":""} !bg-secondary !text-primary`}>
                               {account.address.slice(0, 4)}
                             </AccountName>
                           </AccountNameContainer>

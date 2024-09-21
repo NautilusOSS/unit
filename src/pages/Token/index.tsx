@@ -77,7 +77,7 @@ const ProjectLinkLabel = styled.div`
 `;
 
 const AvatarWithName = styled(Stack)`
-  dsplay: flex;
+  display: flex;
   align-items: center;
   color: #68727d;
   & .owner-name {
@@ -684,9 +684,9 @@ export const Token: React.FC = () => {
                       <path
                         d="M39.6667 49H58.3334M58.3334 49L49 39.6667M58.3334 49L49 58.3334"
                         stroke="#161717"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                       />
                     </g>
                     <defs>

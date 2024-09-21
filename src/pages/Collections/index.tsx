@@ -16,6 +16,16 @@ import { getPrices } from "../../store/dexSlice";
 import { CTCINFO_LP_WVOI_VOI } from "../../contants/dex";
 import { ARC72_INDEXER_API } from "../../config/arc72-idx";
 import { getSmartTokens } from "../../store/smartTokenSlice";
+import {
+  useCollectionInfo,
+  useCollections,
+  useListings,
+  usePrices,
+  useSales,
+  useSmartTokens,
+  useTokens,
+} from "@/components/Navbar/hooks/collections";
+import { GridLoader } from "react-spinners";
 
 const SectionHeading = styled.div`
   display: flex;
@@ -70,66 +80,38 @@ const StyledLink = styled(Link)`
 `;
 
 export const Collections: React.FC = () => {
-  /* Collection Info */
-  const [collectionInfo, setCollectionInfo] = React.useState<any>(null);
-  useEffect(() => {
-    try {
-      axios
-        .get(`https://test-voi.api.highforge.io/projects`)
-        .then((res: any) => res.data.results)
-        .then(setCollectionInfo);
-    } catch (e) {
-      console.log(e);
-    }
-  }, []);
-  console.log({ collectionInfo });
+  // !Replaced data fetching and state management with react-query hooks
+  const { data: collectionInfo } = useCollectionInfo();
 
-  /* Dispatch */
-  const dispatch = useDispatch();
   /* Dex */
-  const prices = useSelector((state: RootState) => state.dex.prices);
-  const dexStatus = useSelector((state: RootState) => state.dex.status);
-  useEffect(() => {
-    dispatch(getPrices() as unknown as UnknownAction);
-  }, [dispatch]);
+
+  // !Replaced data fetching and state management with react-query hooks
+  const { data: prices, status: dexStatus } = usePrices();
+
   const exchangeRate = useMemo(() => {
-    if (!prices || dexStatus !== "succeeded") return 0;
+    if (!prices || dexStatus !== "success") return 0;
     const voiPrice = prices.find((p) => p.contractId === CTCINFO_LP_WVOI_VOI);
     if (!voiPrice) return 0;
     return voiPrice.rate;
   }, [prices, dexStatus]);
+
   /* Tokens */
-  const tokens = useSelector((state: any) => state.tokens.tokens);
-  const tokenStatus = useSelector((state: any) => state.tokens.status);
-  useEffect(() => {
-    dispatch(getTokens() as unknown as UnknownAction);
-  }, [dispatch]);
+  // !Replaced data fetching and state management with react-query hooks
+  const { data: tokens, status: tokenStatus ,error:tokenError} = useTokens();
 
   /* Collections */
-  const collections = useSelector(
-    (state: any) => state.collections.collections
-  );
-  const collectionStatus = useSelector(
-    (state: any) => state.collections.status
-  );
-  useEffect(() => {
-    dispatch(getCollections() as unknown as UnknownAction);
-  }, [dispatch]);
+  // !Replaced data fetching and state management with react-query hooks
+  const { data: collections, status: collectionStatus } = useCollections();
+
   /* Sales */
-  const sales = useSelector((state: any) => state.sales.sales);
-  const salesStatus = useSelector((state: any) => state.sales.status);
-  useEffect(() => {
-    dispatch(getSales() as unknown as UnknownAction);
-  }, [dispatch]);
+
+  // !Replaced data fetching and state management with react-query hooks
+  const { data: sales, status: salesStatus } = useSales();
 
   /* Smart Tokens */
-  const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
-  const smartTokenStatus = useSelector(
-    (state: any) => state.smartTokens.status
-  );
-  useEffect(() => {
-    dispatch(getSmartTokens() as unknown as UnknownAction);
-  }, [dispatch]);
+
+  // !Replaced data fetching and state management with react-query hooks
+  const { data: smartTokens, status: smartTokenStatus } = useSmartTokens();
 
   /* Theme */
   const isDarkTheme = useSelector(
@@ -137,31 +119,32 @@ export const Collections: React.FC = () => {
   );
 
   /* NFT Navigator Listings */
-  const [listings, setListings] = React.useState<any>(null);
-  React.useEffect(() => {
-    try {
-      const res = axios
-        .get(`${ARC72_INDEXER_API}/nft-indexer/v1/mp/listings`, {
-          params: {
-            active: true,
-          },
-        })
-        .then(({ data }) => {
-          setListings(data.listings);
-        });
-    } catch (e) {
-      console.log(e);
-    }
-  }, []);
+  // !Replaced data fetching and state management with react-query hooks
+  const { data: listings, status: listingsStatus } = useListings();
+
+  console.log({
+    collectionInfo,
+    prices,
+    tokens,
+    collections,
+    sales,
+    listings,
+    smartTokens,
+    tokenStatus,
+    tokenError,
+    collectionStatus,
+    salesStatus,
+    smartTokenStatus,
+  });
 
   const rankings: any = useMemo(() => {
     if (
       !tokens ||
       !sales ||
       !listings ||
-      tokenStatus !== "succeeded" ||
-      salesStatus !== "succeeded" ||
-      collectionStatus !== "succeeded"
+      tokenStatus !== "success" ||
+      salesStatus !== "success" ||
+      collectionStatus !== "success"
     )
       return new Map();
     return getRankings(tokens, collections, sales, listings, 1, smartTokens);
@@ -171,26 +154,55 @@ export const Collections: React.FC = () => {
     () =>
       !listings ||
       !rankings ||
-      tokenStatus !== "succeeded" ||
-      collectionStatus !== "succeeded" ||
-      salesStatus !== "succeeded",
+      tokenStatus !== "success" ||
+      collectionStatus !== "success" ||
+      salesStatus !== "success",
     [tokens, listings, rankings, tokenStatus, collectionStatus, salesStatus]
   );
 
-  return !isLoading ? (
+  if (!isLoading) {
+    return (
+      <Layout>
+        <Container maxWidth="xl">
+          <SectionHeading>
+            <SectionTitle className={isDarkTheme ? "dark" : "light"}>
+              Collections
+            </SectionTitle>
+            <SectionDescription>
+              // {rankings?.length} results
+            </SectionDescription>
+          </SectionHeading>
+          <NFTCollectionTable
+            rankings={rankings}
+            collectionInfo={collectionInfo}
+          />
+        </Container>
+      </Layout>
+    );
+  }
+
+  return (
     <Layout>
       <Container maxWidth="xl">
         <SectionHeading>
           <SectionTitle className={isDarkTheme ? "dark" : "light"}>
             Collections
           </SectionTitle>
-          <SectionDescription>// {rankings.length} results</SectionDescription>
+          {/* <SectionDescription>// {rankings?.length} results</SectionDescription> */}
         </SectionHeading>
-        <NFTCollectionTable
-          rankings={rankings}
-          collectionInfo={collectionInfo}
-        />
+        <div className="w-full h-[max(70vh,20rem)]  flex items-center justify-center">
+          <GridLoader
+            size={30}
+            color={isDarkTheme ? "#fff" : "#000"}
+            className="sm:!hidden !text-primary "
+          />
+          <GridLoader
+            size={50}
+            color={isDarkTheme ? "#fff" : "#000"}
+            className="!hidden sm:!block !text-primary "
+          />
+        </div>
       </Container>
     </Layout>
-  ) : null;
+  );
 };
