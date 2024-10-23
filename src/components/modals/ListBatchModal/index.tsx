@@ -25,8 +25,12 @@ import BigNumber from "bignumber.js";
 import { useSelector } from "react-redux";
 import { formatter } from "../../../utils/number";
 import CartNftCard from "../../CartNFTCard";
-import { TOKEN_WVOI } from "../../../contants/tokens";
+import { TOKEN_NAUT_VOI_STAKING, TOKEN_WVOI } from "../../../contants/tokens";
 import { useSmartTokens } from "@/components/Navbar/hooks/collections";
+import StakingInformation from "@/components/StakingInformation/StakingInformation";
+import { decodeRoyalties } from "@/utils/hf";
+import CostBreakdown from "@/components/CostBreakdown";
+import { mp } from "ulujs";
 
 // function to split array into chunks
 
@@ -108,6 +112,21 @@ const ListBatchModal: React.FC<ListBatchModalProps> = ({
     setShowDefaultButton(true);
     handleClose();
   };
+
+  const royaltyInfo = useMemo(() => {
+    if (!nfts.length) return null;
+    const metadata = JSON.parse(nfts[0]?.metadata || "{}");
+    const royalties = metadata.royalties || {};
+    return decodeRoyalties(royalties);
+  }, [nfts]);
+
+  const [mpFee, royaltyFee] = useMemo(() => {
+    const mpFee = 500 / 10000;
+    const royaltyFee = (royaltyInfo?.royaltyPoints || 0) / 10000;
+    return [mpFee, royaltyFee];
+  }, [price, royaltyInfo]);
+
+  console.log({ mpFee, royaltyFee, royaltyInfo });
 
   return (
     <Modal
@@ -199,30 +218,75 @@ const ListBatchModal: React.FC<ListBatchModalProps> = ({
                   }}
                 />
               </Box>*/}
-              <Box>
-                <Typography variant="caption">
-                  {price ? (
-                    <>
-                      <span>
-                        Listing {nfts.length} assets for sale at price {price}{" "}
-                        {token?.contractId === TOKEN_WVOI
-                          ? "VOI"
-                          : token?.symbol}
-                        .
-                      </span>{" "}
-                      {royalties ? (
+              {nfts.length === 1 && [421076].includes(nfts[0].contractId) ? (
+                <Box>
+                  <StakingInformation contractId={nfts[0].tokenId} />
+                </Box>
+              ) : null}
+              {nfts.length > 1 ? (
+                <Box>
+                  <Typography variant="caption">
+                    {price ? (
+                      <>
                         <span>
-                          Royalties will be applied. Proceeds of sales may vary.
-                        </span>
-                      ) : null}{" "}
-                      <span>Reject transaction in wallet to cancel.</span>
-                    </>
-                  ) : null}
-                </Typography>
-              </Box>
+                          Listing {nfts.length} assets for sale at price {price}{" "}
+                          {token?.contractId === TOKEN_WVOI
+                            ? "VOI"
+                            : token?.symbol}
+                          .
+                        </span>{" "}
+                        {royalties ? (
+                          <span>
+                            Royalties will be applied. Proceeds of sales may
+                            vary.
+                          </span>
+                        ) : null}{" "}
+                        <span>Reject transaction in wallet to cancel.</span>
+                      </>
+                    ) : null}
+                  </Typography>
+                </Box>
+              ) : (
+                <CostBreakdown
+                  price={Number(price)}
+                  marketplaceFeeRate={mpFee}
+                  royaltyFeeRate={
+                    [TOKEN_NAUT_VOI_STAKING].includes(nfts[0].contractId)
+                      ? 0
+                      : royaltyFee
+                  }
+                  symbol="VOI"
+                />
+              )}
+              {nfts?.some((el) => el.contractId === 421076) ? (
+                <Box>
+                  <Typography variant="caption">
+                    Nautilus Voi Staking NFTs cannet be listed for sale until
+                    after Oct 28th 2024. Feel free to{" "}
+                    <a
+                      style={{ textDecoration: "underline" }}
+                      href="https://nautilus.sh/#/collection/421076/"
+                      target="_blank"
+                    >
+                      mint Nautilus Locked Voi
+                    </a>{" "}
+                    or participate in the{" "}
+                    <a
+                      style={{ textDecoration: "underline" }}
+                      target="_blank"
+                      href="http://staking.voi.network"
+                    >
+                      staking program
+                    </a>
+                    .
+                  </Typography>
+                </Box>
+              ) : null}
               {showDefaultButton ? (
                 <Button
-                  disabled={loading}
+                  disabled={
+                    nfts?.some((el) => el.contractId === 421076) || loading
+                  }
                   size="large"
                   fullWidth
                   variant="contained"

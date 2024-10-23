@@ -58,7 +58,9 @@ const NFTCollectionTable: React.FC<Props> = ({ rankings, collectionInfo }) => {
               "Items",
               "Owners",
             ].map((header, index) => (
-              <StyledTableCell className=" " key={index}>{header}</StyledTableCell>
+              <StyledTableCell className=" " key={index}>
+                {header}
+              </StyledTableCell>
             ))}
           </TableRow>
         </TableHead>
