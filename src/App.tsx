@@ -66,7 +66,20 @@ const App: React.FC = () => {
       WalletId.KIBISIS,
       {
         id: WalletId.LUTE,
-        options: { siteName: "VoiX" },
+        options: { siteName: "Nautilus" },
+      },
+      {
+        id: WalletId.BIATEC,
+        options: {
+          projectId: walletConnectProjectId,
+          metadata: {
+            name: "Nautilus",
+            url: "https://nautilus.sh",
+            description: "Nautilus NFT Marketplace",
+            icons: ["https://nautilus.sh/favicon.ico"],
+          },
+          themeMode: "light",
+        },
       },
       {
         id: WalletId.WALLETCONNECT,
