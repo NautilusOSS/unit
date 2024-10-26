@@ -6,3 +6,4 @@ export { Token } from "./Token";
 export { Account } from "./Account";
 export { Activity } from "./Activity";
 export { Listings } from "./Listings";
+export { Staking } from "./Staking";

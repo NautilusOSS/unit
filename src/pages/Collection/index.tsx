@@ -54,6 +54,7 @@ import DiamondIcon from "@mui/icons-material/Diamond";
 import { useMarketplaceListings } from "@/hooks/mp";
 import TollIcon from "@mui/icons-material/Toll";
 import NorthEastIcon from "@mui/icons-material/NorthEast";
+import { Staking } from "../Staking";
 
 const PriceRangeContainer = styled.div`
   display: flex;
@@ -483,8 +484,6 @@ export const Collection: React.FC = () => {
   /* Router */
 
   const { id } = useParams();
-
-  const navigate = useNavigate();
 
   const dispatch = useDispatch();
 

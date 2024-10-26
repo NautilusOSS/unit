@@ -27,6 +27,10 @@ export const routes = [
   },
   */
   {
+    path: "/staking",
+    Component: Page.Staking,
+  },
+  {
     path: "/listing",
     Component: Page.Listings,
   },

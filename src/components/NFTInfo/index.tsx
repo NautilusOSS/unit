@@ -1600,10 +1600,10 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
       stakingAccountData.length === 0
     )
       return 0;
-    const [stakingAccount] = stakingAccountData;
     const priceN = new BigNumber(priceAU).div(1e6).toNumber();
-    const totalN = Number(stakingAccount?.global_total);
-    return formatter.format(totalN);
+    const totalN = Number(stakingAccountData?.global_total) / 1e6;
+
+    return priceN < totalN ? formatter.format(totalN) : "";
   }, [nft, priceAU, stakingAccountData, isLoadingStakingAccountData]);
 
   return !loading ? (
@@ -1862,15 +1862,14 @@ export const NFTInfo: React.FC<NFTInfoProps> = ({
                         </Button>
                       </>
                     )
-                  ) : nft.owner === activeAccount?.address ? null : /*
+                  ) : nft.owner === activeAccount?.address ? null /*
                     <Button
                       variant="text"
                       onClick={() => setOpenListSale(true)}
                     >
                       List for Sale
                     </Button>
-                    */
-                  null}
+                    */ : null}
                   {false && (
                     <OfferButton src={ButtonOffer} alt="Offer Button" />
                   )}

@@ -9,12 +9,12 @@ export const navlinks = [
   },
   {
     label: "Staking",
-    href: "/collection/421076/",
+    href: "/staking",
   },
 ];
 
 export const linkLabels: any = {
   "/collection": "Collections",
   "/listing": "Buy",
-  "/collection/421076": "Staking",
+  "/staking": "Staking",
 };

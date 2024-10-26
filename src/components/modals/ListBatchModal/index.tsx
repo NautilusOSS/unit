@@ -285,7 +285,8 @@ const ListBatchModal: React.FC<ListBatchModalProps> = ({
               {showDefaultButton ? (
                 <Button
                   disabled={
-                    nfts?.some((el) => el.contractId === 421076) || loading
+                    //nfts?.some((el) => el.contractId === 421076) ||
+                    loading
                   }
                   size="large"
                   fullWidth

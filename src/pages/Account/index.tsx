@@ -389,9 +389,7 @@ export const Account: React.FC = () => {
         const royalties = decodeRoyalties(metadata.royalties);
         console.log({ nft, metadata, royalties });
         const whichMP206 = CTCINFO_MP206;
-        // [nautilusVoiStaking].includes(nft.contractId)
-        //   ? CTCINFO_MP206_2
-        //   : CTCINFO_MP206;
+        console.log({ nft });
         const customR = await mp.list(
           activeAccount.address,
           nft,
@@ -403,11 +401,9 @@ export const Account: React.FC = () => {
             paymentTokenId,
             wrappedNetworkTokenId: TOKEN_WVOI,
             extraTxns: [],
-            enforceRoyalties: [TOKEN_NAUT_VOI_STAKING].includes(
-              nft?.listing?.collectionId || 0
-            )
-              ? false
-              : true,
+            enforceRoyalties: ![TOKEN_NAUT_VOI_STAKING].includes(
+              nft?.contractId || 0
+            ),
             mpContractId: whichMP206,
             listingBoxPaymentOverride: ListingBoxCost + i,
             skipEnsure: true,
