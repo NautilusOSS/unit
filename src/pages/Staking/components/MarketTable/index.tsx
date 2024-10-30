@@ -55,7 +55,7 @@ const MarketTable: React.FC<MarketTableProps> = ({ marketData }) => {
   };
 
   const [currentPage, setCurrentPage] = React.useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
   const totalPages = Math.ceil(marketData.length / itemsPerPage);
 
   const copyToClipboard = (text: string, label: string) => {
