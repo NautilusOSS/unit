@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import PositionTable from "../PositionTable"; // Adjust the import path as necessary
 import { useOwnedStakingContract } from "@/hooks/staking";
 import { useWallet } from "@txnlab/use-wallet-react";
@@ -31,9 +31,8 @@ const PositionContainer: React.FC = () => {
         isDarkTheme={isDarkTheme}
       />
       <PositionTable
-        stakingContracts={stakingContractData}
+        stakingContracts={stakingContractData || []}
         arc72Tokens={arc72TokenData}
-        isDarkTheme={isDarkTheme}
       />
     </div>
   );

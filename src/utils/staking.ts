@@ -14,31 +14,30 @@ export const computeListingDiscount = (listing: ListingI) => {
 
 export const getStakingUnlockTime = (stakingContract: any) => {
   return (
-    (stakingContract.funding || AIRDROP_FUNDING) +
+    (stakingContract?.funding || AIRDROP_FUNDING) +
     getStakingLockupTime(stakingContract) +
     getStakingVestingTime(stakingContract)
   );
 };
 
 export const getStakingTotalTokens = (stakingContract: any) => {
-  const total = Number(stakingContract.global_total);
-  const initial = Number(stakingContract.global_initial);
+  const total = Number(stakingContract?.global_total || 0);
+  const initial = Number(stakingContract?.global_initial || 0);
   return total > initial ? total / 1e6 : initial / 1e6;
 };
 
 export const getStakingVestingTime = (stakingContract: any) => {
-  return (
-    stakingContract.global_distribution_count *
-    stakingContract.global_distribution_seconds
-  );
+  const distributionCount = stakingContract?.global_distribution_count || 0;
+  const distributionSeconds = stakingContract?.global_distribution_seconds || 0;
+  return distributionCount * distributionSeconds;
 };
 
 export const getStakingLockupTime = (stakingContract: any) => {
-  return (
-    (stakingContract.global_lockup_delay * stakingContract.global_period +
-      stakingContract.global_vesting_delay) *
-    stakingContract.global_period_seconds
-  );
+  const lockupDelay = stakingContract?.global_lockup_delay || 0;
+  const period = stakingContract?.global_period || 0;
+  const vestingDelay = stakingContract?.global_vesting_delay || 0;
+  const periodSeconds = stakingContract?.global_period_seconds || 0;
+  return (lockupDelay * period + vestingDelay) * periodSeconds;
 };
 
 export const getStakingWithdrawableAmount = async (

@@ -27,6 +27,7 @@ interface PositionTokenRowProps {
   nft: {
     contractId: string;
     tokenId: string;
+    staking: any;
   };
   index: number;
   arc72TokensLength: number;
@@ -41,6 +42,7 @@ const PositionTokenRow: React.FC<PositionTokenRowProps> = ({
   lastRowStyle,
   cellStyle,
 }) => {
+  if (!nft.staking) return null;
   const { isDarkTheme } = useSelector((state: RootState) => state.theme);
   const { activeAccount, signTransactions } = useWallet();
   const { data, isLoading, refetch } = useStakingContract(Number(nft.tokenId), {
@@ -87,7 +89,7 @@ const PositionTokenRow: React.FC<PositionTokenRowProps> = ({
     ci.setFee(5000);
     const withdrawR2 = await ci.withdraw(
       nft.tokenId,
-      BigInt(data.withdrawable)
+      BigInt(data?.withdrawable || "0")
     );
     if (!withdrawR2.success) {
       console.error({ withdrawR2 });
@@ -139,7 +141,7 @@ const PositionTokenRow: React.FC<PositionTokenRowProps> = ({
         <>
           <TableCell style={cellStyleWithColor} align="right">
             <a
-              href={`https://block.voi.network/explorer/application/${data.contractId}/global-state`}
+              href={`https://block.voi.network/explorer/application/${data?.contractId}/global-state`}
               target="_blank"
               style={{
                 color: isDarkTheme ? "white" : "inherit",
@@ -147,7 +149,7 @@ const PositionTokenRow: React.FC<PositionTokenRowProps> = ({
               }}
               rel="noopener noreferrer"
             >
-              {data.contractId}
+              {data?.contractId}
             </a>
             <ContentCopyIcon
               style={{
@@ -156,12 +158,12 @@ const PositionTokenRow: React.FC<PositionTokenRowProps> = ({
                 marginLeft: "5px",
                 fontSize: "16px",
               }}
-              onClick={() => copyToClipboard(data.contractId, "Account ID")}
+              onClick={() => copyToClipboard(data?.contractId, "Account ID")}
             />
           </TableCell>
           <TableCell style={cellStyleWithColor} align="center">
             <a
-              href={`https://block.voi.network/explorer/account/${data.contractAddress}/transactions`}
+              href={`https://block.voi.network/explorer/account/${data?.contractAddress}/transactions`}
               target="_blank"
               style={{
                 color: isDarkTheme ? "white" : "inherit",
@@ -169,8 +171,8 @@ const PositionTokenRow: React.FC<PositionTokenRowProps> = ({
               }}
               rel="noopener noreferrer"
             >
-              {data.contractAddress.slice(0, 10)}...
-              {data.contractAddress.slice(-10)}
+              {data?.contractAddress.slice(0, 10)}...
+              {data?.contractAddress.slice(-10)}
             </a>
             <ContentCopyIcon
               style={{
@@ -180,7 +182,7 @@ const PositionTokenRow: React.FC<PositionTokenRowProps> = ({
                 fontSize: "16px",
               }}
               onClick={() =>
-                copyToClipboard(data.contractAddress, "Account Address")
+                copyToClipboard(data?.contractAddress, "Account Address")
               }
             />
           </TableCell>
@@ -224,7 +226,7 @@ const PositionTokenRow: React.FC<PositionTokenRowProps> = ({
                   fontWeight: 500,
                 }}
               >
-                {Number(data.withdrawable) / 1e6} VOI
+                {Number(data?.withdrawable || 0) / 1e6} VOI
               </Typography>
             </Button>
           </TableCell>
