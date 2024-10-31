@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -10,11 +10,14 @@ import {
   useTheme,
   Button,
   Typography,
+  Box,
 } from "@mui/material";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import Pagination from "@/components/Pagination";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { toast } from "react-toastify";
 import VIAIcon from "/src/static/crypto-icons/voi/6779767.svg";
 import moment from "moment";
@@ -25,11 +28,16 @@ interface MarketTableProps {
   marketData: any[]; // Replace 'any' with a more specific type if available
 }
 
+type SortDirection = 'asc' | 'desc' | null;
+type SortColumn = 'totalStaked' | 'lockup' | 'vesting' | 'unlock' | 'discount' | 'price' | null;
+
 const MarketTable: React.FC<MarketTableProps> = ({ marketData }) => {
   const { isDarkTheme } = useSelector((state: RootState) => state.theme);
   const theme = useTheme();
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sortColumn, setSortColumn] = useState<SortColumn>('discount');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const tableStyle = {
     backgroundColor: "transparent",
@@ -76,6 +84,67 @@ const MarketTable: React.FC<MarketTableProps> = ({ marketData }) => {
     setIsModalOpen(false);
   };
 
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortDirection(null);
+        setSortColumn(null);
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedData = useMemo(() => {
+    if (!sortColumn || !sortDirection) return marketData;
+
+    return [...marketData].sort((a, b) => {
+      let aValue: any = a[sortColumn];
+      let bValue: any = b[sortColumn];
+
+      // Special handling for specific columns
+      if (sortColumn === 'unlock') {
+        aValue = moment.unix(a.unlock).valueOf();
+        bValue = moment.unix(b.unlock).valueOf();
+      } else if (sortColumn === 'discount') {
+        aValue = parseFloat(a.discount);
+        bValue = parseFloat(b.discount);
+      } else if (sortColumn === 'totalStaked' || sortColumn === 'price') {
+        aValue = Number(a[sortColumn]);
+        bValue = Number(b[sortColumn]);
+      }
+
+      if (sortDirection === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return bValue > aValue ? 1 : -1;
+      }
+    });
+  }, [marketData, sortColumn, sortDirection]);
+
+  const SortableHeader: React.FC<{ column: SortColumn; children: React.ReactNode }> = ({ column, children }) => (
+    <Box
+      component="span"
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        cursor: 'pointer',
+        '&:hover': { opacity: 0.8 },
+      }}
+      onClick={() => handleSort(column)}
+    >
+      {children}
+      {sortColumn === column && (
+        <Box component="span" sx={{ ml: 1 }}>
+          {sortDirection === 'asc' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />}
+        </Box>
+      )}
+    </Box>
+  );
+
   return (
     <>
       <TableContainer component={Paper} style={tableStyle}>
@@ -89,32 +158,41 @@ const MarketTable: React.FC<MarketTableProps> = ({ marketData }) => {
                 Account Address
               </TableCell>
               <TableCell style={headCellStyle} align="right">
-                Total Staked
+                <SortableHeader column="totalStaked">
+                  Total Staked
+                </SortableHeader>
               </TableCell>
               <TableCell style={headCellStyle} align="right">
-                Lockup
+                <SortableHeader column="lockup">
+                  Lockup
+                </SortableHeader>
               </TableCell>
               <TableCell style={headCellStyle} align="right">
-                Vesting
+                <SortableHeader column="vesting">
+                  Vesting
+                </SortableHeader>
               </TableCell>
               <TableCell style={headCellStyle} align="right">
-                Unlock
+                <SortableHeader column="unlock">
+                  Unlock
+                </SortableHeader>
               </TableCell>
               <TableCell style={headCellStyle} align="right">
-                Discount
+                <SortableHeader column="discount">
+                  Discount
+                </SortableHeader>
               </TableCell>
               <TableCell style={headCellStyle} align="right">
-                Price
+                <SortableHeader column="price">
+                  Price
+                </SortableHeader>
               </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {marketData
-              .slice(
-                (currentPage - 1) * itemsPerPage,
-                currentPage * itemsPerPage
-              )
-              .map((item, index) => (
+            {sortedData
+              .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+              .map((item) => (
                 <TableRow key={item.contractId}>
                   <TableCell style={cellStyle} align="center">
                     <Link
