@@ -98,7 +98,7 @@ const MarketContainer: React.FC = () => {
             round: true,
           }),
           unlock: getStakingUnlockTime(el.staking),
-          discount: 1,
+          discount: computeListingDiscount(el),
           //price: Number(el.price) / 1e6,
         }))}
       />

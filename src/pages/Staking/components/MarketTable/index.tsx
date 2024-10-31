@@ -57,6 +57,7 @@ const MarketTable: React.FC<MarketTableProps> = ({ marketData }) => {
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
   const totalPages = Math.ceil(marketData.length / itemsPerPage);
+  const showPagination = marketData.length > itemsPerPage;
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard
@@ -64,8 +65,6 @@ const MarketTable: React.FC<MarketTableProps> = ({ marketData }) => {
       .then(() => toast.success(`${label} copied to clipboard`))
       .catch(() => toast.error("Failed to copy to clipboard"));
   };
-
-  console.log({ marketData });
 
   const handleOpenModal = (item: any) => {
     setSelectedItem(item);
@@ -101,11 +100,9 @@ const MarketTable: React.FC<MarketTableProps> = ({ marketData }) => {
               <TableCell style={headCellStyle} align="right">
                 Unlock
               </TableCell>
-              {/*
               <TableCell style={headCellStyle} align="right">
                 Discount
               </TableCell>
-              */}
               <TableCell style={headCellStyle} align="right">
                 Price
               </TableCell>
@@ -174,9 +171,16 @@ const MarketTable: React.FC<MarketTableProps> = ({ marketData }) => {
                   <TableCell style={cellStyle} align="right">
                     {moment.unix(item.unlock).fromNow()}
                   </TableCell>
-                  {/*<TableCell style={cellStyle} align="right">
+                  <TableCell
+                    style={{
+                      ...cellStyle,
+                      color: item.discount.indexOf("-") === 0 ? "red" : "green",
+                      fontWeight: 900,
+                    }}
+                    align="right"
+                  >
                     {item.discount}%
-                  </TableCell>*/}
+                  </TableCell>
                   <TableCell style={cellStyle} align="right">
                     <Button
                       sx={{
@@ -209,12 +213,14 @@ const MarketTable: React.FC<MarketTableProps> = ({ marketData }) => {
           </TableBody>
         </Table>
       </TableContainer>
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-        isDarkTheme={isDarkTheme}
-      />
+      {showPagination && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          isDarkTheme={isDarkTheme}
+        />
+      )}
       {selectedItem && (
         <BuySaleModal
           open={isModalOpen}

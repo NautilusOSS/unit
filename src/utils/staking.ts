@@ -4,12 +4,12 @@ import algosdk from "algosdk";
 import { CONTRACT } from "ulujs";
 
 export const computeListingDiscount = (listing: ListingI) => {
-  if (!listing.rewards || !listing) return 0;
-  const { rewards } = listing;
-  ((Number(rewards.total || listing.staking.global_total) -
-    Number(listing.price / 1e6)) /
-    Number(rewards.total || listing.staking.global_total)) *
-    100;
+  if (!listing) return 0;
+  return (
+    ((Number(listing.staking.global_total) - Number(listing.price)) /
+      Number(listing.staking.global_total)) *
+    100
+  ).toFixed(2);
 };
 
 export const getStakingUnlockTime = (stakingContract: any) => {
