@@ -50,7 +50,7 @@ const BuySaleModal: React.FC<BuySaleModalProps> = ({ open, onClose, item }) => {
           extraTxns: [],
           algodClient,
           indexerClient,
-          skipEnsure: true,
+          skipEnsure: false,
         }
       );
       console.log({ customR });

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   TableRow,
   TableCell,
@@ -20,6 +20,7 @@ import { waitForConfirmation } from "algosdk";
 import party from "party-js";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
+import DelegateModal from "@/components/modals/DelegateModal";
 
 const { algodClient } = getAlgorandClients();
 
@@ -29,6 +30,7 @@ interface PositionRowProps {
     tokenId: string;
     contractAddress: string;
     withdrawable: string;
+    global_delegate: string;
   };
   cellStyle: React.CSSProperties;
 }
@@ -103,6 +105,8 @@ const PositionRow: React.FC<PositionRowProps> = ({ position, cellStyle }) => {
     ...cellStyle,
   };
 
+  const [isDelegateModalOpen, setIsDelegateModalOpen] = useState(false);
+
   if (isLoading) {
     return (
       <TableRow>
@@ -113,114 +117,148 @@ const PositionRow: React.FC<PositionRowProps> = ({ position, cellStyle }) => {
     );
   }
   return (
-    <TableRow>
-      <TableCell
-        style={{
-          ...cellStyleWithColor,
-          color: isDarkTheme ? "white" : "black",
-          fontWeight: 100,
-        }}
-        align="right"
-      >
-        <a
-          href={`https://block.voi.network/explorer/application/${position.contractId}/global-state`}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "inherit" }}
-        >
-          {position.contractId}
-        </a>
-        <ContentCopyIcon
+    <>
+      <TableRow>
+        <TableCell
           style={{
-            cursor: "pointer",
-            marginLeft: "5px",
-            fontSize: "16px",
-            color: "inherit",
+            ...cellStyleWithColor,
+            color: isDarkTheme ? "white" : "black",
+            fontWeight: 100,
           }}
-          onClick={() => copyToClipboard(position.contractId, "Account ID")}
-        />
-      </TableCell>
-      <TableCell
-        style={{
-          ...cellStyleWithColor,
-          color: isDarkTheme ? "white" : "black",
-          fontWeight: 100,
-        }}
-        align="center"
-      >
-        <a
-          href={`https://block.voi.network/explorer/account/${position.contractAddress}/transactions`}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "inherit" }}
+          align="right"
         >
-          {position.contractAddress.slice(0, 10)}...
-          {position.contractAddress.slice(-10)}
-        </a>
-        <ContentCopyIcon
-          style={{
-            cursor: "pointer",
-            marginLeft: "5px",
-            fontSize: "16px",
-            color: "inherit",
-          }}
-          onClick={() =>
-            copyToClipboard(position.contractAddress, "Account Address")
-          }
-        />
-      </TableCell>
-      <TableCell
-        style={{
-          ...cellStyleWithColor,
-          color: isDarkTheme ? "white" : "black",
-          fontWeight: 100,
-        }}
-        align="right"
-      >
-        {getStakingTotalTokens(position)} VOI
-      </TableCell>
-      <TableCell
-        style={{
-          ...cellStyleWithColor,
-          color: isDarkTheme ? "white" : "black",
-          fontWeight: 100,
-        }}
-        align="right"
-      >
-        {moment.unix(getStakingUnlockTime(position)).fromNow(true)}
-      </TableCell>
-      <TableCell
-        style={{
-          ...cellStyleWithColor,
-          color: isDarkTheme ? "white" : "black",
-          fontWeight: 100,
-        }}
-        align="right"
-      >
-        <Button
-          sx={{
-            borderRadius: "20px",
-            color: "inherit",
-          }}
-          onClick={handleClaim}
-          disabled={data?.withdrawable === "0"}
-          variant={isDarkTheme ? "outlined" : "contained"}
-          size="small"
-        >
-          <img src={VIAIcon} style={{ height: "12px" }} alt="VOI Icon" />
-          <Typography
-            variant="body2"
-            sx={{
-              ml: 1,
-              color: "white",
-              fontWeight: 500,
-            }}
+          <a
+            href={`https://block.voi.network/explorer/application/${position.contractId}/global-state`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "inherit" }}
           >
-            {Number(data?.withdrawable || 0) / 1e6} VOI
-          </Typography>
-        </Button>
-      </TableCell>
-    </TableRow>
+            {position.contractId}
+          </a>
+          <ContentCopyIcon
+            style={{
+              cursor: "pointer",
+              marginLeft: "5px",
+              fontSize: "16px",
+              color: "inherit",
+            }}
+            onClick={() => copyToClipboard(position.contractId, "Account ID")}
+          />
+        </TableCell>
+        <TableCell
+          style={{
+            ...cellStyleWithColor,
+            color: isDarkTheme ? "white" : "black",
+            fontWeight: 100,
+          }}
+          align="center"
+        >
+          <a
+            href={`https://block.voi.network/explorer/account/${position.contractAddress}/transactions`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "inherit" }}
+          >
+            {position.contractAddress.slice(0, 10)}...
+            {position.contractAddress.slice(-10)}
+          </a>
+          <ContentCopyIcon
+            style={{
+              cursor: "pointer",
+              marginLeft: "5px",
+              fontSize: "16px",
+              color: "inherit",
+            }}
+            onClick={() =>
+              copyToClipboard(position.contractAddress, "Account Address")
+            }
+          />
+        </TableCell>
+        <TableCell
+          style={{
+            ...cellStyleWithColor,
+            color: isDarkTheme ? "white" : "black",
+            fontWeight: 100,
+            cursor: "pointer",
+          }}
+          align="center"
+          onClick={() => setIsDelegateModalOpen(true)}
+        >
+          {position.global_delegate.slice(0, 10)}...
+          {position.global_delegate.slice(-10)}
+          <ContentCopyIcon
+            style={{
+              cursor: "pointer",
+              marginLeft: "5px",
+              fontSize: "16px",
+              color: "inherit",
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              copyToClipboard(position.global_delegate, "Account Address");
+            }}
+          />
+        </TableCell>
+        <TableCell
+          style={{
+            ...cellStyleWithColor,
+            color: isDarkTheme ? "white" : "black",
+            fontWeight: 100,
+          }}
+          align="right"
+        >
+          {getStakingTotalTokens(position)} VOI
+        </TableCell>
+        <TableCell
+          style={{
+            ...cellStyleWithColor,
+            color: isDarkTheme ? "white" : "black",
+            fontWeight: 100,
+          }}
+          align="right"
+        >
+          {moment.unix(getStakingUnlockTime(position)).fromNow(true)}
+        </TableCell>
+        <TableCell
+          style={{
+            ...cellStyleWithColor,
+            color: isDarkTheme ? "white" : "black",
+            fontWeight: 100,
+          }}
+          align="right"
+        >
+          <Button
+            sx={{
+              borderRadius: "20px",
+              color: "inherit",
+            }}
+            onClick={handleClaim}
+            disabled={data?.withdrawable === "0"}
+            variant={isDarkTheme ? "outlined" : "contained"}
+            size="small"
+          >
+            <img src={VIAIcon} style={{ height: "12px" }} alt="VOI Icon" />
+            <Typography
+              variant="body2"
+              sx={{
+                ml: 1,
+                color: "white",
+                fontWeight: 500,
+              }}
+            >
+              {Number(data?.withdrawable || 0) / 1e6} VOI
+            </Typography>
+          </Button>
+        </TableCell>
+      </TableRow>
+
+      <DelegateModal
+        open={isDelegateModalOpen}
+        onClose={() => setIsDelegateModalOpen(false)}
+        contractId={position.contractId}
+        currentDelegate={position.global_delegate}
+      />
+    </>
   );
 };
 

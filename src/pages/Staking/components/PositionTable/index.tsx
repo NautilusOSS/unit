@@ -61,6 +61,8 @@ const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
   const { isDarkTheme } = useSelector((state: RootState) => state.theme);
   const theme = useTheme();
 
+  console.log(stakingContracts, arc72Tokens);
+
   const tableStyle = {
     backgroundColor: "transparent",
     borderRadius: "8px",
@@ -116,6 +118,9 @@ const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
                 <TableCell style={headCellStyle} align="center">
                   Account Address
                 </TableCell>
+                <TableCell style={headCellStyle} align="center">
+                  Delegate
+                </TableCell>
                 <TableCell style={headCellStyle} align="right">
                   Lockup Tokens
                 </TableCell>
@@ -157,6 +162,9 @@ const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
                 </TableCell>
                 <TableCell style={headCellStyle} align="center">
                   Account Address
+                </TableCell>
+                <TableCell style={headCellStyle} align="center">
+                  Delegate
                 </TableCell>
                 <TableCell style={headCellStyle} align="right">
                   Lockup Tokens

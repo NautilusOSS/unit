@@ -11,6 +11,10 @@ export const navlinks = [
     label: "Staking",
     href: "/staking",
   },
+  {
+    label: "Launchpad",
+    href: "/create-arc200",
+  },
 ];
 
 export const linkLabels: any = {

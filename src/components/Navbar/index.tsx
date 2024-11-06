@@ -31,6 +31,8 @@ import { useWallet } from "@txnlab/use-wallet-react";
 import { getAlgorandClients } from "@/wallets";
 import { abi, CONTRACT } from "ulujs";
 import { TOKEN_WVOI } from "@/contants/tokens";
+import { ROUTES } from "@/constants/routes";
+import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
 
 const AccountIcon = () => {
   return (

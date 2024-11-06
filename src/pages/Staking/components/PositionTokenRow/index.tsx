@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Button,
   TableCell,
@@ -20,6 +20,8 @@ import { waitForConfirmation } from "algosdk";
 import party from "party-js";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
+import DelegateModal from "@/components/modals/DelegateModal";
+import { NAAS_ADDRESS } from "@/contants/staking";
 
 const { algodClient } = getAlgorandClients();
 
@@ -27,7 +29,13 @@ interface PositionTokenRowProps {
   nft: {
     contractId: string;
     tokenId: string;
-    staking: any;
+    staking: {
+      contractId: string;
+      tokenId: string;
+      contractAddress: string;
+      withdrawable: string;
+      global_delegate: string;
+    };
   };
   index: number;
   arc72TokensLength: number;
@@ -49,6 +57,7 @@ const PositionTokenRow: React.FC<PositionTokenRowProps> = ({
     includeRewards: true,
     includeWithdrawable: true,
   });
+  const [isDelegateModalOpen, setIsDelegateModalOpen] = useState(false);
 
   const handleClaim = async () => {
     if (!activeAccount) return;
@@ -129,110 +138,147 @@ const PositionTokenRow: React.FC<PositionTokenRowProps> = ({
   };
 
   return (
-    <TableRow
-      key={`${nft.contractId}-${nft.tokenId}`}
-      style={index === arc72TokensLength - 1 ? lastRowStyle : undefined}
-    >
-      {isLoading ? (
-        <TableCell style={cellStyleWithColor} colSpan={5} align="right">
-          <Skeleton variant="text" />
-        </TableCell>
-      ) : (
-        <>
-          <TableCell style={cellStyleWithColor} align="right">
-            <a
-              href={`https://block.voi.network/explorer/application/${data?.contractId}/global-state`}
-              target="_blank"
-              style={{
-                color: isDarkTheme ? "white" : "inherit",
-                fontWeight: 100,
-              }}
-              rel="noopener noreferrer"
-            >
-              {data?.contractId}
-            </a>
-            <ContentCopyIcon
-              style={{
-                color: isDarkTheme ? "white" : "inherit",
-                cursor: "pointer",
-                marginLeft: "5px",
-                fontSize: "16px",
-              }}
-              onClick={() => copyToClipboard(data?.contractId, "Account ID")}
-            />
+    <>
+      <TableRow
+        key={`${nft.contractId}-${nft.tokenId}`}
+        style={index === arc72TokensLength - 1 ? lastRowStyle : undefined}
+      >
+        {isLoading ? (
+          <TableCell style={cellStyleWithColor} colSpan={5} align="right">
+            <Skeleton variant="text" />
           </TableCell>
-          <TableCell style={cellStyleWithColor} align="center">
-            <a
-              href={`https://block.voi.network/explorer/account/${data?.contractAddress}/transactions`}
-              target="_blank"
-              style={{
-                color: isDarkTheme ? "white" : "inherit",
-                fontWeight: 100,
-              }}
-              rel="noopener noreferrer"
-            >
-              {data?.contractAddress.slice(0, 10)}...
-              {data?.contractAddress.slice(-10)}
-            </a>
-            <ContentCopyIcon
-              style={{
-                color: isDarkTheme ? "white" : "inherit",
-                cursor: "pointer",
-                marginLeft: "5px",
-                fontSize: "16px",
-              }}
-              onClick={() =>
-                copyToClipboard(data?.contractAddress, "Account Address")
-              }
-            />
-          </TableCell>
-          <TableCell
-            style={{
-              ...cellStyleWithColor,
-              color: isDarkTheme ? "white" : "inherit",
-              fontWeight: 100,
-            }}
-            align="right"
-          >
-            {getStakingTotalTokens(data)} VOI
-          </TableCell>
-          <TableCell
-            style={{
-              ...cellStyleWithColor,
-              color: isDarkTheme ? "white" : "inherit",
-              fontWeight: 100,
-            }}
-            align="right"
-          >
-            {moment.unix(getStakingUnlockTime(data)).fromNow(true)}
-          </TableCell>
-          <TableCell style={cellStyleWithColor} align="right">
-            <Button
-              sx={{
-                borderRadius: "20px",
-                color: "inherit",
-              }}
-              onClick={handleClaim}
-              disabled={data?.withdrawable === "0"}
-              variant={isDarkTheme ? "outlined" : "contained"}
-              size="small"
-            >
-              <img src={VIAIcon} style={{ height: "12px" }} alt="VOI Icon" />
-              <Typography
-                variant="body2"
-                sx={{
-                  ml: 1,
-                  color: "white",
-                  fontWeight: 500,
+        ) : (
+          <>
+            <TableCell style={cellStyleWithColor} align="right">
+              <a
+                href={`https://block.voi.network/explorer/application/${data?.contractId}/global-state`}
+                target="_blank"
+                style={{
+                  color: isDarkTheme ? "white" : "inherit",
+                  fontWeight: 100,
                 }}
+                rel="noopener noreferrer"
               >
-                {Number(data?.withdrawable || 0) / 1e6} VOI
-              </Typography>
-            </Button>
-          </TableCell>
-        </>
-      )}
-    </TableRow>
+                {data?.contractId}
+              </a>
+              <ContentCopyIcon
+                style={{
+                  color: isDarkTheme ? "white" : "inherit",
+                  cursor: "pointer",
+                  marginLeft: "5px",
+                  fontSize: "16px",
+                }}
+                onClick={() => copyToClipboard(data?.contractId, "Account ID")}
+              />
+            </TableCell>
+            <TableCell style={cellStyleWithColor} align="center">
+              <a
+                href={`https://block.voi.network/explorer/account/${data?.contractAddress}/transactions`}
+                target="_blank"
+                style={{
+                  color: isDarkTheme ? "white" : "inherit",
+                  fontWeight: 100,
+                }}
+                rel="noopener noreferrer"
+              >
+                {data?.contractAddress.slice(0, 10)}...
+                {data?.contractAddress.slice(-10)}
+              </a>
+              <ContentCopyIcon
+                style={{
+                  color: isDarkTheme ? "white" : "inherit",
+                  cursor: "pointer",
+                  marginLeft: "5px",
+                  fontSize: "16px",
+                }}
+                onClick={() =>
+                  copyToClipboard(data?.contractAddress, "Account Address")
+                }
+              />
+            </TableCell>
+            <TableCell
+              style={{
+                ...cellStyleWithColor,
+                color: isDarkTheme ? "white" : "inherit",
+                fontWeight: 100,
+                cursor: "pointer",
+              }}
+              align="center"
+              onClick={() => setIsDelegateModalOpen(true)}
+            >
+              {data.global_delegate.slice(0, 10)}...
+              {data.global_delegate.slice(-10)}
+              <ContentCopyIcon
+                style={{
+                  color: isDarkTheme ? "white" : "inherit",
+                  cursor: "pointer",
+                  marginLeft: "5px",
+                  fontSize: "16px",
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  copyToClipboard(data.global_delegate, "Account Address");
+                }}
+              />
+            </TableCell>
+            <TableCell
+              style={{
+                ...cellStyleWithColor,
+                color: isDarkTheme ? "white" : "inherit",
+                fontWeight: 100,
+              }}
+              align="right"
+            >
+              {getStakingTotalTokens(data)} VOI
+            </TableCell>
+            <TableCell
+              style={{
+                ...cellStyleWithColor,
+                color: isDarkTheme ? "white" : "inherit",
+                fontWeight: 100,
+              }}
+              align="right"
+            >
+              {moment.unix(getStakingUnlockTime(data)).fromNow(true)}
+            </TableCell>
+            <TableCell style={cellStyleWithColor} align="right">
+              <Button
+                sx={{
+                  borderRadius: "20px",
+                  color: "inherit",
+                }}
+                onClick={handleClaim}
+                disabled={data?.withdrawable === "0"}
+                variant={isDarkTheme ? "outlined" : "contained"}
+                size="small"
+              >
+                <img src={VIAIcon} style={{ height: "12px" }} alt="VOI Icon" />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    ml: 1,
+                    color: "white",
+                    fontWeight: 500,
+                  }}
+                >
+                  {Number(data?.withdrawable || 0) / 1e6} VOI
+                </Typography>
+              </Button>
+            </TableCell>
+          </>
+        )}
+      </TableRow>
+
+      <DelegateModal
+        open={isDelegateModalOpen}
+        onClose={() => setIsDelegateModalOpen(false)}
+        contractId={nft.contractId}
+        tokenId={nft.tokenId}
+        currentDelegate={data?.global_delegate || ""}
+        allowNaaS={true}
+        naaSAddress={NAAS_ADDRESS}
+      />
+    </>
   );
 };
 
