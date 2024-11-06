@@ -124,7 +124,7 @@ const Navbar: React.FC = () => {
 
     setIsLoadingBalance(true);
     try {
-      let withdrawableBalance = balanceData.returnValue;
+      let withdrawableBalance = Number(balanceData.returnValue) / 1e6;
       // const { algodClient } = getAlgorandClients();
       // for (const stakingContract of stakingContractData || []) {
       //   const withdrawable = await getStakingWithdrawableAmount(
@@ -174,17 +174,17 @@ const Navbar: React.FC = () => {
       if (!withdrawR.success) return;
 
       // If including staking, withdraw from staking contracts
-      if (includeStaking) {
-        // Add staking contract withdrawal logic here
-        for (const stakingContract of stakingContractData || []) {
-          const withdrawable = await getStakingWithdrawableAmount(
-            algodClient,
-            stakingContract.contractId,
-            activeAccount?.address || ""
-          );
-          // Add withdrawal transaction
-        }
-      }
+      // if (includeStaking) {
+      //   // Add staking contract withdrawal logic here
+      //   for (const stakingContract of stakingContractData || []) {
+      //     const withdrawable = await getStakingWithdrawableAmount(
+      //       algodClient,
+      //       stakingContract.contractId,
+      //       activeAccount?.address || ""
+      //     );
+      //     // Add withdrawal transaction
+      //   }
+      // }
 
       const stxns = await signTransactions(
         withdrawR.txns.map((t: string) => {
