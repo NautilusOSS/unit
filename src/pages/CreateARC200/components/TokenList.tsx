@@ -26,9 +26,10 @@ import BigNumber from "bignumber.js";
 import algosdk from "algosdk";
 import { useEffect, useState, useMemo } from "react";
 import Pagination from "@/components/Pagination";
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import axios from "axios";
+import TokenInfoModal from "@/components/modals/TokenInfoModal";
 
 interface TokenData {
   contractId: number;
@@ -79,13 +80,17 @@ interface Pool {
 }
 
 const StyledTableContainer = styled(TableContainer)<{ $isDarkTheme: boolean }>`
-  background-color: ${props => props.$isDarkTheme ? 'rgba(255, 255, 255, 0.05)' : '#fff'};
+  background-color: ${(props) =>
+    props.$isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "#fff"};
   border-radius: 24px;
-  border: 1px solid ${props => props.$isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : '#D8D8E1'};
+  border: 1px solid
+    ${(props) => (props.$isDarkTheme ? "rgba(255, 255, 255, 0.1)" : "#D8D8E1")};
   margin-top: 32px;
 
   .MuiTableCell-root {
-    border-bottom: 1px solid ${props => props.$isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'};
+    border-bottom: 1px solid
+      ${(props) =>
+        props.$isDarkTheme ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)"};
     background-color: transparent;
   }
 
@@ -94,15 +99,17 @@ const StyledTableContainer = styled(TableContainer)<{ $isDarkTheme: boolean }>`
   }
 
   .MuiTableRow-root:hover {
-    background-color: ${props => props.$isDarkTheme ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)'};
+    background-color: ${(props) =>
+      props.$isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.02)"};
   }
 
   .MuiTableHead-root .MuiTableRow-root {
-    background-color: ${props => props.$isDarkTheme ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)'};
+    background-color: ${(props) =>
+      props.$isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.02)"};
   }
 
   a {
-    color: ${props => props.$isDarkTheme ? '#fff' : 'inherit'};
+    color: ${(props) => (props.$isDarkTheme ? "#fff" : "inherit")};
     text-decoration: none;
     &:hover {
       text-decoration: underline;
@@ -121,14 +128,14 @@ const NameCell = styled.div`
 `;
 
 const StyledSwitch = styled(Switch)(({ theme }) => ({
-  '& .MuiSwitch-switchBase.Mui-checked': {
-    color: '#4CAF50',
-    '&:hover': {
-      backgroundColor: 'rgba(76, 175, 80, 0.08)',
+  "& .MuiSwitch-switchBase.Mui-checked": {
+    color: "#4CAF50",
+    "&:hover": {
+      backgroundColor: "rgba(76, 175, 80, 0.08)",
     },
   },
-  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-    backgroundColor: '#4CAF50',
+  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+    backgroundColor: "#4CAF50",
   },
 }));
 
@@ -158,12 +165,14 @@ const ActionButton = styled(Button)<{ $isDarkTheme: boolean }>`
   align-items: center;
   gap: 8px;
   border-radius: 8px;
-  background: ${props => props.$isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'};
-  color: ${props => props.$isDarkTheme ? '#fff' : 'inherit'};
+  background: ${(props) =>
+    props.$isDarkTheme ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)"};
+  color: ${(props) => (props.$isDarkTheme ? "#fff" : "inherit")};
   transition: all 0.2s ease-in-out;
 
   &:hover {
-    background: ${props => props.$isDarkTheme ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)'};
+    background: ${(props) =>
+      props.$isDarkTheme ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.08)"};
   }
 `;
 
@@ -177,10 +186,13 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
   const [showCreators, setShowCreators] = useState(false);
   const itemsPerPage = 10;
 
-  const [sortColumn, setSortColumn] = useState<'change_7d'>('change_7d');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [sortColumn, setSortColumn] = useState<"change_7d">("change_7d");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   const [isLoadingPool, setIsLoadingPool] = useState(false);
+
+  const [selectedToken, setSelectedToken] = useState<TokenData | null>(null);
+  const [showTokenInfo, setShowTokenInfo] = useState(false);
 
   const filteredTokens = tokens.filter((token) => {
     const isARC200LT = token.symbol !== "ARC200LT";
@@ -195,7 +207,7 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
     return [...filteredTokens].sort((a, b) => {
       const aChange = a.change_7d.percent_change || 0;
       const bChange = b.change_7d.percent_change || 0;
-      return sortDirection === 'desc' ? bChange - aChange : aChange - bChange;
+      return sortDirection === "desc" ? bChange - aChange : aChange - bChange;
     });
   }, [filteredTokens, sortDirection]);
 
@@ -203,16 +215,16 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
   const showPagination = sortedTokens.length > itemsPerPage;
 
   const cellStyle = {
-    color: isDarkTheme ? '#fff' : theme.palette.text.primary,
+    color: isDarkTheme ? "#fff" : theme.palette.text.primary,
     fontWeight: 100,
-    backgroundColor: 'transparent',
-    padding: '16px',
+    backgroundColor: "transparent",
+    padding: "16px",
   };
 
   const headCellStyle = {
     ...cellStyle,
     fontWeight: 600,
-    color: isDarkTheme ? '#fff' : theme.palette.text.primary,
+    color: isDarkTheme ? "#fff" : theme.palette.text.primary,
   };
 
   const copyToClipboard = (text: string, label: string) => {
@@ -251,14 +263,14 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
       const response = await axios.get(
         `https://mainnet-idx.nautilus.sh/nft-indexer/v1/dex/pools?tokenId=${tokenId}`
       );
-      
+
       if (response.data.pools && response.data.pools.length > 0) {
         // Get the first pool from the response
         const firstPool = response.data.pools[0];
         // Open Humble swap in new tab with the pool ID
         window.open(
           `https://voi.humble.sh/#/swap?poolId=${firstPool.contractId}`,
-          '_blank'
+          "_blank"
         );
       } else {
         toast.error("No liquidity pool found for this token");
@@ -269,6 +281,11 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
     } finally {
       setIsLoadingPool(false);
     }
+  };
+
+  const handleTokenClick = (token: TokenData) => {
+    setSelectedToken(token);
+    setShowTokenInfo(true);
   };
 
   if (sortedTokens.length === 0) {
@@ -306,9 +323,11 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
           label={
             <Typography
               sx={{
-                color: isDarkTheme ? 'rgba(255, 255, 255, 0.87)' : 'rgba(0, 0, 0, 0.87)',
+                color: isDarkTheme
+                  ? "rgba(255, 255, 255, 0.87)"
+                  : "rgba(0, 0, 0, 0.87)",
                 fontFamily: '"Plus Jakarta Sans"',
-                fontSize: '14px',
+                fontSize: "14px",
               }}
             >
               Show Creators
@@ -325,9 +344,11 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
           label={
             <Typography
               sx={{
-                color: isDarkTheme ? 'rgba(255, 255, 255, 0.87)' : 'rgba(0, 0, 0, 0.87)',
+                color: isDarkTheme
+                  ? "rgba(255, 255, 255, 0.87)"
+                  : "rgba(0, 0, 0, 0.87)",
                 fontFamily: '"Plus Jakarta Sans"',
-                fontSize: '14px',
+                fontSize: "14px",
               }}
             >
               Show Verified Only
@@ -336,79 +357,98 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
         />
       </FilterContainer>
 
-      <StyledTableContainer 
-        component={Box} 
-        $isDarkTheme={isDarkTheme}
-      >
+      <StyledTableContainer component={Box} $isDarkTheme={isDarkTheme}>
         <Table>
           <TableHead>
             <TableRow>
               <TableCell style={headCellStyle}>Contract ID</TableCell>
               <TableCell style={headCellStyle}>Name</TableCell>
               <TableCell style={headCellStyle}>Symbol</TableCell>
-              <TableCell style={headCellStyle} align="right">Total Supply</TableCell>
-              <TableCell style={headCellStyle} align="right">Price</TableCell>
-              <TableCell style={headCellStyle} align="right">1h Change</TableCell>
-              <TableCell style={headCellStyle} align="right">24h Change</TableCell>
-              <TableCell style={headCellStyle} align="right">7d Change</TableCell>
+              <TableCell style={headCellStyle} align="right">
+                Total Supply
+              </TableCell>
+              <TableCell style={headCellStyle} align="right">
+                Price
+              </TableCell>
+              <TableCell style={headCellStyle} align="right">
+                1h Change
+              </TableCell>
+              <TableCell style={headCellStyle} align="right">
+                24h Change
+              </TableCell>
+              <TableCell style={headCellStyle} align="right">
+                7d Change
+              </TableCell>
               {showCreators && (
                 <TableCell style={headCellStyle}>Creator</TableCell>
               )}
-              <TableCell style={headCellStyle} align="center">Action</TableCell>
+              <TableCell style={headCellStyle} align="center">
+                Action
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {paginatedTokens.map((token) => (
-              <TableRow 
+              <TableRow
                 key={token.contractId}
                 sx={{
-                  '&:hover': {
-                    backgroundColor: isDarkTheme 
-                      ? 'rgba(255, 255, 255, 0.05)' 
-                      : 'rgba(0, 0, 0, 0.02)',
+                  "&:hover": {
+                    backgroundColor: isDarkTheme
+                      ? "rgba(255, 255, 255, 0.05)"
+                      : "rgba(0, 0, 0, 0.02)",
                   },
                 }}
               >
                 <TableCell style={cellStyle}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <Link
                       href={`https://block.voi.network/explorer/application/${token.contractId}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      sx={{ color: 'inherit' }}
+                      sx={{ color: "inherit" }}
                     >
                       {token.contractId}
                     </Link>
                     <ContentCopyIcon
-                      sx={{ 
-                        cursor: 'pointer', 
-                        fontSize: '16px',
-                        '&:hover': { opacity: 0.8 }
+                      sx={{
+                        cursor: "pointer",
+                        fontSize: "16px",
+                        "&:hover": { opacity: 0.8 },
                       }}
-                      onClick={() => copyToClipboard(token.contractId.toString(), "Contract ID")}
+                      onClick={() =>
+                        copyToClipboard(
+                          token.contractId.toString(),
+                          "Contract ID"
+                        )
+                      }
                     />
                   </Box>
                 </TableCell>
                 <TableCell style={cellStyle}>
                   <TokenIconContainer>
                     {token.verified && (
-                      <TokenIcon 
+                      <TokenIcon
                         src={`https://asset-verification.nautilus.sh/icons/${token.contractId}.png`}
                         alt={token.name}
-                        onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                          e.currentTarget.style.display = 'none';
+                        onError={(
+                          e: React.SyntheticEvent<HTMLImageElement>
+                        ) => {
+                          e.currentTarget.style.display = "none";
                         }}
                       />
                     )}
-                    <NameCell>
+                    <NameCell
+                      onClick={() => handleTokenClick(token)}
+                      style={{ cursor: "pointer" }}
+                    >
                       {token.name}
                       {token.verified && (
                         <Tooltip title="Verified Token" placement="top">
-                          <VerifiedUserIcon 
-                            sx={{ 
-                              fontSize: '16px',
-                              color: isDarkTheme ? '#4CAF50' : '#2E7D32'
-                            }} 
+                          <VerifiedUserIcon
+                            sx={{
+                              fontSize: "16px",
+                              color: isDarkTheme ? "#4CAF50" : "#2E7D32",
+                            }}
                           />
                         </Tooltip>
                       )}
@@ -416,15 +456,18 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
                   </TokenIconContainer>
                 </TableCell>
                 <TableCell style={cellStyle}>
-                  <NameCell>
+                  <NameCell
+                    onClick={() => handleTokenClick(token)}
+                    style={{ cursor: "pointer" }}
+                  >
                     {token.symbol}
                     {token.verified && (
                       <Tooltip title="Verified Token" placement="top">
-                        <VerifiedUserIcon 
-                          sx={{ 
-                            fontSize: '16px',
-                            color: isDarkTheme ? '#4CAF50' : '#2E7D32'
-                          }} 
+                        <VerifiedUserIcon
+                          sx={{
+                            fontSize: "16px",
+                            color: isDarkTheme ? "#4CAF50" : "#2E7D32",
+                          }}
                         />
                       </Tooltip>
                     )}
@@ -447,32 +490,37 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
                 </TableCell>
                 {showCreators && (
                   <TableCell style={cellStyle}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <Link
                         href={`https://block.voi.network/explorer/account/${token.creator}/transactions`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        sx={{ 
-                          color: 'inherit',
-                          fontFamily: 'monospace',
-                          fontSize: '14px'
+                        sx={{
+                          color: "inherit",
+                          fontFamily: "monospace",
+                          fontSize: "14px",
                         }}
                       >
-                        {`${token.creator?.slice(0, 4)}...${token.creator?.slice(-4)}`}
+                        {`${token.creator?.slice(
+                          0,
+                          4
+                        )}...${token.creator?.slice(-4)}`}
                       </Link>
                       <ContentCopyIcon
-                        sx={{ 
-                          cursor: 'pointer', 
-                          fontSize: '16px',
-                          '&:hover': { opacity: 0.8 }
+                        sx={{
+                          cursor: "pointer",
+                          fontSize: "16px",
+                          "&:hover": { opacity: 0.8 },
                         }}
-                        onClick={() => copyToClipboard(token.creator, "Creator Address")}
+                        onClick={() =>
+                          copyToClipboard(token.creator, "Creator Address")
+                        }
                       />
                     </Box>
                   </TableCell>
                 )}
                 <TableCell style={cellStyle} align="center">
-                  <ActionButton 
+                  <ActionButton
                     $isDarkTheme={isDarkTheme}
                     onClick={() => handleSwap(token.contractId)}
                     disabled={isLoadingPool}
@@ -482,9 +530,7 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
                     ) : (
                       <>
                         <SwapHorizIcon sx={{ fontSize: 20 }} />
-                        <Typography variant="body2">
-                          Swap
-                        </Typography>
+                        <Typography variant="body2">Swap</Typography>
                       </>
                     )}
                   </ActionButton>
@@ -496,12 +542,14 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
       </StyledTableContainer>
 
       {showPagination && (
-        <Box sx={{ 
-          mt: 2, 
-          display: 'flex', 
-          justifyContent: 'center',
-          color: isDarkTheme ? '#fff' : 'inherit'
-        }}>
+        <Box
+          sx={{
+            mt: 2,
+            display: "flex",
+            justifyContent: "center",
+            color: isDarkTheme ? "#fff" : "inherit",
+          }}
+        >
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -509,6 +557,15 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
             isDarkTheme={isDarkTheme}
           />
         </Box>
+      )}
+
+      {selectedToken && (
+        <TokenInfoModal
+          open={showTokenInfo}
+          onClose={() => setShowTokenInfo(false)}
+          isDarkTheme={isDarkTheme}
+          token={selectedToken}
+        />
       )}
     </>
   );
