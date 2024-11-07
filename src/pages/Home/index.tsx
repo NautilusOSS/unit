@@ -24,6 +24,7 @@ import Grid2 from "@mui/material/Unstable_Grid2"; // Grid version 2
 import LazyLoad from "react-lazy-load";
 import axios from "axios";
 import { stripTrailingZeroBytes } from "@/utils/string";
+import { useInView } from "react-intersection-observer";
 
 const ActivityFilterContainer = styled.div`
   display: flex;
@@ -175,21 +176,37 @@ const SectionBanners = styled.div`
 const pageSize = 12;
 
 export const Home: React.FC = () => {
-  /* Collection Info */
-  // const [collectionInfo, setCollectionInfo] = React.useState<any>(null);
-  // useEffect(() => {
-  //   try {
-  //     axios
-  //       .get(`https://prod-voi.api.highforge.io/projects`)
-  //       .then((res: any) => res.data.results)
-  //       .then(setCollectionInfo);
-  //   } catch (e) {
-  //     console.log(e);
-  //   }
-  // }, []);
-  // console.log({ collectionInfo });
+  /* Dispatch */
+  const dispatch = useDispatch();
+
+  /* Smart Tokens */
+  const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
+  const smartTokenStatus = useSelector((state: any) => state.smartTokens.status);
+  useEffect(() => {
+    if (smartTokenStatus === "succeeded") return;
+    dispatch(getSmartTokens() as unknown as UnknownAction);
+  }, []);
+
+  /* Listings */
+  const listings = useSelector((state: any) => state.listings.listings);
+  const listingsStatus = useSelector((state: any) => state.listings.status);
+  useEffect(() => {
+    if (listingsStatus === "succeeded") return;
+    dispatch(getListings() as unknown as UnknownAction);
+  }, []);
+
+  /* Theme */
+  const isDarkTheme = useSelector((state: RootState) => state.theme.isDarkTheme);
 
   const [showing, setShowing] = useState<number>(pageSize);
+  const { ref: loadMoreRef, inView } = useInView();
+
+  // Add effect for infinite scroll
+  useEffect(() => {
+    if (inView && listings?.length > showing) {
+      setShowing(prev => prev + pageSize);
+    }
+  }, [inView, listings?.length, showing]);
 
   /* Activity */
   const [activeFilter, setActiveFilter] = useState<string[]>(["all"]);
@@ -205,69 +222,6 @@ export const Home: React.FC = () => {
       setActiveFilter([...activeFilter, value]);
     }
   };
-
-  /* Dispatch */
-  const dispatch = useDispatch();
-
-  /* Smart Tokens */
-  const smartTokens = useSelector((state: any) => state.smartTokens.tokens);
-  const smartTokenStatus = useSelector(
-    (state: any) => state.smartTokens.status
-  );
-  useEffect(() => {
-    if (smartTokenStatus === "succeeded") return;
-    dispatch(getSmartTokens() as unknown as UnknownAction);
-  }, []);
-
-  /* Listings */
-  const listings = useSelector((state: any) => state.listings.listings);
-  const listingsStatus = useSelector((state: any) => state.listings.status);
-  useEffect(() => {
-    if (listingsStatus === "succeeded") return;
-    dispatch(getListings() as unknown as UnknownAction);
-  }, []);
-
-  /* Theme */
-  const isDarkTheme = useSelector(
-    (state: RootState) => state.theme.isDarkTheme
-  );
-
-  /* Tokens */
-  // const tokens = useSelector((state: any) => state.tokens.tokens);
-  // const tokenStatus = useSelector((state: any) => state.tokens.status);
-  // useEffect(() => {
-  //   dispatch(getTokens() as unknown as UnknownAction);
-  // }, [dispatch]);
-  /* Sales */
-  // const sales = useSelector((state: any) => state.sales.sales);
-  // const salesStatus = useSelector((state: any) => state.sales.status);
-  // useEffect(() => {
-  //   dispatch(getSales() as unknown as UnknownAction);
-  // }, [dispatch]);
-  /* Collections */
-  // const collections = useSelector(
-  //   (state: any) => state.collections.collections
-  // );
-  // const collectionStatus = useSelector(
-  //   (state: any) => state.collections.status
-  // );
-  // useEffect(() => {
-  //   dispatch(getCollections() as unknown as UnknownAction);
-  // }, [dispatch]);
-
-  /* Rankings */
-  // const rankings: any = useMemo(() => {
-  //   if (
-  //     !tokens ||
-  //     !sales ||
-  //     !listings ||
-  //     tokenStatus !== "succeeded" ||
-  //     salesStatus !== "succeeded" ||
-  //     collectionStatus !== "succeeded"
-  //   )
-  //     return null;
-  //   return getRankings(tokens, collections, sales, listings, 1, smartTokens);
-  // }, [sales, tokens, collections, listings]);
 
   const navigate = useNavigate();
 
@@ -288,9 +242,7 @@ export const Home: React.FC = () => {
                 >
                   <Link to="/listing">
                     <SectionMoreButtonText
-                      className={
-                        isDarkTheme ? "button-text-dark" : "button-text-light"
-                      }
+                      className={isDarkTheme ? "button-text-dark" : "button-text-light"}
                     >
                       View All
                     </SectionMoreButtonText>
@@ -300,65 +252,30 @@ export const Home: React.FC = () => {
             </Stack>
           </SectionHeading>
           {listings ? (
-            <>
-              <div className=" items-center flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 x sm:w-fit gap-4 sm:gap-2">
-                {listings.slice(0, showing).map((el: NFTIndexerListingI) => {
-                  const nft = {
-                    ...el.token,
-                    metadataURI: stripTrailingZeroBytes(
-                      el?.token?.metadataURI || ""
-                    ),
-                  };
-                  return (
-                    <Grid2 key={el.transactionId}>
-                      <CartNftCard
-                        token={nft}
-                        listing={el}
-                        onClick={() => {
-                          navigate(
-                            `/collection/${el.token.contractId}/token/${el.token.tokenId}`
-                          );
-                        }}
-                      />
-                    </Grid2>
-                  );
-                })}
-                <Grid2>
-                  <SectionButtonContainer
-                    sx={{ height: "305px", width: "305px" }}
-                  >
-                    <SectionButton
-                      onClick={() => setShowing(showing + pageSize * 2)}
-                      className={isDarkTheme ? "button-dark" : "button-light"}
-                    >
-                      <SectionMoreButtonText
-                        className={
-                          isDarkTheme ? "button-text-dark" : "button-text-light"
-                        }
-                      >
-                        View More
-                      </SectionMoreButtonText>
-                    </SectionButton>
-                  </SectionButtonContainer>
-                </Grid2>
-              </div>
-              {/*
-                <SectionButtonContainer sx={{ mt: 5 }}>
-                  <SectionButton
-                    onClick={() => setShowing(showing + pageSize * 2)}
-                    className={isDarkTheme ? "button-dark" : "button-light"}
-                  >
-                    <SectionMoreButtonText
-                      className={
-                        isDarkTheme ? "button-text-dark" : "button-text-light"
-                      }
-                    >
-                      View More
-                    </SectionMoreButtonText>
-                  </SectionButton>
-                </SectionButtonContainer>
-                    */}
-            </>
+            <div className="items-center flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 x sm:w-fit gap-4 sm:gap-2">
+              {listings.slice(0, showing).map((el: NFTIndexerListingI) => {
+                const nft = {
+                  ...el.token,
+                  metadataURI: stripTrailingZeroBytes(el?.token?.metadataURI || ""),
+                };
+                return (
+                  <Grid2 key={el.transactionId}>
+                    <CartNftCard
+                      token={nft}
+                      listing={el}
+                      onClick={() => {
+                        navigate(`/collection/${el.token.contractId}/token/${el.token.tokenId}`);
+                      }}
+                    />
+                  </Grid2>
+                );
+              })}
+
+              {/* Invisible load more trigger */}
+              {listings.length > showing && (
+                <div ref={loadMoreRef} style={{ height: "20px", margin: "20px 0" }} />
+              )}
+            </div>
           ) : (
             <div>"No NFTs available for sale."</div>
           )}
