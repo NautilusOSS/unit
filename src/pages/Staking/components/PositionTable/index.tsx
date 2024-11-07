@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -12,13 +12,15 @@ import {
   Tab,
   Box,
   useTheme,
+  styled,
 } from "@mui/material";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import PositionTokenRow from "../PositionTokenRow";
 import PositionRow from "../PositionRow";
 import Pagination from "@/components/Pagination";
-import party from "party-js";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -54,12 +56,133 @@ interface ResponsiveTableProps {
   arc72Tokens: any[];
 }
 
+type SortDirection = "asc" | "desc" | null;
+type SortColumn = "contractId" | "totalStaked" | "unlock" | "claimable" | null;
+
+const StyledTabs = styled(Tabs)<{ $isDarkTheme: boolean }>`
+  .MuiTab-root {
+    color: ${props => props.$isDarkTheme ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)'};
+    font-family: "Plus Jakarta Sans";
+    font-weight: 600;
+    
+    &.Mui-selected {
+      color: #9933ff;
+    }
+  }
+
+  .MuiTabs-indicator {
+    background-color: #9933ff;
+  }
+`;
+
 const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
   stakingContracts,
   arc72Tokens,
 }) => {
   const { isDarkTheme } = useSelector((state: RootState) => state.theme);
   const theme = useTheme();
+  const pageSize = 10;
+
+  // Add sorting state
+  const [sortColumn, setSortColumn] = useState<SortColumn>("totalStaked");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      if (sortDirection === "asc") {
+        setSortDirection("desc");
+      } else if (sortDirection === "desc") {
+        setSortDirection(null);
+        setSortColumn(null);
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  // Sort stakingContracts
+  const sortedStakingContracts = useMemo(() => {
+    if (!sortColumn || !sortDirection) return stakingContracts;
+
+    return [...stakingContracts].sort((a, b) => {
+      let aValue: any = a[sortColumn];
+      let bValue: any = b[sortColumn];
+
+      // Special handling for specific columns
+      if (sortColumn === "totalStaked") {
+        aValue = Number(a.global_total || 0);
+        bValue = Number(b.global_total || 0);
+      } else if (sortColumn === "unlock") {
+        aValue = Number(a.unlock || 0);
+        bValue = Number(b.unlock || 0);
+      } else if (sortColumn === "claimable") {
+        aValue = Number(a.withdrawable || 0);
+        bValue = Number(b.withdrawable || 0);
+      }
+
+      if (sortDirection === "asc") {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return bValue > aValue ? 1 : -1;
+      }
+    });
+  }, [stakingContracts, sortColumn, sortDirection]);
+
+  // Sort arc72Tokens
+  const sortedArc72Tokens = useMemo(() => {
+    if (!sortColumn || !sortDirection) return arc72Tokens;
+
+    return [...arc72Tokens].sort((a, b) => {
+      let aValue: any = a[sortColumn];
+      let bValue: any = b[sortColumn];
+
+      // Special handling for specific columns
+      if (sortColumn === "totalStaked") {
+        aValue = Number(a.staking?.global_total || 0);
+        bValue = Number(b.staking?.global_total || 0);
+      } else if (sortColumn === "unlock") {
+        aValue = Number(a.staking?.unlock || 0);
+        bValue = Number(b.staking?.unlock || 0);
+      } else if (sortColumn === "claimable") {
+        aValue = Number(a.staking?.withdrawable || 0);
+        bValue = Number(b.staking?.withdrawable || 0);
+      }
+
+      if (sortDirection === "asc") {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return bValue > aValue ? 1 : -1;
+      }
+    });
+  }, [arc72Tokens, sortColumn, sortDirection]);
+
+  const SortableHeader: React.FC<{
+    column: SortColumn;
+    children: React.ReactNode;
+  }> = ({ column, children }) => (
+    <Box
+      component="span"
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        cursor: "pointer",
+        "&:hover": { opacity: 0.8 },
+      }}
+      onClick={() => handleSort(column)}
+    >
+      {children}
+      {sortColumn === column && (
+        <Box component="span" sx={{ ml: 1 }}>
+          {sortDirection === "asc" ? (
+            <ArrowUpwardIcon fontSize="small" />
+          ) : (
+            <ArrowDownwardIcon fontSize="small" />
+          )}
+        </Box>
+      )}
+    </Box>
+  );
 
   console.log(stakingContracts, arc72Tokens);
 
@@ -95,25 +218,32 @@ const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
     setValue(newValue);
   };
 
-  const totalPages = Math.ceil(stakingContracts.length / 5);
+  const totalPages = Math.ceil(sortedStakingContracts.length / pageSize);
   const [currentPage, setCurrentPage] = React.useState(1);
 
-  const totalPages2 = Math.ceil(arc72Tokens.length / 5);
+  const totalPages2 = Math.ceil(sortedArc72Tokens.length / pageSize);
   const [currentPage2, setCurrentPage2] = React.useState(1);
 
   return (
     <>
-      <Tabs value={value} onChange={handleChange} aria-label="position tabs">
-        <Tab label="Staking Contracts" sx={{ color: cellStyle.color }} />
-        <Tab label="Tokens" sx={{ color: cellStyle.color }} />
-      </Tabs>
+      <StyledTabs 
+        value={value} 
+        onChange={handleChange} 
+        aria-label="position tabs"
+        $isDarkTheme={isDarkTheme}
+      >
+        <Tab label="Staking Contracts" />
+        <Tab label="Tokens" />
+      </StyledTabs>
       <CustomTabPanel value={value} index={0}>
         <TableContainer component={Paper} style={tableStyle}>
           <Table>
             <TableHead>
               <TableRow style={headRowStyle}>
                 <TableCell style={headCellStyle} align="right">
-                  Account Id
+                  <SortableHeader column="contractId">
+                    Account Id
+                  </SortableHeader>
                 </TableCell>
                 <TableCell style={headCellStyle} align="center">
                   Account Address
@@ -122,19 +252,21 @@ const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
                   Delegate
                 </TableCell>
                 <TableCell style={headCellStyle} align="right">
-                  Lockup Tokens
+                  <SortableHeader column="totalStaked">
+                    Lockup Tokens
+                  </SortableHeader>
                 </TableCell>
                 <TableCell style={headCellStyle} align="right">
-                  Unlock Time
+                  <SortableHeader column="unlock">Unlock Time</SortableHeader>
                 </TableCell>
                 <TableCell style={headCellStyle} align="right">
-                  Claimable
+                  <SortableHeader column="claimable">Claimable</SortableHeader>
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {stakingContracts
-                ?.slice((currentPage - 1) * 5, currentPage * 5)
+              {sortedStakingContracts
+                ?.slice((currentPage - 1) * pageSize, currentPage * pageSize)
                 ?.map((ctc, index) => (
                   <PositionRow
                     key={ctc.contractId}
@@ -158,7 +290,9 @@ const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
             <TableHead>
               <TableRow style={headRowStyle}>
                 <TableCell style={headCellStyle} align="right">
-                  Account Id
+                  <SortableHeader column="contractId">
+                    Account Id
+                  </SortableHeader>
                 </TableCell>
                 <TableCell style={headCellStyle} align="center">
                   Account Address
@@ -167,25 +301,27 @@ const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
                   Delegate
                 </TableCell>
                 <TableCell style={headCellStyle} align="right">
-                  Lockup Tokens
+                  <SortableHeader column="totalStaked">
+                    Lockup Tokens
+                  </SortableHeader>
                 </TableCell>
                 <TableCell style={headCellStyle} align="right">
-                  Unlock Time
+                  <SortableHeader column="unlock">Unlock Time</SortableHeader>
                 </TableCell>
                 <TableCell style={headCellStyle} align="right">
-                  Claimable
+                  <SortableHeader column="claimable">Claimable</SortableHeader>
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {arc72Tokens
-                ?.slice((currentPage2 - 1) * 5, currentPage2 * 5)
+              {sortedArc72Tokens
+                ?.slice((currentPage2 - 1) * pageSize, currentPage2 * pageSize)
                 ?.map((nft, index) => (
                   <PositionTokenRow
                     key={nft.tokenId}
                     nft={nft}
                     index={index}
-                    arc72TokensLength={arc72Tokens.length}
+                    arc72TokensLength={sortedArc72Tokens.length}
                     lastRowStyle={lastRowStyle}
                     cellStyle={cellStyle}
                   />

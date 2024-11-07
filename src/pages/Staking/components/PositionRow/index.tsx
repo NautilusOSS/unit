@@ -110,7 +110,7 @@ const PositionRow: React.FC<PositionRowProps> = ({ position, cellStyle }) => {
   if (isLoading) {
     return (
       <TableRow>
-        <TableCell style={cellStyleWithColor} colSpan={5} align="right">
+        <TableCell style={cellStyleWithColor} colSpan={6} align="right">
           <Skeleton variant="text" />
         </TableCell>
       </TableRow>

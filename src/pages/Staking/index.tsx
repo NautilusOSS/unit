@@ -58,6 +58,7 @@ import TollIcon from "@mui/icons-material/Toll";
 import NorthEastIcon from "@mui/icons-material/NorthEast";
 import PositionContainer from "./components/PositionContainer";
 import MarketContainer from "./components/MarketContainer";
+import { styled as mStyled } from "@mui/material/styles";
 
 const PriceRangeContainer = styled.div`
   display: flex;
@@ -477,6 +478,22 @@ const StyledLink = styled(Link)`
 
 const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
+const StyledTabs = styled(Tabs)<{ $isDarkTheme: boolean }>`
+  .MuiTab-root {
+    color: ${props => props.$isDarkTheme ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)'};
+    font-family: "Plus Jakarta Sans";
+    font-weight: 600;
+    
+    &.Mui-selected {
+      color: #9933ff;
+    }
+  }
+
+  .MuiTabs-indicator {
+    background-color: #9933ff;
+  }
+`;
+
 export const Staking: React.FC = () => {
   /* Theme */
 
@@ -702,30 +719,16 @@ export const Staking: React.FC = () => {
           </BannerTitleContainer>
         </BannerContainer>
 
-        <Tabs value={selectedTab} onChange={handleTabChange}>
+        <StyledTabs 
+          value={selectedTab} 
+          onChange={handleTabChange}
+          $isDarkTheme={isDarkTheme}
+        >
           <Tab label="Market" />
           <Tab label="Positions" />
-        </Tabs>
+        </StyledTabs>
 
         {selectedTab === 0 && (
-          /*
-          <ListingRoot className="!flex !flex-col lg:!flex-row !items-center md:!items-start">
-            <ListingContainer>
-              <Box sx={{ mt: 3, width: "100%" }}>
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <NFTListingTable
-                      listings={filteredListings}
-                      tokens={filteredListings.map((el: any) => el.token)}
-                      collections={collections}
-                      columns={["timestamp", "price", "discount"]}
-                    />
-                  </Grid>
-                </Grid>
-              </Box>
-            </ListingContainer>
-          </ListingRoot>
-          */
           <div style={{ marginTop: "20px" }}>
             <MarketContainer />
           </div>

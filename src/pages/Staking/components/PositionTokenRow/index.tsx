@@ -144,7 +144,7 @@ const PositionTokenRow: React.FC<PositionTokenRowProps> = ({
         style={index === arc72TokensLength - 1 ? lastRowStyle : undefined}
       >
         {isLoading ? (
-          <TableCell style={cellStyleWithColor} colSpan={5} align="right">
+          <TableCell style={cellStyleWithColor} colSpan={6} align="right">
             <Skeleton variant="text" />
           </TableCell>
         ) : (

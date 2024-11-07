@@ -18,15 +18,15 @@ const PositionSummary: React.FC<PositionSummaryProps> = ({
 
   console.log({ stakingContracts, arc72Tokens });
 
-  const totalStaked =
-    arc72Tokens
-      ?.map((token) => token.staking)
-      ?.reduce((total, staking) => {
-        return total + Number(getStakingTotalTokens(staking));
-      }, 0) || 0;
-  stakingContracts?.reduce((total, contract) => {
-    return total + Number(getStakingTotalTokens(contract));
-  }, 0) || 0;
+  const totalStaked = arc72Tokens
+    ?.map((token) => token.staking)
+    ?.reduce((total, staking) => {
+      return total + Number(getStakingTotalTokens(staking));
+    }, 0);
+  const totalStaked2 =
+    stakingContracts?.reduce((total, contract) => {
+      return total + Number(getStakingTotalTokens(contract));
+    }, 0) || 0;
 
   return (
     <Box
@@ -59,8 +59,10 @@ const PositionSummary: React.FC<PositionSummaryProps> = ({
             border: "none",
           }}
         >
-          <Typography variant="h5">{totalStaked.toFixed(2)} VOI</Typography>
-          <Typography variant="body2">Total Staked</Typography>
+          <Typography variant="h5">
+            {(totalStaked + totalStaked2).toFixed(2)} VOI
+          </Typography>
+          <Typography variant="body2">Total Stake</Typography>
         </Box>
       </Box>
     </Box>
