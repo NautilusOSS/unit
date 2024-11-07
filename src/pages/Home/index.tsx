@@ -630,7 +630,9 @@ export const Home: React.FC = () => {
   }, []);
 
   // Add state for second featured collection
-  const [secondFeaturedListings, setSecondFeaturedListings] = useState<NFTIndexerListingI[]>([]);
+  const [secondFeaturedListings, setSecondFeaturedListings] = useState<
+    NFTIndexerListingI[]
+  >([]);
   const [isLoadingSecondFeatured, setIsLoadingSecondFeatured] = useState(false);
 
   // Add effect to fetch second featured collection listings
@@ -639,17 +641,17 @@ export const Home: React.FC = () => {
       setIsLoadingSecondFeatured(true);
       try {
         const response = await axios.get(
-          'https://mainnet-idx.nautilus.sh/nft-indexer/v1/mp/listings',
+          "https://mainnet-idx.nautilus.sh/nft-indexer/v1/mp/listings",
           {
             params: {
               contractId: 425242, // Different collection ID
-              sort: '-createRound'
-            }
+              sort: "-createRound",
+            },
           }
         );
         setSecondFeaturedListings(response.data.listings || []);
       } catch (error) {
-        console.error('Error fetching second featured listings:', error);
+        console.error("Error fetching second featured listings:", error);
       } finally {
         setIsLoadingSecondFeatured(false);
       }
@@ -659,7 +661,9 @@ export const Home: React.FC = () => {
   }, []);
 
   // Add state for third featured collection
-  const [thirdFeaturedListings, setThirdFeaturedListings] = useState<NFTIndexerListingI[]>([]);
+  const [thirdFeaturedListings, setThirdFeaturedListings] = useState<
+    NFTIndexerListingI[]
+  >([]);
   const [isLoadingThirdFeatured, setIsLoadingThirdFeatured] = useState(false);
 
   // Add effect to fetch third featured collection listings
@@ -668,17 +672,17 @@ export const Home: React.FC = () => {
       setIsLoadingThirdFeatured(true);
       try {
         const response = await axios.get(
-          'https://mainnet-idx.nautilus.sh/nft-indexer/v1/mp/listings',
+          "https://mainnet-idx.nautilus.sh/nft-indexer/v1/mp/listings",
           {
             params: {
               contractId: 398796,
-              sort: '-createRound'
-            }
+              sort: "-createRound",
+            },
           }
         );
         setThirdFeaturedListings(response.data.listings || []);
       } catch (error) {
-        console.error('Error fetching third featured listings:', error);
+        console.error("Error fetching third featured listings:", error);
       } finally {
         setIsLoadingThirdFeatured(false);
       }
@@ -704,7 +708,9 @@ export const Home: React.FC = () => {
                 >
                   <Link to="/listing">
                     <SectionMoreButtonText
-                      className={isDarkTheme ? "button-text-dark" : "button-text-light"}
+                      className={
+                        isDarkTheme ? "button-text-dark" : "button-text-light"
+                      }
                     >
                       View All
                     </SectionMoreButtonText>
@@ -716,16 +722,19 @@ export const Home: React.FC = () => {
           {listings ? (
             <div className="items-center flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 sm:w-fit gap-4 sm:gap-2">
               {listings
-                .filter((el: NFTIndexerListingI) => 
-                  el.collectionId !== 421076 && 
-                  el.collectionId !== 447482 && 
-                  el.collectionId !== 425242
+                .filter(
+                  (el: NFTIndexerListingI) =>
+                    el.collectionId !== 421076 &&
+                    el.collectionId !== 447482 &&
+                    el.collectionId !== 425242
                 )
                 .slice(0, NEW_LISTINGS_COUNT)
                 .map((el: NFTIndexerListingI) => {
                   const nft = {
                     ...el.token,
-                    metadataURI: stripTrailingZeroBytes(el?.token?.metadataURI || ""),
+                    metadataURI: stripTrailingZeroBytes(
+                      el?.token?.metadataURI || ""
+                    ),
                   };
                   return (
                     <Grid2 key={el.transactionId}>
@@ -733,7 +742,9 @@ export const Home: React.FC = () => {
                         token={nft}
                         listing={el}
                         onClick={() => {
-                          navigate(`/collection/${el.token.contractId}/token/${el.token.tokenId}`);
+                          navigate(
+                            `/collection/${el.token.contractId}/token/${el.token.tokenId}`
+                          );
                         }}
                       />
                     </Grid2>
@@ -744,8 +755,16 @@ export const Home: React.FC = () => {
                 <Grid2>
                   <Link to="/listing" style={{ textDecoration: "none" }}>
                     <SectionButtonContainer>
-                      <SectionButton className={isDarkTheme ? "button-dark" : "button-light"}>
-                        <SectionMoreButtonText className={isDarkTheme ? "button-text-dark" : "button-text-light"}>
+                      <SectionButton
+                        className={isDarkTheme ? "button-dark" : "button-light"}
+                      >
+                        <SectionMoreButtonText
+                          className={
+                            isDarkTheme
+                              ? "button-text-dark"
+                              : "button-text-light"
+                          }
+                        >
                           View More
                         </SectionMoreButtonText>
                       </SectionButton>
@@ -786,7 +805,12 @@ export const Home: React.FC = () => {
             <div className="items-center flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 sm:w-fit gap-4 sm:gap-2">
               {[...Array(5)].map((_, index) => (
                 <Grid2 key={index}>
-                  <Skeleton variant="rectangular" width="100%" height={300} sx={{ borderRadius: 2 }} />
+                  <Skeleton
+                    variant="rectangular"
+                    width="100%"
+                    height={300}
+                    sx={{ borderRadius: 2 }}
+                  />
                 </Grid2>
               ))}
             </div>
@@ -798,7 +822,9 @@ export const Home: React.FC = () => {
                 .map((el: NFTIndexerListingI) => {
                   const nft = {
                     ...el.token,
-                    metadataURI: stripTrailingZeroBytes(el?.token?.metadataURI || ""),
+                    metadataURI: stripTrailingZeroBytes(
+                      el?.token?.metadataURI || ""
+                    ),
                   };
                   return (
                     <Grid2 key={el.transactionId}>
@@ -806,7 +832,9 @@ export const Home: React.FC = () => {
                         token={nft}
                         listing={el}
                         onClick={() => {
-                          navigate(`/collection/${el.token.contractId}/token/${el.token.tokenId}`);
+                          navigate(
+                            `/collection/${el.token.contractId}/token/${el.token.tokenId}`
+                          );
                         }}
                       />
                     </Grid2>
@@ -815,10 +843,21 @@ export const Home: React.FC = () => {
 
               {featuredListings.length > FEATURED_PAGE_SIZE && (
                 <Grid2>
-                  <Link to="/collection/447482" style={{ textDecoration: "none" }}>
+                  <Link
+                    to="/collection/447482"
+                    style={{ textDecoration: "none" }}
+                  >
                     <SectionButtonContainer>
-                      <SectionButton className={isDarkTheme ? "button-dark" : "button-light"}>
-                        <SectionMoreButtonText className={isDarkTheme ? "button-text-dark" : "button-text-light"}>
+                      <SectionButton
+                        className={isDarkTheme ? "button-dark" : "button-light"}
+                      >
+                        <SectionMoreButtonText
+                          className={
+                            isDarkTheme
+                              ? "button-text-dark"
+                              : "button-text-light"
+                          }
+                        >
                           View More
                         </SectionMoreButtonText>
                       </SectionButton>
@@ -838,9 +877,15 @@ export const Home: React.FC = () => {
             </SectionTitle>
             <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
               <SectionMoreButtonContainer>
-                <SectionMoreButton className={isDarkTheme ? "button-dark" : "button-light"}>
+                <SectionMoreButton
+                  className={isDarkTheme ? "button-dark" : "button-light"}
+                >
                   <Link to="/collection/421076">
-                    <SectionMoreButtonText className={isDarkTheme ? "button-text-dark" : "button-text-light"}>
+                    <SectionMoreButtonText
+                      className={
+                        isDarkTheme ? "button-text-dark" : "button-text-light"
+                      }
+                    >
                       View Collection
                     </SectionMoreButtonText>
                   </Link>
@@ -853,7 +898,12 @@ export const Home: React.FC = () => {
             <div className="items-center flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 sm:w-fit gap-4 sm:gap-2">
               {[...Array(5)].map((_, index) => (
                 <Grid2 key={index}>
-                  <Skeleton variant="rectangular" width="100%" height={300} sx={{ borderRadius: 2 }} />
+                  <Skeleton
+                    variant="rectangular"
+                    width="100%"
+                    height={300}
+                    sx={{ borderRadius: 2 }}
+                  />
                 </Grid2>
               ))}
             </div>
@@ -865,7 +915,9 @@ export const Home: React.FC = () => {
                 .map((el: NFTIndexerListingI) => {
                   const nft = {
                     ...el.token,
-                    metadataURI: stripTrailingZeroBytes(el?.token?.metadataURI || ""),
+                    metadataURI: stripTrailingZeroBytes(
+                      el?.token?.metadataURI || ""
+                    ),
                   };
                   return (
                     <Grid2 key={el.transactionId}>
@@ -873,7 +925,9 @@ export const Home: React.FC = () => {
                         token={nft}
                         listing={el}
                         onClick={() => {
-                          navigate(`/collection/${el.token.contractId}/token/${el.token.tokenId}`);
+                          navigate(
+                            `/collection/${el.token.contractId}/token/${el.token.tokenId}`
+                          );
                         }}
                       />
                     </Grid2>
@@ -882,10 +936,21 @@ export const Home: React.FC = () => {
 
               {secondFeaturedListings.length > FEATURED_PAGE_SIZE && (
                 <Grid2>
-                  <Link to="/collection/421076" style={{ textDecoration: "none" }}>
+                  <Link
+                    to="/collection/421076"
+                    style={{ textDecoration: "none" }}
+                  >
                     <SectionButtonContainer>
-                      <SectionButton className={isDarkTheme ? "button-dark" : "button-light"}>
-                        <SectionMoreButtonText className={isDarkTheme ? "button-text-dark" : "button-text-light"}>
+                      <SectionButton
+                        className={isDarkTheme ? "button-dark" : "button-light"}
+                      >
+                        <SectionMoreButtonText
+                          className={
+                            isDarkTheme
+                              ? "button-text-dark"
+                              : "button-text-light"
+                          }
+                        >
                           View More
                         </SectionMoreButtonText>
                       </SectionButton>
@@ -905,9 +970,15 @@ export const Home: React.FC = () => {
             </SectionTitle>
             <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
               <SectionMoreButtonContainer>
-                <SectionMoreButton className={isDarkTheme ? "button-dark" : "button-light"}>
+                <SectionMoreButton
+                  className={isDarkTheme ? "button-dark" : "button-light"}
+                >
                   <Link to="/collection/398796">
-                    <SectionMoreButtonText className={isDarkTheme ? "button-text-dark" : "button-text-light"}>
+                    <SectionMoreButtonText
+                      className={
+                        isDarkTheme ? "button-text-dark" : "button-text-light"
+                      }
+                    >
                       View Collection
                     </SectionMoreButtonText>
                   </Link>
@@ -920,7 +991,12 @@ export const Home: React.FC = () => {
             <div className="items-center flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 sm:w-fit gap-4 sm:gap-2">
               {[...Array(5)].map((_, index) => (
                 <Grid2 key={index}>
-                  <Skeleton variant="rectangular" width="100%" height={300} sx={{ borderRadius: 2 }} />
+                  <Skeleton
+                    variant="rectangular"
+                    width="100%"
+                    height={300}
+                    sx={{ borderRadius: 2 }}
+                  />
                 </Grid2>
               ))}
             </div>
@@ -932,7 +1008,9 @@ export const Home: React.FC = () => {
                 .map((el: NFTIndexerListingI) => {
                   const nft = {
                     ...el.token,
-                    metadataURI: stripTrailingZeroBytes(el?.token?.metadataURI || ""),
+                    metadataURI: stripTrailingZeroBytes(
+                      el?.token?.metadataURI || ""
+                    ),
                   };
                   return (
                     <Grid2 key={el.transactionId}>
@@ -940,7 +1018,9 @@ export const Home: React.FC = () => {
                         token={nft}
                         listing={el}
                         onClick={() => {
-                          navigate(`/collection/${el.token.contractId}/token/${el.token.tokenId}`);
+                          navigate(
+                            `/collection/${el.token.contractId}/token/${el.token.tokenId}`
+                          );
                         }}
                       />
                     </Grid2>
@@ -949,10 +1029,21 @@ export const Home: React.FC = () => {
 
               {thirdFeaturedListings.length > FEATURED_PAGE_SIZE && (
                 <Grid2>
-                  <Link to="/collection/398796" style={{ textDecoration: "none" }}>
+                  <Link
+                    to="/collection/398796"
+                    style={{ textDecoration: "none" }}
+                  >
                     <SectionButtonContainer>
-                      <SectionButton className={isDarkTheme ? "button-dark" : "button-light"}>
-                        <SectionMoreButtonText className={isDarkTheme ? "button-text-dark" : "button-text-light"}>
+                      <SectionButton
+                        className={isDarkTheme ? "button-dark" : "button-light"}
+                      >
+                        <SectionMoreButtonText
+                          className={
+                            isDarkTheme
+                              ? "button-text-dark"
+                              : "button-text-light"
+                          }
+                        >
                           View More
                         </SectionMoreButtonText>
                       </SectionButton>
@@ -1254,160 +1345,170 @@ export const Home: React.FC = () => {
           </ActivitySection>
 
           {/* Top Sellers Section */}
-          <ActivitySection>
-            <ActivityTitle $isDarkTheme={isDarkTheme}>
-              Top Sellers
-            </ActivityTitle>
-            <StyledTableContainer $isDarkTheme={isDarkTheme}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Seller</TableCell>
-                    <TableCell align="right">Total Sales</TableCell>
-                    <TableCell align="right">Total Proceeds</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {isLoadingTopSellers ? (
+          {false && (
+            <ActivitySection>
+              <ActivityTitle $isDarkTheme={isDarkTheme}>
+                Top Sellers
+              </ActivityTitle>
+              <StyledTableContainer $isDarkTheme={isDarkTheme}>
+                <Table>
+                  <TableHead>
                     <TableRow>
-                      <TableCell colSpan={3} align="center">
-                        <CircularProgress
-                          size={24}
-                          sx={{ color: isDarkTheme ? "#fff" : "inherit" }}
-                        />
-                      </TableCell>
+                      <TableCell>Seller</TableCell>
+                      <TableCell align="right">Total Sales</TableCell>
+                      <TableCell align="right">Total Proceeds</TableCell>
                     </TableRow>
-                  ) : (
-                    paginatedSellers.map((seller) => (
-                      <TableRow key={seller.seller}>
-                        <TableCell>
-                          <Link
-                            to={`/account/${seller.seller}`}
-                            style={{
-                              textDecoration: "none",
-                              color: isDarkTheme ? "#fff" : "inherit",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "12px",
-                            }}
-                          >
-                            <Jazzicon
-                              diameter={24}
-                              seed={jsNumberForAddress(seller.seller)}
-                            />
-                            {`${seller.seller.slice(
-                              0,
-                              6
-                            )}...${seller.seller.slice(-4)}`}
-                          </Link>
-                        </TableCell>
-                        <TableCell align="right">
-                          {seller.totalSales.toLocaleString()}
-                        </TableCell>
-                        <TableCell align="right">
-                          {(seller.totalProceeds / 1e6).toLocaleString(
-                            undefined,
-                            {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            }
-                          )}{" "}
-                          VOI
+                  </TableHead>
+                  <TableBody>
+                    {isLoadingTopSellers ? (
+                      <TableRow>
+                        <TableCell colSpan={3} align="center">
+                          <CircularProgress
+                            size={24}
+                            sx={{ color: isDarkTheme ? "#fff" : "inherit" }}
+                          />
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </StyledTableContainer>
+                    ) : (
+                      paginatedSellers.map((seller) => (
+                        <TableRow key={seller.seller}>
+                          <TableCell>
+                            <Link
+                              to={`/account/${seller.seller}`}
+                              style={{
+                                textDecoration: "none",
+                                color: isDarkTheme ? "#fff" : "inherit",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "12px",
+                              }}
+                            >
+                              <Jazzicon
+                                diameter={24}
+                                seed={jsNumberForAddress(seller.seller)}
+                              />
+                              {`${seller.seller.slice(
+                                0,
+                                6
+                              )}...${seller.seller.slice(-4)}`}
+                            </Link>
+                          </TableCell>
+                          <TableCell align="right">
+                            {seller.totalSales.toLocaleString()}
+                          </TableCell>
+                          <TableCell align="right">
+                            {(seller.totalProceeds / 1e6).toLocaleString(
+                              undefined,
+                              {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }
+                            )}{" "}
+                            VOI
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </StyledTableContainer>
 
-            {/* Add Pagination for Top Sellers */}
-            {topSellers.length > sellersPerPage && (
-              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                <Pagination
-                  currentPage={currentTopSellersPage}
-                  totalPages={totalSellerPages}
-                  onPageChange={setCurrentTopSellersPage}
-                  isDarkTheme={isDarkTheme}
-                />
-              </Box>
-            )}
-          </ActivitySection>
+              {/* Add Pagination for Top Sellers */}
+              {topSellers.length > sellersPerPage && (
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                  <Pagination
+                    currentPage={currentTopSellersPage}
+                    totalPages={totalSellerPages}
+                    onPageChange={setCurrentTopSellersPage}
+                    isDarkTheme={isDarkTheme}
+                  />
+                </Box>
+              )}
+            </ActivitySection>
+          )}
 
           {/* Top Buyers Section */}
-          <ActivitySection>
-            <ActivityTitle $isDarkTheme={isDarkTheme}>Top Buyers</ActivityTitle>
-            <StyledTableContainer $isDarkTheme={isDarkTheme}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Buyer</TableCell>
-                    <TableCell align="right">Total Purchases</TableCell>
-                    <TableCell align="right">Total Spent</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {isLoadingTopBuyers ? (
+          {false && (
+            <ActivitySection>
+              <ActivityTitle $isDarkTheme={isDarkTheme}>
+                Top Buyers
+              </ActivityTitle>
+              <StyledTableContainer $isDarkTheme={isDarkTheme}>
+                <Table>
+                  <TableHead>
                     <TableRow>
-                      <TableCell colSpan={3} align="center">
-                        <CircularProgress
-                          size={24}
-                          sx={{ color: isDarkTheme ? "#fff" : "inherit" }}
-                        />
-                      </TableCell>
+                      <TableCell>Buyer</TableCell>
+                      <TableCell align="right">Total Purchases</TableCell>
+                      <TableCell align="right">Total Spent</TableCell>
                     </TableRow>
-                  ) : (
-                    paginatedBuyers.map((buyer) => (
-                      <TableRow key={buyer.buyer}>
-                        <TableCell>
-                          <Link
-                            to={`/account/${buyer.buyer}`}
-                            style={{
-                              textDecoration: "none",
-                              color: isDarkTheme ? "#fff" : "inherit",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "12px",
-                            }}
-                          >
-                            <Jazzicon
-                              diameter={24}
-                              seed={jsNumberForAddress(buyer.buyer)}
-                            />
-                            {`${buyer.buyer.slice(0, 6)}...${buyer.buyer.slice(
-                              -4
-                            )}`}
-                          </Link>
-                        </TableCell>
-                        <TableCell align="right">
-                          {buyer.totalPurchases.toLocaleString()}
-                        </TableCell>
-                        <TableCell align="right">
-                          {(buyer.totalSpent / 1e6).toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}{" "}
-                          VOI
+                  </TableHead>
+                  <TableBody>
+                    {isLoadingTopBuyers ? (
+                      <TableRow>
+                        <TableCell colSpan={3} align="center">
+                          <CircularProgress
+                            size={24}
+                            sx={{ color: isDarkTheme ? "#fff" : "inherit" }}
+                          />
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </StyledTableContainer>
+                    ) : (
+                      paginatedBuyers.map((buyer) => (
+                        <TableRow key={buyer.buyer}>
+                          <TableCell>
+                            <Link
+                              to={`/account/${buyer.buyer}`}
+                              style={{
+                                textDecoration: "none",
+                                color: isDarkTheme ? "#fff" : "inherit",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "12px",
+                              }}
+                            >
+                              <Jazzicon
+                                diameter={24}
+                                seed={jsNumberForAddress(buyer.buyer)}
+                              />
+                              {`${buyer.buyer.slice(
+                                0,
+                                6
+                              )}...${buyer.buyer.slice(-4)}`}
+                            </Link>
+                          </TableCell>
+                          <TableCell align="right">
+                            {buyer.totalPurchases.toLocaleString()}
+                          </TableCell>
+                          <TableCell align="right">
+                            {(buyer.totalSpent / 1e6).toLocaleString(
+                              undefined,
+                              {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }
+                            )}{" "}
+                            VOI
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </StyledTableContainer>
 
-            {/* Add Pagination for Top Buyers */}
-            {topBuyers.length > buyersPerPage && (
-              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                <Pagination
-                  currentPage={currentTopBuyersPage}
-                  totalPages={totalBuyerPages}
-                  onPageChange={setCurrentTopBuyersPage}
-                  isDarkTheme={isDarkTheme}
-                />
-              </Box>
-            )}
-          </ActivitySection>
+              {/* Add Pagination for Top Buyers */}
+              {topBuyers.length > buyersPerPage && (
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                  <Pagination
+                    currentPage={currentTopBuyersPage}
+                    totalPages={totalBuyerPages}
+                    onPageChange={setCurrentTopBuyersPage}
+                    isDarkTheme={isDarkTheme}
+                  />
+                </Box>
+              )}
+            </ActivitySection>
+          )}
         </div>
       ) : (
         <div>
