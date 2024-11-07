@@ -196,10 +196,9 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
 
   const filteredTokens = tokens.filter((token) => {
     const isARC200LT = token.symbol !== "ARC200LT";
-    const maxSupply =
-      "115792089237316195423570985008687907853269984665640564039457584007913129639935";
+    const maxSupply = "115792089237316195423570985008687907853269984665640564039457584007913129639935";
     const isNotMaxSupply = token.totalSupply !== maxSupply;
-    const meetsVerifiedCriteria = showVerifiedOnly ? token.verified : true;
+    const meetsVerifiedCriteria = showVerifiedOnly ? Number(token.verified) > 0 : true;
     return isARC200LT && isNotMaxSupply && meetsVerifiedCriteria;
   });
 
@@ -323,11 +322,9 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
           label={
             <Typography
               sx={{
-                color: isDarkTheme
-                  ? "rgba(255, 255, 255, 0.87)"
-                  : "rgba(0, 0, 0, 0.87)",
+                color: isDarkTheme ? 'rgba(255, 255, 255, 0.87)' : 'rgba(0, 0, 0, 0.87)',
                 fontFamily: '"Plus Jakarta Sans"',
-                fontSize: "14px",
+                fontSize: '14px',
               }}
             >
               Show Creators
@@ -344,11 +341,9 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
           label={
             <Typography
               sx={{
-                color: isDarkTheme
-                  ? "rgba(255, 255, 255, 0.87)"
-                  : "rgba(0, 0, 0, 0.87)",
+                color: isDarkTheme ? 'rgba(255, 255, 255, 0.87)' : 'rgba(0, 0, 0, 0.87)',
                 fontFamily: '"Plus Jakarta Sans"',
-                fontSize: "14px",
+                fontSize: '14px',
               }}
             >
               Show Verified Only
@@ -426,7 +421,7 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
                 </TableCell>
                 <TableCell style={cellStyle}>
                   <TokenIconContainer>
-                    {token.verified && (
+                    {Number(token.verified) > 0 && (
                       <TokenIcon
                         src={`https://asset-verification.nautilus.sh/icons/${token.contractId}.png`}
                         alt={token.name}
@@ -442,7 +437,7 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
                       style={{ cursor: "pointer" }}
                     >
                       {token.name}
-                      {token.verified && (
+                      {Number(token.verified) > 0 && (
                         <Tooltip title="Verified Token" placement="top">
                           <VerifiedUserIcon
                             sx={{
@@ -461,7 +456,7 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
                     style={{ cursor: "pointer" }}
                   >
                     {token.symbol}
-                    {token.verified && (
+                    {Number(token.verified) > 0 && (
                       <Tooltip title="Verified Token" placement="top">
                         <VerifiedUserIcon
                           sx={{

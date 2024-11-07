@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Button,
   FormControl,
@@ -30,6 +30,8 @@ import algosdk from "algosdk";
 import BigNumber from "bignumber.js";
 import { Link } from "react-router-dom";
 import TokenList from "./components/TokenList";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import { Buffer } from "buffer";
 
 const { algodClient } = getAlgorandClients();
 
@@ -188,6 +190,146 @@ const StyledDialogTitle = styled(DialogTitle)<{ $isDarkTheme: boolean }>`
   font-weight: 600;
 `;
 
+const ImageUploadContainer = styled.div<{ $isDarkTheme: boolean }>`
+  border: 2px dashed
+    ${(props) =>
+      props.$isDarkTheme ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.2)"};
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: ${(props) =>
+    props.$isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.02)"};
+
+  &:hover {
+    border-color: ${(props) =>
+      props.$isDarkTheme ? "rgba(255, 255, 255, 0.3)" : "rgba(0, 0, 0, 0.3)"};
+    background: ${(props) =>
+      props.$isDarkTheme ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)"};
+  }
+`;
+
+const ImagePreviewContainer = styled.div`
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin: 16px auto;
+`;
+
+const ImagePreview = styled.img`
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+`;
+
+const RemoveImageButton = styled(Button)`
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 0;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+`;
+
+const convertToSVG = async (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = 256; // Standard size for token icons
+          canvas.height = 256;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            reject(new Error("Failed to get canvas context"));
+            return;
+          }
+
+          // Draw image with white background for transparency
+          ctx.fillStyle = "white";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          // Convert to SVG
+          const svgString = `
+            <svg width="256" height="256" xmlns="http://www.w3.org/2000/svg">
+              <image href="${canvas.toDataURL(
+                "image/png"
+              )}" width="256" height="256"/>
+            </svg>
+          `;
+          resolve(svgString);
+        };
+        img.src = e.target?.result as string;
+      } catch (error) {
+        reject(error);
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
+const convertToPNG = async (file: File): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = 256; // Standard size for token icons
+          canvas.height = 256;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            reject(new Error("Failed to get canvas context"));
+            return;
+          }
+
+          // Draw image maintaining aspect ratio
+          const scale = Math.min(
+            canvas.width / img.width,
+            canvas.height / img.height
+          );
+          const x = (canvas.width - img.width * scale) / 2;
+          const y = (canvas.height - img.height * scale) / 2;
+
+          // Clear canvas
+          ctx.fillStyle = "white";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          // Draw image
+          ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+
+          // Convert to PNG blob
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                resolve(blob);
+              } else {
+                reject(new Error("Failed to convert to PNG"));
+              }
+            },
+            "image/png",
+            1.0
+          );
+        };
+        img.src = e.target?.result as string;
+      } catch (error) {
+        reject(error);
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
 export const CreateARC200: React.FC = () => {
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
@@ -206,6 +348,11 @@ export const CreateARC200: React.FC = () => {
   const [isLoadingContracts, setIsLoadingContracts] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [tokens, setTokens] = useState<any[]>([]);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [convertedPNG, setConvertedPNG] = useState<Blob | null>(null);
+  const [convertedSVG, setConvertedSVG] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const MAX_NAME_LENGTH = 32;
   const MAX_SYMBOL_LENGTH = 8;
@@ -252,6 +399,42 @@ export const CreateARC200: React.FC = () => {
 
     fetchTokens();
   }, []);
+
+  const uploadTokenIcon = async (contractId: number) => {
+    if (!selectedImage || !convertedPNG || !convertedSVG) return;
+
+    try {
+      const formData = new FormData();
+
+      // Create Blobs with proper filenames including contractId
+      const pngBlob = new Blob([convertedPNG], { type: 'image/png' });
+      const svgBlob = new Blob([convertedSVG], { type: 'image/svg+xml' });
+
+      // Required fields from SubmitProjectForm - using exact same field names
+      formData.append('logoPng', pngBlob, `${contractId}.png`);
+      formData.append('logoSvg', svgBlob, `${contractId}.svg`);
+      formData.append('assetId', contractId.toString());
+      formData.append('projectName', name);
+      formData.append('contactName', name); // Using token name as contact name
+      formData.append('projectUrl', `https://block.voi.network/explorer/application/${contractId}`);
+      formData.append('email', `${contractId}@voi.network`); // Changed from emailAddress to email
+      formData.append('discordLink', 'https://discord.gg/humble');
+      formData.append('telegramLink', 'https://t.me/HumbleDefi');
+      formData.append('twitterUsername', 'HumbleDefi');
+      formData.append('description', `${name} (${symbol}) is an ARC-200 token on the VOI network.`);
+
+      // Submit to verification API
+      await fetch('https://asset-verification.nautilus.sh/submit', {
+        method: 'POST',
+        body: formData
+      });
+
+      toast.success("Token icon and verification submitted successfully");
+    } catch (error) {
+      console.error("Error uploading token icon:", error);
+      toast.error("Failed to upload token icon");
+    }
+  };
 
   const handleCreateToken = async () => {
     if (!activeAccount) {
@@ -352,22 +535,6 @@ export const CreateARC200: React.FC = () => {
           ),
         });
       }
-      /*
-      builder.newARC200.setFee(3000);
-      builder.newARC200.setPaymentAmount(1000000 + 31300);
-      const mintR = await builder.newARC200.mint(
-        activeAccount.address,
-        new Uint8Array(Buffer.from(name.padEnd(32, "\0"), "utf8")),
-        new Uint8Array(Buffer.from(symbol.padEnd(8, "\0"), "utf8")),
-        Number(decimals),
-        BigInt(
-          new BigNumber(totalSupply)
-            .multipliedBy(Math.pow(10, Number(decimals)))
-            .toFixed(0)
-        )
-      );
-      console.log({ mintR });
-      */
       ci.setFee(2000);
       ci.setEnableGroupResourceSharing(true);
       ci.setExtraTxns(buildN);
@@ -389,6 +556,11 @@ export const CreateARC200: React.FC = () => {
         .do();
 
       await waitForConfirmation(algodClient, txId, 4);
+
+      // After successful token creation, upload the icon
+      if (selectedImage && convertedPNG) {
+        await uploadTokenIcon(selectedContract.contractId);
+      }
 
       setTxnId(txId);
       setTxnMsg(`Token ${name} (${symbol}) created successfully!`);
@@ -426,6 +598,54 @@ export const CreateARC200: React.FC = () => {
   const handleConfirm = async () => {
     setShowConfirmation(false);
     await handleCreateToken();
+  };
+
+  const handleImageSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) {
+        // 1MB limit
+        toast.error("Image size should be less than 1MB");
+        return;
+      }
+
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please upload an image file");
+        return;
+      }
+
+      try {
+        // Convert to both formats
+        const pngBlob = await convertToPNG(file);
+        const svgString = await convertToSVG(file);
+
+        setConvertedPNG(pngBlob);
+        setConvertedSVG(svgString);
+        setSelectedImage(file);
+
+        // Show preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result as string);
+        };
+        reader.readAsDataURL(pngBlob);
+      } catch (error) {
+        console.error("Error converting image:", error);
+        toast.error("Failed to process image");
+      }
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    setConvertedPNG(null);
+    setConvertedSVG(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   return (
@@ -614,6 +834,62 @@ export const CreateARC200: React.FC = () => {
             </Grid>
 
             <Grid item xs={12}>
+              <FormControl fullWidth>
+                <StyledFormLabel $isDarkTheme={isDarkTheme}>
+                  Token Icon
+                </StyledFormLabel>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  style={{ display: "none" }}
+                  ref={fileInputRef}
+                />
+                <ImageUploadContainer
+                  $isDarkTheme={isDarkTheme}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {imagePreview ? (
+                    <ImagePreviewContainer>
+                      <ImagePreview
+                        src={imagePreview}
+                        alt="Token icon preview"
+                      />
+                      <RemoveImageButton
+                        variant="contained"
+                        color="error"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveImage();
+                        }}
+                      >
+                        ×
+                      </RemoveImageButton>
+                    </ImagePreviewContainer>
+                  ) : (
+                    <>
+                      <CloudUploadIcon
+                        sx={{ fontSize: 48, mb: 1, opacity: 0.7 }}
+                      />
+                      <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                        Click to upload token icon
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{ display: "block", mt: 1, opacity: 0.5 }}
+                      >
+                        PNG, JPG up to 1MB
+                      </Typography>
+                    </>
+                  )}
+                </ImageUploadContainer>
+                <HelperText $isDarkTheme={isDarkTheme}>
+                  Upload a token icon for better visibility (optional)
+                </HelperText>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12}>
               <Button
                 variant="contained"
                 color="primary"
@@ -677,9 +953,7 @@ export const CreateARC200: React.FC = () => {
               variant="body2"
               gutterBottom
               sx={{
-                color: isDarkTheme
-                  ? "rgba(255, 255, 255, 0.9)"
-                  : "inherit",
+                color: isDarkTheme ? "rgba(255, 255, 255, 0.9)" : "inherit",
                 "& > span": {
                   color: isDarkTheme ? "#fff" : "inherit",
                   fontWeight: 600,
@@ -702,16 +976,12 @@ export const CreateARC200: React.FC = () => {
             </CostTitle>
 
             <CostItem $isDarkTheme={isDarkTheme}>
-              <CostLabel $isDarkTheme={isDarkTheme}>
-                Creation Fee
-              </CostLabel>
+              <CostLabel $isDarkTheme={isDarkTheme}>Creation Fee</CostLabel>
               <CostValue $isDarkTheme={isDarkTheme}>1.0313 VOI</CostValue>
             </CostItem>
 
             <CostItem $isDarkTheme={isDarkTheme}>
-              <CostLabel $isDarkTheme={isDarkTheme}>
-                Factory Fee
-              </CostLabel>
+              <CostLabel $isDarkTheme={isDarkTheme}>Factory Fee</CostLabel>
               <CostValue $isDarkTheme={isDarkTheme}>1000 F</CostValue>
             </CostItem>
 
@@ -757,9 +1027,7 @@ export const CreateARC200: React.FC = () => {
             variant="contained"
             color="primary"
             disabled={isSubmitting}
-            startIcon={
-              isSubmitting ? <CircularProgress size={20} /> : null
-            }
+            startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
           >
             {isSubmitting ? "Creating..." : "Confirm & Create"}
           </Button>
