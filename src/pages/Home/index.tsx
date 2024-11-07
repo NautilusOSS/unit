@@ -231,7 +231,7 @@ export const Home: React.FC = () => {
     <Layout>
       {!isLoading ? (
         <div>
-          <SectionHeading className="flex flex-col justify-items-start !items-start gap-2 sm:flex-row  mb-4 sm:mb-0">
+          <SectionHeading className="flex flex-col justify-items-start !items-start gap-2 sm:flex-row mb-8">
             <SectionTitle className={`${isDarkTheme ? "dark" : "light"} `}>
               New Listings
             </SectionTitle>
@@ -252,7 +252,7 @@ export const Home: React.FC = () => {
             </Stack>
           </SectionHeading>
           {listings ? (
-            <div className="items-center flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 x sm:w-fit gap-4 sm:gap-2">
+            <div className="items-center flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 sm:w-fit gap-4 sm:gap-2">
               {listings.slice(0, showing).map((el: NFTIndexerListingI) => {
                 const nft = {
                   ...el.token,
