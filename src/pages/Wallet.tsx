@@ -315,10 +315,6 @@ export default function Wallet() {
         <TokenInfoModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          onTransferSuccess={() => {
-            // Refresh balances
-            fetchBalances();
-          }}
           token={selectedToken}
           balance={
             balances.find((b) => b.contractId === selectedToken.contractId)

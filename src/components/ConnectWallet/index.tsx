@@ -515,7 +515,12 @@ function BasicMenu() {
             {activeAccount?.address.slice(0, 4)}...
             {activeAccount?.address.slice(-4)}
           </AccountDropdownLabel>
-          <Link to={`/wallet/${activeAccount?.address}`}>
+          <Link
+            to={`/wallet/${activeAccount?.address}`}
+            onClick={(e: any) => {
+              e.stopPropagation();
+            }}
+          >
             <StyledWalletIcon />
           </Link>
         </AccountDropdown>
