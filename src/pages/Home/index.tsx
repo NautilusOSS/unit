@@ -36,8 +36,14 @@ import {
   Paper,
   CircularProgress,
 } from "@mui/material";
-import Pagination from "../../components/Pagination";
 import Jazzicon, { jsNumberForAddress } from "react-jazzicon";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+import CustomPagination from "../../components/Pagination";
+import { Tabs, Tab } from '@mui/material';
 
 const ActivityFilterContainer = styled.div`
   display: flex;
@@ -225,6 +231,53 @@ interface BuyerStats {
 }
 
 const FEATURED_PAGE_SIZE = 5; // New constant for featured collections
+
+// Add these type definitions at the top of the file
+interface CollectionStats {
+  collectionId: number;
+  totalSales: number;
+  totalVolume: number;
+  lastSale: number;
+  metadata?: any;
+}
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+const StyledTabs = styled(Tabs)`
+  margin-bottom: 24px;
+  
+  & .MuiTabs-indicator {
+    background-color: ${props => props.theme.isDarkTheme ? '#fff' : '#93f'};
+  }
+`;
+
+const StyledTab = styled(Tab)`
+  color: ${props => props.theme.isDarkTheme ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)'} !important;
+  
+  &.Mui-selected {
+    color: ${props => props.theme.isDarkTheme ? '#fff' : '#93f'} !important;
+  }
+`;
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`collection-tabpanel-${index}`}
+      aria-labelledby={`collection-tab-${index}`}
+      {...other}
+    >
+      {value === index && children}
+    </div>
+  );
+}
 
 export const Home: React.FC = () => {
   /* Dispatch */
@@ -493,10 +546,10 @@ export const Home: React.FC = () => {
 
         // Convert to array and sort by total sales count
         const sortedSellers = Object.values(sellerMap)
-          .sort((a, b) => b.totalSales - a.totalSales)
-          .slice(0, 20); // Get top 20 sellers for pagination
+          .sort((a: SellerStats, b: SellerStats) => b.totalSales - a.totalSales)
+          .slice(0, 20);
 
-        setTopSellers(sortedSellers as SellerStats[]);
+        setTopSellers(sortedSellers);
       } catch (error) {
         console.error("Error fetching top sellers:", error);
       } finally {
@@ -547,10 +600,13 @@ export const Home: React.FC = () => {
 
         // Convert to array and sort by total purchases
         const sortedBuyers = Object.values(buyerMap)
-          .sort((a, b) => b.totalPurchases - a.totalPurchases)
+          .sort(
+            (a: BuyerStats, b: BuyerStats) =>
+              b.totalPurchases - a.totalPurchases
+          )
           .slice(0, 20); // Get top 20 buyers for pagination
 
-        setTopBuyers(sortedBuyers);
+        setTopBuyers(sortedBuyers as BuyerStats[]);
       } catch (error) {
         console.error("Error fetching top buyers:", error);
       } finally {
@@ -568,654 +624,372 @@ export const Home: React.FC = () => {
     currentTopBuyersPage * buyersPerPage
   );
 
-  // Add state for collection listings
-  const [collectionListings, setCollectionListings] = useState<
-    NFTIndexerListingI[]
-  >([]);
-  const [isLoadingCollection, setIsLoadingCollection] = useState(false);
-
-  // Add effect to fetch collection listings
-  useEffect(() => {
-    const fetchCollectionListings = async () => {
-      setIsLoadingCollection(true);
-      try {
-        const response = await axios.get(
-          "https://mainnet-idx.nautilus.sh/nft-indexer/v1/mp/listings",
-          {
-            params: {
-              contractId: 447482,
-            },
-          }
-        );
-        setCollectionListings(response.data.listings || []);
-      } catch (error) {
-        console.error("Error fetching collection listings:", error);
-      } finally {
-        setIsLoadingCollection(false);
-      }
-    };
-
-    fetchCollectionListings();
-  }, []);
-
-  // Add state for featured collection
-  const [featuredListings, setFeaturedListings] = useState<
-    NFTIndexerListingI[]
-  >([]);
-  const [isLoadingFeatured, setIsLoadingFeatured] = useState(false);
-
-  // Add effect to fetch featured collection listings
-  useEffect(() => {
-    const fetchFeaturedListings = async () => {
-      setIsLoadingFeatured(true);
-      try {
-        const response = await axios.get(
-          "https://mainnet-idx.nautilus.sh/nft-indexer/v1/mp/listings",
-          {
-            params: {
-              contractId: 447482,
-              sort: "-createRound",
-            },
-          }
-        );
-        setFeaturedListings(response.data.listings || []);
-      } catch (error) {
-        console.error("Error fetching featured listings:", error);
-      } finally {
-        setIsLoadingFeatured(false);
-      }
-    };
-
-    fetchFeaturedListings();
-  }, []);
-
-  // Add state for second featured collection
-  const [secondFeaturedListings, setSecondFeaturedListings] = useState<
-    NFTIndexerListingI[]
-  >([]);
-  const [isLoadingSecondFeatured, setIsLoadingSecondFeatured] = useState(false);
-
-  // Add effect to fetch second featured collection listings
-  useEffect(() => {
-    const fetchSecondFeaturedListings = async () => {
-      setIsLoadingSecondFeatured(true);
-      try {
-        const response = await axios.get(
-          "https://mainnet-idx.nautilus.sh/nft-indexer/v1/mp/listings",
-          {
-            params: {
-              contractId: 425242, // Different collection ID
-              sort: "-createRound",
-            },
-          }
-        );
-        setSecondFeaturedListings(response.data.listings || []);
-      } catch (error) {
-        console.error("Error fetching second featured listings:", error);
-      } finally {
-        setIsLoadingSecondFeatured(false);
-      }
-    };
-
-    fetchSecondFeaturedListings();
-  }, []);
-
-  // Add state for third featured collection
-  const [thirdFeaturedListings, setThirdFeaturedListings] = useState<
-    NFTIndexerListingI[]
-  >([]);
-  const [isLoadingThirdFeatured, setIsLoadingThirdFeatured] = useState(false);
-
-  // Add effect to fetch third featured collection listings
-  useEffect(() => {
-    const fetchThirdFeaturedListings = async () => {
-      setIsLoadingThirdFeatured(true);
-      try {
-        const response = await axios.get(
-          "https://mainnet-idx.nautilus.sh/nft-indexer/v1/mp/listings",
-          {
-            params: {
-              contractId: 398796,
-              sort: "-createRound",
-            },
-          }
-        );
-        setThirdFeaturedListings(response.data.listings || []);
-      } catch (error) {
-        console.error("Error fetching third featured listings:", error);
-      } finally {
-        setIsLoadingThirdFeatured(false);
-      }
-    };
-
-    fetchThirdFeaturedListings();
-  }, []);
-
   const NEW_LISTINGS_COUNT = 5; // New constant for number of listings to show
+
+  const [topCollections, setTopCollections] = useState<
+    {
+      collectionId: number;
+      totalSales: number;
+      totalVolume: number;
+      lastSale?: number;
+      metadata?: any;
+    }[]
+  >([]);
+  const [isLoadingTopCollections, setIsLoadingTopCollections] = useState(false);
+
+  // Add this effect to fetch top collections by sales
+  useEffect(() => {
+    const fetchTopCollections = async () => {
+      setIsLoadingTopCollections(true);
+      try {
+        // First get collections with their total supply
+        const collectionsResponse = await axios.get(
+          "https://mainnet-idx.nautilus.sh/nft-indexer/v1/collections"
+        );
+        
+        // Get all sales to calculate total volume
+        const allSalesResponse = await axios.get(
+          "https://mainnet-idx.nautilus.sh/nft-indexer/v1/mp/sales"
+        );
+
+        // Calculate total volume and sales for each collection
+        const collectionStats = allSalesResponse.data.sales.reduce(
+          (acc: Record<number, { totalSales: number; totalVolume: number }>, sale: any) => {
+            if (!acc[sale.collectionId]) {
+              acc[sale.collectionId] = {
+                totalSales: 0,
+                totalVolume: 0,
+              };
+            }
+            acc[sale.collectionId].totalSales += 1;
+            acc[sale.collectionId].totalVolume += Number(sale.price);
+            return acc;
+          },
+          {}
+        );
+
+        // Combine collection data with total volumes and sales
+        const collections = collectionsResponse.data.collections.map((collection: any) => ({
+          collectionId: collection.contractId,
+          totalSales: collectionStats[collection.contractId]?.totalSales || 0,
+          totalVolume: collectionStats[collection.contractId]?.totalVolume || 0,
+          metadata: collection,
+        }));
+
+        // Sort by total all-time volume and take top 5
+        const sortedCollections = collections
+          .sort((a: CollectionStats, b: CollectionStats) => b.totalVolume - a.totalVolume)
+          .slice(0, 5);
+
+        setTopCollections(sortedCollections);
+      } catch (error) {
+        console.error("Error fetching top collections:", error);
+      } finally {
+        setIsLoadingTopCollections(false);
+      }
+    };
+
+    fetchTopCollections();
+  }, []);
+
+  const [tabValue, setTabValue] = useState(0);
+  const [trendingCollections, setTrendingCollections] = useState<CollectionStats[]>([]);
+  const [isLoadingTrendingCollections, setIsLoadingTrendingCollections] = useState(false);
+
+  // Add tab change handler
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
+  // Add effect to fetch trending collections
+  useEffect(() => {
+    const fetchTrendingCollections = async () => {
+      setIsLoadingTrendingCollections(true);
+      try {
+        // Get only the last 100 sales
+        const response = await axios.get(
+          "https://mainnet-idx.nautilus.sh/nft-indexer/v1/mp/sales?sort=-round&limit=100"
+        );
+
+        // Group sales by collection and calculate totals from ONLY these 100 sales
+        const collectionMap = response.data.sales.reduce(
+          (acc: Record<number, CollectionStats>, sale: any) => {
+            const collectionId = sale.collectionId;
+            if (!acc[collectionId]) {
+              acc[collectionId] = {
+                collectionId: collectionId,
+                totalSales: 0,
+                totalVolume: 0,
+                lastSale: sale.timestamp,
+                recentSales: [] // Add array to track recent sales
+              };
+            }
+            
+            // Add this sale to recent sales and update totals
+            acc[collectionId].totalSales += 1;
+            acc[collectionId].totalVolume += Number(sale.price);
+            acc[collectionId].recentSales.push(sale);
+            
+            return acc;
+          },
+          {}
+        );
+
+        // Convert to array and sort by recent volume
+        const sortedCollections = Object.values(collectionMap)
+          .map((collection: any) => ({
+            collectionId: collection.collectionId,
+            totalSales: collection.totalSales,
+            totalVolume: collection.recentSales.reduce((sum: number, sale: any) => sum + Number(sale.price), 0),
+            lastSale: collection.lastSale,
+          }))
+          .sort((a, b) => b.totalVolume - a.totalVolume)
+          .slice(0, 5);
+
+        // Fetch metadata for each collection
+        for (const collection of sortedCollections) {
+          try {
+            const collectionResponse = await axios.get(
+              `https://mainnet-idx.nautilus.sh/nft-indexer/v1/collections?contractId=${collection.collectionId}`
+            );
+            if (collectionResponse.data.collections?.[0]) {
+              collection.metadata = collectionResponse.data.collections[0];
+            }
+          } catch (error) {
+            console.error(
+              `Error fetching collection ${collection.collectionId} metadata:`,
+              error
+            );
+          }
+        }
+
+        setTrendingCollections(sortedCollections);
+      } catch (error) {
+        console.error("Error fetching trending collections:", error);
+      } finally {
+        setIsLoadingTrendingCollections(false);
+      }
+    };
+
+    fetchTrendingCollections();
+  }, []);
 
   return (
     <Layout>
       {!isLoading ? (
         <div>
-          <SectionHeading className="flex flex-col justify-items-start !items-start gap-2 sm:flex-row mb-8">
-            <SectionTitle className={`${isDarkTheme ? "dark" : "light"} `}>
-              New Listings
-            </SectionTitle>
-            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-              <SectionMoreButtonContainer>
-                <SectionMoreButton
-                  className={isDarkTheme ? "button-dark" : "button-light"}
-                >
-                  <Link to="/listing">
-                    <SectionMoreButtonText
-                      className={
-                        isDarkTheme ? "button-text-dark" : "button-text-light"
-                      }
-                    >
-                      View All
-                    </SectionMoreButtonText>
-                  </Link>
-                </SectionMoreButton>
-              </SectionMoreButtonContainer>
-            </Stack>
-          </SectionHeading>
-          {listings ? (
-            <div className="items-center flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 sm:w-fit gap-4 sm:gap-2">
-              {listings
-                .filter(
-                  (el: NFTIndexerListingI) =>
-                    el.collectionId !== 421076 &&
-                    el.collectionId !== 447482 &&
-                    el.collectionId !== 425242
-                )
-                .slice(0, NEW_LISTINGS_COUNT)
-                .map((el: NFTIndexerListingI) => {
-                  const nft = {
-                    ...el.token,
-                    metadataURI: stripTrailingZeroBytes(
-                      el?.token?.metadataURI || ""
-                    ),
-                  };
-                  return (
-                    <Grid2 key={el.transactionId}>
-                      <CartNftCard
-                        token={nft}
-                        listing={el}
-                        onClick={() => {
-                          navigate(
-                            `/collection/${el.token.contractId}/token/${el.token.tokenId}`
-                          );
-                        }}
-                      />
-                    </Grid2>
-                  );
-                })}
+          <StyledTabs 
+            value={tabValue} 
+            onChange={handleTabChange}
+            theme={{ isDarkTheme }}
+          >
+            <StyledTab label="Top Collections" />
+            <StyledTab label="Trending Volume" />
+          </StyledTabs>
 
-              {listings.length > NEW_LISTINGS_COUNT && (
-                <Grid2>
-                  <Link to="/listing" style={{ textDecoration: "none" }}>
-                    <SectionButtonContainer>
-                      <SectionButton
-                        className={isDarkTheme ? "button-dark" : "button-light"}
-                      >
-                        <SectionMoreButtonText
-                          className={
-                            isDarkTheme
-                              ? "button-text-dark"
-                              : "button-text-light"
-                          }
-                        >
-                          View More
-                        </SectionMoreButtonText>
-                      </SectionButton>
-                    </SectionButtonContainer>
-                  </Link>
-                </Grid2>
-              )}
-            </div>
-          ) : (
-            <div>"No NFTs available for sale."</div>
-          )}
-
-          {/* Add Featured Collection section */}
-          <SectionHeading className="flex flex-col justify-items-start !items-start gap-2 sm:flex-row mb-8 mt-16">
-            <SectionTitle className={`${isDarkTheme ? "dark" : "light"} `}>
-              Featured Collection
-            </SectionTitle>
-            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-              <SectionMoreButtonContainer>
-                <SectionMoreButton
-                  className={isDarkTheme ? "button-dark" : "button-light"}
-                >
-                  <Link to="/collection/447482">
-                    <SectionMoreButtonText
-                      className={
-                        isDarkTheme ? "button-text-dark" : "button-text-light"
-                      }
-                    >
-                      View Collection
-                    </SectionMoreButtonText>
-                  </Link>
-                </SectionMoreButton>
-              </SectionMoreButtonContainer>
-            </Stack>
-          </SectionHeading>
-
-          {isLoadingFeatured ? (
-            <div className="items-center flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 sm:w-fit gap-4 sm:gap-2">
-              {[...Array(5)].map((_, index) => (
-                <Grid2 key={index}>
-                  <Skeleton
-                    variant="rectangular"
-                    width="100%"
-                    height={300}
-                    sx={{ borderRadius: 2 }}
-                  />
-                </Grid2>
-              ))}
-            </div>
-          ) : featuredListings.length > 0 ? (
-            <div className="items-center flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 sm:w-fit gap-4 sm:gap-2">
-              {listings
-                .filter((el: any) => el.collectionId === 447482)
-                .slice(0, FEATURED_PAGE_SIZE)
-                .map((el: NFTIndexerListingI) => {
-                  const nft = {
-                    ...el.token,
-                    metadataURI: stripTrailingZeroBytes(
-                      el?.token?.metadataURI || ""
-                    ),
-                  };
-                  return (
-                    <Grid2 key={el.transactionId}>
-                      <CartNftCard
-                        token={nft}
-                        listing={el}
-                        onClick={() => {
-                          navigate(
-                            `/collection/${el.token.contractId}/token/${el.token.tokenId}`
-                          );
-                        }}
-                      />
-                    </Grid2>
-                  );
-                })}
-
-              {featuredListings.length > FEATURED_PAGE_SIZE && (
-                <Grid2>
-                  <Link
-                    to="/collection/447482"
-                    style={{ textDecoration: "none" }}
-                  >
-                    <SectionButtonContainer>
-                      <SectionButton
-                        className={isDarkTheme ? "button-dark" : "button-light"}
-                      >
-                        <SectionMoreButtonText
-                          className={
-                            isDarkTheme
-                              ? "button-text-dark"
-                              : "button-text-light"
-                          }
-                        >
-                          View More
-                        </SectionMoreButtonText>
-                      </SectionButton>
-                    </SectionButtonContainer>
-                  </Link>
-                </Grid2>
-              )}
-            </div>
-          ) : (
-            <div>No listings available for this collection.</div>
-          )}
-
-          {/* Add Second Featured Collection section */}
-          <SectionHeading className="flex flex-col justify-items-start !items-start gap-2 sm:flex-row mb-8 mt-16">
-            <SectionTitle className={`${isDarkTheme ? "dark" : "light"} `}>
-              Featured Collection #2
-            </SectionTitle>
-            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-              <SectionMoreButtonContainer>
-                <SectionMoreButton
-                  className={isDarkTheme ? "button-dark" : "button-light"}
-                >
-                  <Link to="/collection/421076">
-                    <SectionMoreButtonText
-                      className={
-                        isDarkTheme ? "button-text-dark" : "button-text-light"
-                      }
-                    >
-                      View Collection
-                    </SectionMoreButtonText>
-                  </Link>
-                </SectionMoreButton>
-              </SectionMoreButtonContainer>
-            </Stack>
-          </SectionHeading>
-
-          {isLoadingSecondFeatured ? (
-            <div className="items-center flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 sm:w-fit gap-4 sm:gap-2">
-              {[...Array(5)].map((_, index) => (
-                <Grid2 key={index}>
-                  <Skeleton
-                    variant="rectangular"
-                    width="100%"
-                    height={300}
-                    sx={{ borderRadius: 2 }}
-                  />
-                </Grid2>
-              ))}
-            </div>
-          ) : secondFeaturedListings.length > 0 ? (
-            <div className="items-center flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 sm:w-fit gap-4 sm:gap-2">
-              {listings
-                .filter((el: any) => el.collectionId === 425242)
-                .slice(0, FEATURED_PAGE_SIZE)
-                .map((el: NFTIndexerListingI) => {
-                  const nft = {
-                    ...el.token,
-                    metadataURI: stripTrailingZeroBytes(
-                      el?.token?.metadataURI || ""
-                    ),
-                  };
-                  return (
-                    <Grid2 key={el.transactionId}>
-                      <CartNftCard
-                        token={nft}
-                        listing={el}
-                        onClick={() => {
-                          navigate(
-                            `/collection/${el.token.contractId}/token/${el.token.tokenId}`
-                          );
-                        }}
-                      />
-                    </Grid2>
-                  );
-                })}
-
-              {secondFeaturedListings.length > FEATURED_PAGE_SIZE && (
-                <Grid2>
-                  <Link
-                    to="/collection/421076"
-                    style={{ textDecoration: "none" }}
-                  >
-                    <SectionButtonContainer>
-                      <SectionButton
-                        className={isDarkTheme ? "button-dark" : "button-light"}
-                      >
-                        <SectionMoreButtonText
-                          className={
-                            isDarkTheme
-                              ? "button-text-dark"
-                              : "button-text-light"
-                          }
-                        >
-                          View More
-                        </SectionMoreButtonText>
-                      </SectionButton>
-                    </SectionButtonContainer>
-                  </Link>
-                </Grid2>
-              )}
-            </div>
-          ) : (
-            <div>No listings available for this collection.</div>
-          )}
-
-          {/* Add Third Featured Collection section */}
-          <SectionHeading className="flex flex-col justify-items-start !items-start gap-2 sm:flex-row mb-8 mt-16">
-            <SectionTitle className={`${isDarkTheme ? "dark" : "light"} `}>
-              Featured Collection #3
-            </SectionTitle>
-            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-              <SectionMoreButtonContainer>
-                <SectionMoreButton
-                  className={isDarkTheme ? "button-dark" : "button-light"}
-                >
-                  <Link to="/collection/398796">
-                    <SectionMoreButtonText
-                      className={
-                        isDarkTheme ? "button-text-dark" : "button-text-light"
-                      }
-                    >
-                      View Collection
-                    </SectionMoreButtonText>
-                  </Link>
-                </SectionMoreButton>
-              </SectionMoreButtonContainer>
-            </Stack>
-          </SectionHeading>
-
-          {isLoadingThirdFeatured ? (
-            <div className="items-center flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 sm:w-fit gap-4 sm:gap-2">
-              {[...Array(5)].map((_, index) => (
-                <Grid2 key={index}>
-                  <Skeleton
-                    variant="rectangular"
-                    width="100%"
-                    height={300}
-                    sx={{ borderRadius: 2 }}
-                  />
-                </Grid2>
-              ))}
-            </div>
-          ) : thirdFeaturedListings.length > 0 ? (
-            <div className="items-center flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 sm:w-fit gap-4 sm:gap-2">
-              {listings
-                .filter((el: any) => el.collectionId === 398796)
-                .slice(0, FEATURED_PAGE_SIZE)
-                .map((el: NFTIndexerListingI) => {
-                  const nft = {
-                    ...el.token,
-                    metadataURI: stripTrailingZeroBytes(
-                      el?.token?.metadataURI || ""
-                    ),
-                  };
-                  return (
-                    <Grid2 key={el.transactionId}>
-                      <CartNftCard
-                        token={nft}
-                        listing={el}
-                        onClick={() => {
-                          navigate(
-                            `/collection/${el.token.contractId}/token/${el.token.tokenId}`
-                          );
-                        }}
-                      />
-                    </Grid2>
-                  );
-                })}
-
-              {thirdFeaturedListings.length > FEATURED_PAGE_SIZE && (
-                <Grid2>
-                  <Link
-                    to="/collection/398796"
-                    style={{ textDecoration: "none" }}
-                  >
-                    <SectionButtonContainer>
-                      <SectionButton
-                        className={isDarkTheme ? "button-dark" : "button-light"}
-                      >
-                        <SectionMoreButtonText
-                          className={
-                            isDarkTheme
-                              ? "button-text-dark"
-                              : "button-text-light"
-                          }
-                        >
-                          View More
-                        </SectionMoreButtonText>
-                      </SectionButton>
-                    </SectionButtonContainer>
-                  </Link>
-                </Grid2>
-              )}
-            </div>
-          ) : (
-            <div>No listings available for this collection.</div>
-          )}
-
-          {/* Top Collections */}
-          {/*true ? (
-            <>
-              <SectionHeading>
-                <SectionTitle className={isDarkTheme ? "dark" : "light"}>
-                  Top Collections
-                </SectionTitle>
-                <Stack
-                  direction="row"
-                  spacing={2}
-                  sx={{ alignItems: "center" }}
-                >
-                  <SectionMoreButtonContainer>
-                    <SectionMoreButton
-                      className={isDarkTheme ? "button-dark" : "button-light"}
-                    >
-                      <Link to="/collection">
-                        <SectionMoreButtonText
-                          className={
-                            isDarkTheme
-                              ? "button-text-dark"
-                              : "button-text-light"
-                          }
-                        >
-                          View All
-                        </SectionMoreButtonText>
-                      </Link>
-                    </SectionMoreButton>
-                  </SectionMoreButtonContainer>
-                </Stack>
-              </SectionHeading>
-              {rankings ? (
-                <RankingList
-                  rankings={rankings}
-                  selectedOption="all"
-                  collectionInfo={collectionInfo}
+          <TabPanel value={tabValue} index={0}>
+            {isLoadingTopCollections ? (
+              <div className="w-full">
+                <Skeleton
+                  variant="rectangular"
+                  height={400}
+                  sx={{ borderRadius: 2 }}
                 />
-              ) : (
-                "Loading..."
-              )}
-            </>
-              ) : null*/}
+              </div>
+            ) : (
+              <Swiper
+                modules={[Navigation, Pagination, Autoplay]}
+                spaceBetween={30}
+                slidesPerView={3}
+                centeredSlides={true}
+                loop={true}
+                navigation
+                pagination={{ clickable: true }}
+                autoplay={{ 
+                  delay: 5000,
+                  disableOnInteraction: false
+                }}
+                className="w-full mb-12"
+                style={{
+                  borderRadius: "16px",
+                  height: "400px",
+                }}
+                breakpoints={{
+                  // when window width is >= 320px
+                  320: {
+                    slidesPerView: 1,
+                    spaceBetween: 20
+                  },
+                  // when window width is >= 640px
+                  640: {
+                    slidesPerView: 2,
+                    spaceBetween: 30
+                  },
+                  // when window width is >= 1024px
+                  1024: {
+                    slidesPerView: 3,
+                    spaceBetween: 30
+                  }
+                }}
+              >
+                {topCollections.map((collection) => {
+                  const metadata = collection.metadata?.firstToken?.metadata
+                    ? JSON.parse(collection.metadata.firstToken.metadata)
+                    : null;
+
+                  return (
+                    <SwiperSlide key={collection.collectionId}>
+                      {({ isActive, isNext, isPrev }) => (
+                        <div
+                          className="relative w-full h-full cursor-pointer transition-all duration-300"
+                          onClick={() => navigate(`/collection/${collection.collectionId}`)}
+                          style={{
+                            filter: isActive ? 'none' : 'blur(2px)',
+                            transform: isActive ? 'scale(1.05)' : isNext || isPrev ? 'scale(0.9)' : 'scale(0.8)',
+                            opacity: isActive ? 1 : isNext || isPrev ? 0.7 : 0.5,
+                          }}
+                        >
+                          <img
+                            src={
+                              metadata?.image
+                                ? metadata.image.replace("ipfs://", "https://ipfs.io/ipfs/")
+                                : "/placeholder.png"
+                            }
+                            alt={metadata?.name || `Collection #${collection.collectionId}`}
+                            className="w-full h-full object-cover rounded-lg"
+                            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                              e.currentTarget.src = "/placeholder.png";
+                            }}
+                          />
+                          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-4 rounded-b-lg">
+                            <h3 className="text-xl font-bold mb-2">
+                              {metadata?.name?.replace(/\s*#\d+$/, "") ||
+                                `Collection #${collection.collectionId}`}
+                            </h3>
+                            <div className="flex justify-between">
+                              <div>
+                                <p className="text-sm opacity-80">Total Sales</p>
+                                <p className="font-bold">{collection.totalSales}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm opacity-80">Volume</p>
+                                <p className="font-bold">
+                                  {formatPrice(collection.totalVolume)} VOI
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </SwiperSlide>
+                  );
+                })}
+              </Swiper>
+            )}
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={1}>
+            {isLoadingTrendingCollections ? (
+              <div className="w-full">
+                <Skeleton
+                  variant="rectangular"
+                  height={400}
+                  sx={{ borderRadius: 2 }}
+                />
+              </div>
+            ) : (
+              <Swiper
+                modules={[Navigation, Pagination, Autoplay]}
+                spaceBetween={30}
+                slidesPerView={3}
+                centeredSlides={true}
+                loop={true}
+                navigation
+                pagination={{ clickable: true }}
+                autoplay={{ 
+                  delay: 5000,
+                  disableOnInteraction: false
+                }}
+                className="w-full mb-12"
+                style={{
+                  borderRadius: "16px",
+                  height: "400px",
+                }}
+                breakpoints={{
+                  // when window width is >= 320px
+                  320: {
+                    slidesPerView: 1,
+                    spaceBetween: 20
+                  },
+                  // when window width is >= 640px
+                  640: {
+                    slidesPerView: 2,
+                    spaceBetween: 30
+                  },
+                  // when window width is >= 1024px
+                  1024: {
+                    slidesPerView: 3,
+                    spaceBetween: 30
+                  }
+                }}
+              >
+                {trendingCollections.map((collection) => {
+                  const metadata = collection.metadata?.firstToken?.metadata
+                    ? JSON.parse(collection.metadata.firstToken.metadata)
+                    : null;
+
+                  return (
+                    <SwiperSlide key={collection.collectionId}>
+                      {({ isActive, isNext, isPrev }) => (
+                        <div
+                          className="relative w-full h-full cursor-pointer transition-all duration-300"
+                          onClick={() => navigate(`/collection/${collection.collectionId}`)}
+                          style={{
+                            filter: isActive ? 'none' : 'blur(2px)',
+                            transform: isActive ? 'scale(1.05)' : isNext || isPrev ? 'scale(0.9)' : 'scale(0.8)',
+                            opacity: isActive ? 1 : isNext || isPrev ? 0.7 : 0.5,
+                          }}
+                        >
+                          <img
+                            src={
+                              metadata?.image
+                                ? metadata.image.replace("ipfs://", "https://ipfs.io/ipfs/")
+                                : "/placeholder.png"
+                            }
+                            alt={metadata?.name || `Collection #${collection.collectionId}`}
+                            className="w-full h-full object-cover rounded-lg"
+                            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                              e.currentTarget.src = "/placeholder.png";
+                            }}
+                          />
+                          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-4 rounded-b-lg">
+                            <h3 className="text-xl font-bold mb-2">
+                              {metadata?.name?.replace(/\s*#\d+$/, "") ||
+                                `Collection #${collection.collectionId}`}
+                            </h3>
+                            <div className="flex justify-between">
+                              <div>
+                                <p className="text-sm opacity-80">Recent Sales</p>
+                                <p className="font-bold">{collection.totalSales}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm opacity-80">Volume</p>
+                                <p className="font-bold">
+                                  {formatPrice(collection.totalVolume)} VOI
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </SwiperSlide>
+                  );
+                })}
+              </Swiper>
+            )}
+          </TabPanel>
+
           {/* Activity */}
-          {/*true ? (
-            <>
-              <SectionHeading>
-                <Stack
-                  direction="row"
-                  spacing={2}
-                  sx={{ alignItems: "center" }}
-                >
-                  <SectionTitle className={isDarkTheme ? "dark" : "light"}>
-                    Activity
-                  </SectionTitle>
-                  {<ActivityFilterContainer>
-                    {[
-                      {
-                        label: "All",
-                        value: "all",
-                      },
-                      {
-                        label: "Listing",
-                        value: "listing",
-                      },
-                      {
-                        label: "Sale",
-                        value: "sale",
-                      },
-                    ].map((filter) => {
-                      if (activeFilter.includes(filter.value)) {
-                        return (
-                          <ActiveFilter
-                            onClick={() => handleFilterClick(filter.value)}
-                          >
-                            <ActiveFilterLabel>
-                              {filter.label}
-                            </ActiveFilterLabel>
-                          </ActiveFilter>
-                        );
-                      }
-                      return (
-                        <Filter onClick={() => handleFilterClick(filter.value)}>
-                          <FilterLabel>{filter.label}</FilterLabel>
-                        </Filter>
-                      );
-                    })}
-                  </ActivityFilterContainer>}
-                </Stack>
-                <Stack
-                  direction="row"
-                  spacing={2}
-                  sx={{ alignItems: "center" }}
-                >
-                  {<SectionMoreButtonContainer>
-                    <SectionMoreButton
-                      className={isDarkTheme ? "button-dark" : "button-light"}
-                    >
-                      <Link to="/activity">
-                        <SectionMoreButtonText
-                          className={
-                            isDarkTheme
-                              ? "button-text-dark"
-                              : "button-text-light"
-                          }
-                        >
-                          View All
-                        </SectionMoreButtonText>
-                      </Link>
-                    </SectionMoreButton>
-                        </SectionMoreButtonContainer>}
-                </Stack>
-              </SectionHeading>
-              {
-                <NFTSaleActivityTable
-                  sales={sales}
-                  tokens={tokens}
-                  collections={collections}
-                  listings={listings}
-                  activeFilter={activeFilter}
-                  limit={10}
-                />
-              }
-            </>
-            ) : null*/}
-          {/* Banners */}
-          {false ? (
-            <>
-              <SectionBanners>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <Link to="https://nftnavigator.xyz/" target="_blank">
-                      <img
-                        style={{
-                          width: "100%",
-                          cursor: "pointer",
-                          borderRadius: 10,
-                        }}
-                        src="/img/banner-nft-navigator.png"
-                        alt="VOI NFT Navigator Banner"
-                      />
-                    </Link>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Link to="https://highforge.io/" target="_blank">
-                      <img
-                        style={{
-                          width: "100%",
-                          cursor: "pointer",
-                          borderRadius: 10,
-                        }}
-                        src="/img/banner-high-forge.png"
-                        alt="High Forge Banner"
-                      />
-                    </Link>
-                  </Grid>
-                </Grid>
-              </SectionBanners>
-            </>
-          ) : null}
-
           <ActivitySection>
             <ActivityTitle $isDarkTheme={isDarkTheme}>
               Recent Activity
@@ -1334,7 +1108,7 @@ export const Home: React.FC = () => {
             {/* Add Pagination */}
             {sales.length > salesPerPage && (
               <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                <Pagination
+                <CustomPagination
                   currentPage={currentPage}
                   totalPages={totalPages}
                   onPageChange={setCurrentPage}
@@ -1416,7 +1190,7 @@ export const Home: React.FC = () => {
               {/* Add Pagination for Top Sellers */}
               {topSellers.length > sellersPerPage && (
                 <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                  <Pagination
+                  <CustomPagination
                     currentPage={currentTopSellersPage}
                     totalPages={totalSellerPages}
                     onPageChange={setCurrentTopSellersPage}
@@ -1499,7 +1273,7 @@ export const Home: React.FC = () => {
               {/* Add Pagination for Top Buyers */}
               {topBuyers.length > buyersPerPage && (
                 <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                  <Pagination
+                  <CustomPagination
                     currentPage={currentTopBuyersPage}
                     totalPages={totalBuyerPages}
                     onPageChange={setCurrentTopBuyersPage}
@@ -1518,7 +1292,7 @@ export const Home: React.FC = () => {
           </SectionHeading>
           <Grid container spacing={2} sx={{ mt: 5 }}>
             {Array.from({ length: 12 }).map((_, i) => (
-              <Grid item xs={6} sm={4} md={3}>
+              <Grid item xs={6} sm={4} md={3} key={i}>
                 <Skeleton
                   sx={{ borderRadius: 10 }}
                   variant="rounded"
