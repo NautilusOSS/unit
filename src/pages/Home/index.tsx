@@ -43,7 +43,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import CustomPagination from "../../components/Pagination";
-import { Tabs, Tab } from '@mui/material';
+import { Tabs, Tab } from "@mui/material";
 
 const ActivityFilterContainer = styled.div`
   display: flex;
@@ -249,17 +249,20 @@ interface TabPanelProps {
 
 const StyledTabs = styled(Tabs)`
   margin-bottom: 24px;
-  
+
   & .MuiTabs-indicator {
-    background-color: ${props => props.theme.isDarkTheme ? '#fff' : '#93f'};
+    background-color: ${(props) => (props.theme.isDarkTheme ? "#fff" : "#93f")};
   }
 `;
 
 const StyledTab = styled(Tab)`
-  color: ${props => props.theme.isDarkTheme ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)'} !important;
-  
+  color: ${(props) =>
+    props.theme.isDarkTheme
+      ? "rgba(255, 255, 255, 0.7)"
+      : "rgba(0, 0, 0, 0.7)"} !important;
+
   &.Mui-selected {
-    color: ${props => props.theme.isDarkTheme ? '#fff' : '#93f'} !important;
+    color: ${(props) => (props.theme.isDarkTheme ? "#fff" : "#93f")} !important;
   }
 `;
 
@@ -646,7 +649,7 @@ export const Home: React.FC = () => {
         const collectionsResponse = await axios.get(
           "https://mainnet-idx.nautilus.sh/nft-indexer/v1/collections"
         );
-        
+
         // Get all sales to calculate total volume
         const allSalesResponse = await axios.get(
           "https://mainnet-idx.nautilus.sh/nft-indexer/v1/mp/sales"
@@ -654,7 +657,10 @@ export const Home: React.FC = () => {
 
         // Calculate total volume and sales for each collection
         const collectionStats = allSalesResponse.data.sales.reduce(
-          (acc: Record<number, { totalSales: number; totalVolume: number }>, sale: any) => {
+          (
+            acc: Record<number, { totalSales: number; totalVolume: number }>,
+            sale: any
+          ) => {
             if (!acc[sale.collectionId]) {
               acc[sale.collectionId] = {
                 totalSales: 0,
@@ -669,16 +675,22 @@ export const Home: React.FC = () => {
         );
 
         // Combine collection data with total volumes and sales
-        const collections = collectionsResponse.data.collections.map((collection: any) => ({
-          collectionId: collection.contractId,
-          totalSales: collectionStats[collection.contractId]?.totalSales || 0,
-          totalVolume: collectionStats[collection.contractId]?.totalVolume || 0,
-          metadata: collection,
-        }));
+        const collections = collectionsResponse.data.collections.map(
+          (collection: any) => ({
+            collectionId: collection.contractId,
+            totalSales: collectionStats[collection.contractId]?.totalSales || 0,
+            totalVolume:
+              collectionStats[collection.contractId]?.totalVolume || 0,
+            metadata: collection,
+          })
+        );
 
         // Sort by total all-time volume and take top 5
         const sortedCollections = collections
-          .sort((a: CollectionStats, b: CollectionStats) => b.totalVolume - a.totalVolume)
+          .sort(
+            (a: CollectionStats, b: CollectionStats) =>
+              b.totalVolume - a.totalVolume
+          )
           .slice(0, 5);
 
         setTopCollections(sortedCollections);
@@ -693,8 +705,11 @@ export const Home: React.FC = () => {
   }, []);
 
   const [tabValue, setTabValue] = useState(0);
-  const [trendingCollections, setTrendingCollections] = useState<CollectionStats[]>([]);
-  const [isLoadingTrendingCollections, setIsLoadingTrendingCollections] = useState(false);
+  const [trendingCollections, setTrendingCollections] = useState<
+    CollectionStats[]
+  >([]);
+  const [isLoadingTrendingCollections, setIsLoadingTrendingCollections] =
+    useState(false);
 
   // Add tab change handler
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -721,15 +736,15 @@ export const Home: React.FC = () => {
                 totalSales: 0,
                 totalVolume: 0,
                 lastSale: sale.timestamp,
-                recentSales: [] // Add array to track recent sales
+                recentSales: [], // Add array to track recent sales
               };
             }
-            
+
             // Add this sale to recent sales and update totals
             acc[collectionId].totalSales += 1;
             acc[collectionId].totalVolume += Number(sale.price);
             acc[collectionId].recentSales.push(sale);
-            
+
             return acc;
           },
           {}
@@ -740,7 +755,10 @@ export const Home: React.FC = () => {
           .map((collection: any) => ({
             collectionId: collection.collectionId,
             totalSales: collection.totalSales,
-            totalVolume: collection.recentSales.reduce((sum: number, sale: any) => sum + Number(sale.price), 0),
+            totalVolume: collection.recentSales.reduce(
+              (sum: number, sale: any) => sum + Number(sale.price),
+              0
+            ),
             lastSale: collection.lastSale,
           }))
           .sort((a, b) => b.totalVolume - a.totalVolume)
@@ -778,8 +796,8 @@ export const Home: React.FC = () => {
     <Layout>
       {!isLoading ? (
         <div>
-          <StyledTabs 
-            value={tabValue} 
+          <StyledTabs
+            value={tabValue}
             onChange={handleTabChange}
             theme={{ isDarkTheme }}
           >
@@ -805,9 +823,9 @@ export const Home: React.FC = () => {
                 loop={true}
                 navigation
                 pagination={{ clickable: true }}
-                autoplay={{ 
+                autoplay={{
                   delay: 5000,
-                  disableOnInteraction: false
+                  disableOnInteraction: false,
                 }}
                 className="w-full mb-12"
                 style={{
@@ -818,18 +836,18 @@ export const Home: React.FC = () => {
                   // when window width is >= 320px
                   320: {
                     slidesPerView: 1,
-                    spaceBetween: 20
+                    spaceBetween: 20,
                   },
                   // when window width is >= 640px
                   640: {
                     slidesPerView: 2,
-                    spaceBetween: 30
+                    spaceBetween: 30,
                   },
                   // when window width is >= 1024px
                   1024: {
                     slidesPerView: 3,
-                    spaceBetween: 30
-                  }
+                    spaceBetween: 30,
+                  },
                 }}
               >
                 {topCollections.map((collection) => {
@@ -842,22 +860,40 @@ export const Home: React.FC = () => {
                       {({ isActive, isNext, isPrev }) => (
                         <div
                           className="relative w-full h-full cursor-pointer transition-all duration-300"
-                          onClick={() => navigate(`/collection/${collection.collectionId}`)}
+                          onClick={() =>
+                            navigate(`/collection/${collection.collectionId}`)
+                          }
                           style={{
-                            filter: isActive ? 'none' : 'blur(2px)',
-                            transform: isActive ? 'scale(1.05)' : isNext || isPrev ? 'scale(0.9)' : 'scale(0.8)',
-                            opacity: isActive ? 1 : isNext || isPrev ? 0.7 : 0.5,
+                            filter: isActive ? "none" : "blur(2px)",
+                            transform: isActive
+                              ? "scale(1.05)"
+                              : isNext || isPrev
+                              ? "scale(0.9)"
+                              : "scale(0.8)",
+                            opacity: isActive
+                              ? 1
+                              : isNext || isPrev
+                              ? 0.7
+                              : 0.5,
                           }}
                         >
                           <img
                             src={
                               metadata?.image
-                                ? metadata.image.replace("ipfs://", "https://ipfs.io/ipfs/")
+                                ? metadata.image.replace(
+                                    "ipfs://",
+                                    "https://ipfs.io/ipfs/"
+                                  )
                                 : "/placeholder.png"
                             }
-                            alt={metadata?.name || `Collection #${collection.collectionId}`}
+                            alt={
+                              metadata?.name ||
+                              `Collection #${collection.collectionId}`
+                            }
                             className="w-full h-full object-cover rounded-lg"
-                            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                            onError={(
+                              e: React.SyntheticEvent<HTMLImageElement>
+                            ) => {
                               e.currentTarget.src = "/placeholder.png";
                             }}
                           />
@@ -868,8 +904,12 @@ export const Home: React.FC = () => {
                             </h3>
                             <div className="flex justify-between">
                               <div>
-                                <p className="text-sm opacity-80">Total Sales</p>
-                                <p className="font-bold">{collection.totalSales}</p>
+                                <p className="text-sm opacity-80">
+                                  Total Sales
+                                </p>
+                                <p className="font-bold">
+                                  {collection.totalSales}
+                                </p>
                               </div>
                               <div>
                                 <p className="text-sm opacity-80">Volume</p>
@@ -906,9 +946,9 @@ export const Home: React.FC = () => {
                 loop={true}
                 navigation
                 pagination={{ clickable: true }}
-                autoplay={{ 
+                autoplay={{
                   delay: 5000,
-                  disableOnInteraction: false
+                  disableOnInteraction: false,
                 }}
                 className="w-full mb-12"
                 style={{
@@ -919,18 +959,18 @@ export const Home: React.FC = () => {
                   // when window width is >= 320px
                   320: {
                     slidesPerView: 1,
-                    spaceBetween: 20
+                    spaceBetween: 20,
                   },
                   // when window width is >= 640px
                   640: {
                     slidesPerView: 2,
-                    spaceBetween: 30
+                    spaceBetween: 30,
                   },
                   // when window width is >= 1024px
                   1024: {
                     slidesPerView: 3,
-                    spaceBetween: 30
-                  }
+                    spaceBetween: 30,
+                  },
                 }}
               >
                 {trendingCollections.map((collection) => {
@@ -943,22 +983,40 @@ export const Home: React.FC = () => {
                       {({ isActive, isNext, isPrev }) => (
                         <div
                           className="relative w-full h-full cursor-pointer transition-all duration-300"
-                          onClick={() => navigate(`/collection/${collection.collectionId}`)}
+                          onClick={() =>
+                            navigate(`/collection/${collection.collectionId}`)
+                          }
                           style={{
-                            filter: isActive ? 'none' : 'blur(2px)',
-                            transform: isActive ? 'scale(1.05)' : isNext || isPrev ? 'scale(0.9)' : 'scale(0.8)',
-                            opacity: isActive ? 1 : isNext || isPrev ? 0.7 : 0.5,
+                            filter: isActive ? "none" : "blur(2px)",
+                            transform: isActive
+                              ? "scale(1.05)"
+                              : isNext || isPrev
+                              ? "scale(0.9)"
+                              : "scale(0.8)",
+                            opacity: isActive
+                              ? 1
+                              : isNext || isPrev
+                              ? 0.7
+                              : 0.5,
                           }}
                         >
                           <img
                             src={
                               metadata?.image
-                                ? metadata.image.replace("ipfs://", "https://ipfs.io/ipfs/")
+                                ? metadata.image.replace(
+                                    "ipfs://",
+                                    "https://ipfs.io/ipfs/"
+                                  )
                                 : "/placeholder.png"
                             }
-                            alt={metadata?.name || `Collection #${collection.collectionId}`}
+                            alt={
+                              metadata?.name ||
+                              `Collection #${collection.collectionId}`
+                            }
                             className="w-full h-full object-cover rounded-lg"
-                            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                            onError={(
+                              e: React.SyntheticEvent<HTMLImageElement>
+                            ) => {
                               e.currentTarget.src = "/placeholder.png";
                             }}
                           />
@@ -969,8 +1027,12 @@ export const Home: React.FC = () => {
                             </h3>
                             <div className="flex justify-between">
                               <div>
-                                <p className="text-sm opacity-80">Recent Sales</p>
-                                <p className="font-bold">{collection.totalSales}</p>
+                                <p className="text-sm opacity-80">
+                                  Recent Sales
+                                </p>
+                                <p className="font-bold">
+                                  {collection.totalSales}
+                                </p>
                               </div>
                               <div>
                                 <p className="text-sm opacity-80">Volume</p>
