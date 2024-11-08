@@ -8,6 +8,8 @@ import TokenInfoModal from "@/components/TokenInfoModal";
 import algosdk from "algosdk";
 import { abi, CONTRACT } from "ulujs";
 import { getAlgorandClients } from "@/wallets";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
 
 interface TokenBalance {
   accountId: string;
@@ -51,6 +53,7 @@ const MAX_SUPPLY =
 
 export default function Wallet() {
   const { accountId } = useParams();
+  const isDarkTheme = useSelector((state: RootState) => state.theme.isDarkTheme);
   const [balances, setBalances] = useState<TokenBalance[]>([]);
   const [tokenInfo, setTokenInfo] = useState<Record<number, TokenInfo>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -151,13 +154,13 @@ export default function Wallet() {
     }
   };
 
-  if (isLoading) return <div>Loading wallet data...</div>;
-  if (error) return <div>Error: {error}</div>;
-  if (!accountId) return <div>No account ID provided</div>;
+  if (isLoading) return <div className={`min-h-screen ${isDarkTheme ? 'bg-gray-900' : 'bg-white'}`}>Loading wallet data...</div>;
+  if (error) return <div className={`min-h-screen ${isDarkTheme ? 'bg-gray-900' : 'bg-white'}`}>Error: {error}</div>;
+  if (!accountId) return <div className={`min-h-screen ${isDarkTheme ? 'bg-gray-900' : 'bg-white'}`}>No account ID provided</div>;
 
   return (
     <Layout>
-      <div className="p-4">
+      <div className={`p-4 min-h-screen ${isDarkTheme ? 'bg-gray-900' : 'bg-white'}`}>
         <h1 className="text-2xl font-bold mb-4">Wallet Holdings</h1>
         <div className="mb-4">
           <span className="font-semibold">Account ID: </span>
@@ -315,6 +318,10 @@ export default function Wallet() {
         <TokenInfoModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
+          onTransferSuccess={() => {
+            // Refresh balances after successful transfer
+            fetchBalances();
+          }}
           token={selectedToken}
           balance={
             balances.find((b) => b.contractId === selectedToken.contractId)
