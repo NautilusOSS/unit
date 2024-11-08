@@ -16,6 +16,7 @@ import {
   WalletManager,
   WalletProvider,
 } from "@txnlab/use-wallet-react";
+import Wallet from './pages/Wallet';
 
 const BackgroundLayer = styled.div`
   width: 100%;
@@ -115,6 +116,7 @@ const App: React.FC = () => {
                   {routes.map((el, key) => (
                     <Route key={key} path={el.path} Component={el.Component} />
                   ))}
+                  <Route path="/wallet/:accountId" element={<Wallet />} />
                 </Routes>
               </Router>
             </AppContainer>
