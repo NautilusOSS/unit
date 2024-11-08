@@ -10,6 +10,7 @@ import { abi, CONTRACT } from "ulujs";
 import { getAlgorandClients } from "@/wallets";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
+import { ViewList, ViewModule } from "@mui/icons-material";
 
 interface TokenBalance {
   accountId: string;
@@ -62,6 +63,7 @@ export default function Wallet() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedToken, setSelectedToken] = useState<TokenInfo | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
 
   useEffect(() => {
     const fetchBalances = async () => {
@@ -161,7 +163,32 @@ export default function Wallet() {
   return (
     <Layout>
       <div className={`p-4 min-h-screen ${isDarkTheme ? 'bg-gray-900' : 'bg-white'}`}>
-        <h1 className="text-2xl font-bold mb-4">Wallet Holdings</h1>
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">Wallet Holdings</h1>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded-lg ${
+                viewMode === 'list' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-200 dark:bg-gray-700'
+              }`}
+            >
+              <ViewList />
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded-lg ${
+                viewMode === 'grid' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-200 dark:bg-gray-700'
+              }`}
+            >
+              <ViewModule />
+            </button>
+          </div>
+        </div>
+
         <div className="mb-4">
           <span className="font-semibold">Account ID: </span>
           <span className="font-mono">{accountId}</span>
@@ -204,115 +231,163 @@ export default function Wallet() {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-gray-600 dark:border-gray-700">
-          <table className="min-w-full">
-            <thead>
-              <tr className="bg-gray-100 dark:bg-gray-700">
-                <th className="px-4 py-2 border-b border-r border-gray-600 dark:border-gray-700 text-gray-900 dark:text-gray-100 first:border-l-0">
-                  Token
-                </th>
-                <th className="px-4 py-2 border-b border-r border-gray-600 dark:border-gray-700 text-gray-900 dark:text-gray-100">
-                  Contract ID
-                </th>
-                <th className="px-4 py-2 border-b border-r border-gray-600 dark:border-gray-700 text-gray-900 dark:text-gray-100">
-                  Balance
-                </th>
-                <th className="px-4 py-2 border-b border-r border-gray-600 dark:border-gray-700 text-gray-900 dark:text-gray-100">
-                  Price (VOI)
-                </th>
-                <th className="px-4 py-2 border-b border-gray-600 dark:border-gray-700 text-gray-900 dark:text-gray-100 last:border-r-0">
-                  Value (VOI)
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredBalances.length === 0 ? (
-                <tr className="dark:bg-gray-900">
-                  <td
-                    colSpan={5}
-                    className="px-4 py-2 text-center text-gray-500"
-                  >
-                    No tokens found
-                  </td>
+        {viewMode === 'list' ? (
+          <div className="overflow-hidden rounded-lg border border-gray-600 dark:border-gray-700">
+            <table className="min-w-full">
+              <thead>
+                <tr className="bg-gray-100 dark:bg-gray-700">
+                  <th className="px-4 py-2 border-b border-r border-gray-600 dark:border-gray-700 text-gray-900 dark:text-gray-100 first:border-l-0">
+                    Token
+                  </th>
+                  <th className="px-4 py-2 border-b border-r border-gray-600 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                    Contract ID
+                  </th>
+                  <th className="px-4 py-2 border-b border-r border-gray-600 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                    Balance
+                  </th>
+                  <th className="px-4 py-2 border-b border-r border-gray-600 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                    Price (VOI)
+                  </th>
+                  <th className="px-4 py-2 border-b border-gray-600 dark:border-gray-700 text-gray-900 dark:text-gray-100 last:border-r-0">
+                    Value (VOI)
+                  </th>
                 </tr>
-              ) : (
-                filteredBalances.map((balance) => {
-                  const token = tokenInfo[balance.contractId];
-                  const formattedBalance = token
-                    ? formatBalance(balance.balance, token.decimals)
-                    : balance.balance;
-                  const price = token ? parseFloat(token.price) : 0;
-                  const value =
-                    (parseFloat(balance.balance) * price) /
-                    Math.pow(10, token?.decimals || 0);
-
-                  return (
-                    <tr
-                      key={balance.contractId}
-                      className="dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800"
+              </thead>
+              <tbody>
+                {filteredBalances.length === 0 ? (
+                  <tr className="dark:bg-gray-900">
+                    <td
+                      colSpan={5}
+                      className="px-4 py-2 text-center text-gray-500"
                     >
-                      <td className="px-4 py-2 border-b border-r border-gray-600 dark:border-gray-700 first:border-l-0">
-                        <button
-                          onClick={() => {
-                            setSelectedToken(token);
-                            setIsModalOpen(true);
-                          }}
-                          className="hover:underline text-left flex items-center"
-                        >
-                          {token ? (
-                            <>
-                              {token.name} ({token.symbol})
-                              {token.verified === 1 && (
-                                <span className="ml-2 text-green-600 dark:text-green-500">
-                                  ✓
-                                </span>
-                              )}
-                            </>
-                          ) : (
-                            "Unknown Token"
-                          )}
-                        </button>
-                      </td>
-                      <td className="px-4 py-2 border-b border-r border-gray-600 dark:border-gray-700">
-                        <button
-                          onClick={() =>
-                            copyToClipboard(balance.contractId.toString())
-                          }
-                          className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2 py-1 rounded transition-colors duration-200 flex items-center gap-1 w-full"
-                        >
-                          <span>{balance.contractId}</span>
-                          <svg
-                            className="w-4 h-4 opacity-50 hover:opacity-100"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg"
+                      No tokens found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredBalances.map((balance) => {
+                    const token = tokenInfo[balance.contractId];
+                    const formattedBalance = token
+                      ? formatBalance(balance.balance, token.decimals)
+                      : balance.balance;
+                    const price = token ? parseFloat(token.price) : 0;
+                    const value =
+                      (parseFloat(balance.balance) * price) /
+                      Math.pow(10, token?.decimals || 0);
+
+                    return (
+                      <tr
+                        key={balance.contractId}
+                        className="dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      >
+                        <td className="px-4 py-2 border-b border-r border-gray-600 dark:border-gray-700 first:border-l-0">
+                          <button
+                            onClick={() => {
+                              setSelectedToken(token);
+                              setIsModalOpen(true);
+                            }}
+                            className="hover:underline text-left flex items-center"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                            />
-                          </svg>
-                        </button>
-                      </td>
-                      <td className="px-4 py-2 border-b border-r border-gray-600 dark:border-gray-700 text-right font-mono">
-                        {formattedBalance}
-                      </td>
-                      <td className="px-4 py-2 border-b border-r border-gray-600 dark:border-gray-700 text-right">
-                        {isNaN(price) ? "-" : `${price.toFixed(6)} VOI`}
-                      </td>
-                      <td className="px-4 py-2 border-b border-gray-600 dark:border-gray-700 text-right last:border-r-0">
-                        {isNaN(value) ? "-" : `${value.toFixed(6)} VOI`}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                            {token ? (
+                              <>
+                                {token.name} ({token.symbol})
+                                {token.verified === 1 && (
+                                  <span className="ml-2 text-green-600 dark:text-green-500">
+                                    ✓
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              "Unknown Token"
+                            )}
+                          </button>
+                        </td>
+                        <td className="px-4 py-2 border-b border-r border-gray-600 dark:border-gray-700">
+                          <button
+                            onClick={() =>
+                              copyToClipboard(balance.contractId.toString())
+                            }
+                            className="hover:bg-gray-100 dark:hover:bg-gray-800 px-2 py-1 rounded transition-colors duration-200 flex items-center gap-1 w-full"
+                          >
+                            <span>{balance.contractId}</span>
+                            <svg
+                              className="w-4 h-4 opacity-50 hover:opacity-100"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                              />
+                            </svg>
+                          </button>
+                        </td>
+                        <td className="px-4 py-2 border-b border-r border-gray-600 dark:border-gray-700 text-right font-mono">
+                          {formattedBalance}
+                        </td>
+                        <td className="px-4 py-2 border-b border-r border-gray-600 dark:border-gray-700 text-right">
+                          {isNaN(price) ? "-" : `${price.toFixed(6)} VOI`}
+                        </td>
+                        <td className="px-4 py-2 border-b border-gray-600 dark:border-gray-700 text-right last:border-r-0">
+                          {isNaN(value) ? "-" : `${value.toFixed(6)} VOI`}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredBalances.map((balance) => {
+              const token = tokenInfo[balance.contractId];
+              const formattedBalance = token
+                ? formatBalance(balance.balance, token.decimals)
+                : balance.balance;
+              const price = token ? parseFloat(token.price) : 0;
+              const value = (parseFloat(balance.balance) * price) / Math.pow(10, token?.decimals || 0);
+
+              return (
+                <div 
+                  key={balance.contractId}
+                  className="p-4 rounded-lg border border-gray-600 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                  onClick={() => {
+                    setSelectedToken(token);
+                    setIsModalOpen(true);
+                  }}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="font-semibold">
+                        {token ? (
+                          <>
+                            {token.name} ({token.symbol})
+                            {token.verified === 1 && (
+                              <span className="ml-2 text-green-600 dark:text-green-500">✓</span>
+                            )}
+                          </>
+                        ) : (
+                          "Unknown Token"
+                        )}
+                      </h3>
+                      <p className="text-sm text-gray-500">{balance.contractId}</p>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-lg font-mono">{formattedBalance}</p>
+                    <p className="text-sm text-gray-500">
+                      {isNaN(value) ? "-" : `${value.toFixed(6)} VOI`}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
       {selectedToken && (
         <TokenInfoModal
