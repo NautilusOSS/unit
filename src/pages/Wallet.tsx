@@ -10,7 +10,12 @@ import { abi, CONTRACT } from "ulujs";
 import { getAlgorandClients } from "@/wallets";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
-import { ViewList, ViewModule } from "@mui/icons-material";
+import { ViewList, ViewModule, PieChart } from "@mui/icons-material";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Pie } from 'react-chartjs-2';
+
+// Register ChartJS components
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 interface TokenBalance {
   accountId: string;
@@ -63,56 +68,56 @@ export default function Wallet() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedToken, setSelectedToken] = useState<TokenInfo | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'pie'>('list');
+
+  const fetchBalances = async () => {
+    if (!accountId) return;
+
+    try {
+      setIsLoading(true);
+      const response = await fetch(
+        `https://mainnet-idx.nautilus.sh/nft-indexer/v1/arc200/balances?accountId=${accountId}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch wallet data");
+      }
+
+      const data: BalanceResponse = await response.json();
+      setBalances(data.balances);
+
+      // Fetch token info for each balance
+      const tokenInfoPromises = data.balances.map(async (balance) => {
+        const tokenResponse = await fetch(
+          `https://mainnet-idx.nautilus.sh/nft-indexer/v1/arc200/tokens?includes=all&contractId=${balance.contractId}`
+        );
+        if (!tokenResponse.ok) return null;
+        const tokenData: TokenResponse = await tokenResponse.json();
+        const token = tokenData.tokens[0];
+
+        // If totalSupply matches MAX_SUPPLY, fetch the contract method address
+        if (token && token.totalSupply === MAX_SUPPLY) {
+          // TODO implement me
+        }
+        return token;
+      });
+
+      const tokenInfoResults = await Promise.all(tokenInfoPromises);
+      const tokenInfoMap: Record<number, TokenInfo> = {};
+      tokenInfoResults.forEach((token) => {
+        if (token) {
+          tokenInfoMap[token.contractId] = token;
+        }
+      });
+      setTokenInfo(tokenInfoMap);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchBalances = async () => {
-      if (!accountId) return;
-
-      try {
-        setIsLoading(true);
-        const response = await fetch(
-          `https://mainnet-idx.nautilus.sh/nft-indexer/v1/arc200/balances?accountId=${accountId}`
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch wallet data");
-        }
-
-        const data: BalanceResponse = await response.json();
-        setBalances(data.balances);
-
-        // Fetch token info for each balance
-        const tokenInfoPromises = data.balances.map(async (balance) => {
-          const tokenResponse = await fetch(
-            `https://mainnet-idx.nautilus.sh/nft-indexer/v1/arc200/tokens?includes=all&contractId=${balance.contractId}`
-          );
-          if (!tokenResponse.ok) return null;
-          const tokenData: TokenResponse = await tokenResponse.json();
-          const token = tokenData.tokens[0];
-
-          // If totalSupply matches MAX_SUPPLY, fetch the contract method address
-          if (token && token.totalSupply === MAX_SUPPLY) {
-            // TODO implement me
-          }
-          return token;
-        });
-
-        const tokenInfoResults = await Promise.all(tokenInfoPromises);
-        const tokenInfoMap: Record<number, TokenInfo> = {};
-        tokenInfoResults.forEach((token) => {
-          if (token) {
-            tokenInfoMap[token.contractId] = token;
-          }
-        });
-        setTokenInfo(tokenInfoMap);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchBalances();
   }, [accountId]);
 
@@ -121,23 +126,35 @@ export default function Wallet() {
     return (num / Math.pow(10, decimals)).toFixed(decimals);
   };
 
-  const filteredBalances = balances.filter((balance) => {
-    const token = tokenInfo[balance.contractId];
+  const filteredBalances = balances
+    .filter((balance) => {
+      const token = tokenInfo[balance.contractId];
 
-    // First apply verified filter
-    if (verifiedOnly && token?.verified !== 1) return false;
+      // First apply verified filter
+      if (verifiedOnly && token?.verified !== 1) return false;
 
-    // Then apply search filter if there's a search term
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      const matchesName = token?.name?.toLowerCase().includes(search);
-      const matchesSymbol = token?.symbol?.toLowerCase().includes(search);
-      const matchesContract = balance.contractId.toString().includes(search);
-      return matchesName || matchesSymbol || matchesContract;
-    }
+      // Then apply search filter if there's a search term
+      if (searchTerm) {
+        const search = searchTerm.toLowerCase();
+        const matchesName = token?.name?.toLowerCase().includes(search);
+        const matchesSymbol = token?.symbol?.toLowerCase().includes(search);
+        const matchesContract = balance.contractId.toString().includes(search);
+        return matchesName || matchesSymbol || matchesContract;
+      }
 
-    return true;
-  });
+      return true;
+    })
+    .sort((a, b) => {
+      const tokenA = tokenInfo[a.contractId];
+      const tokenB = tokenInfo[b.contractId];
+      
+      const valueA = (parseFloat(a.balance) * parseFloat(tokenA?.price || '0')) / 
+        Math.pow(10, tokenA?.decimals || 0);
+      const valueB = (parseFloat(b.balance) * parseFloat(tokenB?.price || '0')) / 
+        Math.pow(10, tokenB?.decimals || 0);
+      
+      return valueB - valueA; // Sort in descending order
+    });
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -154,6 +171,54 @@ export default function Wallet() {
         hideProgressBar: true,
       });
     }
+  };
+
+  const getPieChartData = () => {
+    const chartData = filteredBalances.map(balance => {
+      const token = tokenInfo[balance.contractId];
+      const value = (parseFloat(balance.balance) * parseFloat(token?.price || '0')) / 
+        Math.pow(10, token?.decimals || 0);
+      return {
+        value,
+        label: token ? `${token.symbol}` : `Contract ${balance.contractId}`
+      };
+    });
+
+    // Sort by value and take top 10
+    const top10Data = chartData
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10);
+
+    return {
+      labels: top10Data.map(item => item.label),
+      datasets: [
+        {
+          data: top10Data.map(item => item.value),
+          backgroundColor: [
+            '#FF6384',
+            '#36A2EB',
+            '#FFCE56',
+            '#4BC0C0',
+            '#9966FF',
+            '#FF9F40',
+            '#FF6384',
+            '#36A2EB',
+            '#FFCE56',
+            '#4BC0C0',
+          ],
+          borderWidth: 1,
+        },
+      ],
+    };
+  };
+
+  const calculateTotalValue = (balances: TokenBalance[]) => {
+    return balances.reduce((total, balance) => {
+      const token = tokenInfo[balance.contractId];
+      const value = (parseFloat(balance.balance) * parseFloat(token?.price || '0')) / 
+        Math.pow(10, token?.decimals || 0);
+      return total + (isNaN(value) ? 0 : value);
+    }, 0);
   };
 
   if (isLoading) return <div className={`min-h-screen ${isDarkTheme ? 'bg-gray-900' : 'bg-white'}`}>Loading wallet data...</div>;
@@ -185,6 +250,16 @@ export default function Wallet() {
               }`}
             >
               <ViewModule />
+            </button>
+            <button
+              onClick={() => setViewMode('pie')}
+              className={`p-2 rounded-lg ${
+                viewMode === 'pie' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-200 dark:bg-gray-700'
+              }`}
+            >
+              <PieChart />
             </button>
           </div>
         </div>
@@ -231,7 +306,60 @@ export default function Wallet() {
           </div>
         </div>
 
-        {viewMode === 'list' ? (
+        {viewMode === 'pie' ? (
+          <div className="max-w-2xl mx-auto mt-8">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-semibold mb-2">Portfolio Distribution</h3>
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                Total Value: {calculateTotalValue(filteredBalances).toFixed(2)} VOI
+              </p>
+            </div>
+            <Pie 
+              data={getPieChartData()}
+              options={{
+                plugins: {
+                  legend: {
+                    position: 'right' as const,
+                    labels: {
+                      color: isDarkTheme ? 'white' : 'black',
+                      generateLabels: (chart) => {
+                        const dataset = chart.data.datasets[0];
+                        const labels = chart.data.labels || [];
+                        return labels.map((label, i) => {
+                          const value = dataset.data[i] as number;
+                          const percentage = ((value / calculateTotalValue(filteredBalances)) * 100).toFixed(1);
+                          return {
+                            text: `${label} - ${value.toFixed(2)} VOI (${percentage}%)`,
+                            fillStyle: (dataset.backgroundColor as string[])[i] || '#000000',
+                            hidden: false,
+                            index: i,
+                            strokeStyle: isDarkTheme ? '#ffffff' : '#000000',
+                            fontColor: isDarkTheme ? '#ffffff' : '#000000',
+                          };
+                        });
+                      },
+                    }
+                  },
+                  tooltip: {
+                    titleColor: isDarkTheme ? 'white' : 'black',
+                    bodyColor: isDarkTheme ? 'white' : 'black',
+                    backgroundColor: isDarkTheme ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                    callbacks: {
+                      label: function(context) {
+                        const value = context.raw as number;
+                        const total = calculateTotalValue(filteredBalances);
+                        const percentage = ((value / total) * 100).toFixed(1);
+                        return `${context.label}: ${value.toFixed(2)} VOI (${percentage}%)`;
+                      }
+                    }
+                  }
+                },
+                maintainAspectRatio: true,
+                responsive: true,
+              }}
+            />
+          </div>
+        ) : viewMode === 'list' ? (
           <div className="overflow-hidden rounded-lg border border-gray-600 dark:border-gray-700">
             <table className="min-w-full">
               <thead>
