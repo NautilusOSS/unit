@@ -4,7 +4,7 @@ import styled from "styled-components";
 import { Box, Divider, MenuItem, Select, Typography } from "@mui/material";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   QUEST_ACTION,
   QUEST_API,
@@ -317,6 +317,7 @@ interface OuterConnectButtonProps {
   theme: "light" | "dark";
 }
 const OuterConnectButton: React.FC<OuterConnectButtonProps> = ({ theme }) => {
+  const navigate = useNavigate();
   return theme === "dark" ? (
     <svg
       width="159"
@@ -514,7 +515,9 @@ function BasicMenu() {
             {activeAccount?.address.slice(0, 4)}...
             {activeAccount?.address.slice(-4)}
           </AccountDropdownLabel>
-          <StyledWalletIcon />
+          <Link to={`/wallet/${activeAccount?.address}`}>
+            <StyledWalletIcon />
+          </Link>
         </AccountDropdown>
       )}
       <AccountMenu
