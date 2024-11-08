@@ -25,6 +25,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useWallet } from "@txnlab/use-wallet-react";
 import StakingInformation from "@/components/StakingInformation/StakingInformation";
+import styled from "styled-components";
 
 const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
@@ -48,6 +49,35 @@ interface BuySaleModalProps {
   paymentAltTokenId?: string;
   seller?: string;
 }
+
+const StyledDialog = styled(Modal)<{ isDark?: boolean }>`
+  .MuiPaper-root {
+    background-color: ${props => props.isDark ? '#202020' : '#fff'};
+    color: ${props => props.isDark ? '#fff' : '#161717'};
+    border: 1px solid ${props => props.isDark ? '#3b3b3b' : '#eaebf0'};
+  }
+
+  .MuiDialogTitle-root {
+    color: ${props => props.isDark ? '#fff' : '#161717'};
+  }
+
+  .MuiDialogContent-root {
+    color: ${props => props.isDark ? '#fff' : '#161717'};
+  }
+
+  .MuiDialogActions-root {
+    border-top: 1px solid ${props => props.isDark ? '#3b3b3b' : '#eaebf0'};
+  }
+
+  .MuiButton-root {
+    color: ${props => props.isDark ? '#fff' : '#161717'};
+    border-color: ${props => props.isDark ? '#3b3b3b' : '#eaebf0'};
+
+    &:hover {
+      background-color: ${props => props.isDark ? '#2b2b2b' : 'rgba(0, 0, 0, 0.04)'};
+    }
+  }
+`;
 
 const BuySaleModal: React.FC<BuySaleModalProps> = ({
   token,
@@ -283,10 +313,13 @@ const BuySaleModal: React.FC<BuySaleModalProps> = ({
       ? image
       : `https://ipfs.io/ipfs/${image.slice(7)}`;
 
+  const isDarkTheme = useSelector((state: any) => state.theme.isDarkTheme);
+
   return (
-    <Modal
+    <StyledDialog
       open={open}
       onClose={handleClose}
+      isDark={isDarkTheme}
       aria-labelledby="address-modal-title"
       aria-describedby="address-modal-description"
     >
@@ -296,15 +329,19 @@ const BuySaleModal: React.FC<BuySaleModalProps> = ({
           top: "50%",
           left: "50%",
           transform: "translate(-50%, -50%)",
-          background: "white",
+          background: isDarkTheme ? "#202020" : "white",
+          color: isDarkTheme ? "#fff" : "#161717",
           padding: "40px",
           minHeight: "300px",
           minWidth: "400px",
           width: "50vw",
           borderRadius: "25px",
+          border: `1px solid ${isDarkTheme ? "#3b3b3b" : "#eaebf0"}`,
         }}
       >
-        <h2 id="address-modal-title">{title}</h2>
+        <h2 id="address-modal-title" style={{ color: isDarkTheme ? "#fff" : "#161717" }}>
+          {title}
+        </h2>
         {!loading ? (
           <>
             <Grid container spacing={2}>
@@ -474,7 +511,7 @@ const BuySaleModal: React.FC<BuySaleModalProps> = ({
           </div>
         )}
       </div>
-    </Modal>
+    </StyledDialog>
   );
 };
 

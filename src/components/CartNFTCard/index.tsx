@@ -27,28 +27,29 @@ import { TOKEN_WVOI } from "../../contants/tokens";
 import { useSelector } from "react-redux";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { HIGHFORGE_CDN } from "@/config/arc72-idx";
+import { RootState } from "../../store/store";
 
 const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
-const CollectionName = styled.div`
-  color: var(--White, #fff);
+const CollectionName = styled.div<{ isDark?: boolean; inList?: boolean }>`
+  color: ${props => props.isDark ? '#fff' : '#161717'};
   leading-trim: both;
   text-edge: cap;
   font-feature-settings: "clig" off, "liga" off;
   font-family: Inter;
-  font-size: 20px;
+  font-size: ${props => props.inList ? '16px' : '20px'};
   font-style: normal;
   font-weight: 800;
-  line-height: 24px; /* 120% */
+  line-height: ${props => props.inList ? '22px' : '24px'};
 `;
 
-const CollectionVolume = styled.div`
-  color: var(--White, #fff);
+const CollectionVolume = styled.div<{ isDark?: boolean; inList?: boolean }>`
+  color: ${props => props.isDark ? '#fff' : '#161717'};
   font-family: Inter;
-  font-size: 16px;
+  font-size: ${props => props.inList ? '14px' : '16px'};
   font-style: normal;
   font-weight: 600;
-  line-height: 140%; /* 22.4px */
+  line-height: 140%;
 `;
 
 const NFTCardWrapper = styled.div`
@@ -245,6 +246,63 @@ const NFTCardWrapper = styled.div`
   }
 `;
 
+// Add this styled component for list view
+const ListViewWrapper = styled.div<{ isDark?: boolean }>`
+  display: flex;
+  width: 100%;
+  padding: 12px 16px;
+  gap: 16px;
+  border-radius: 12px;
+  background: ${props => props.isDark ? '#202020' : '#fff'};
+  border: 1px solid ${props => props.isDark ? '#2b2b2b' : '#eaebf0'};
+  cursor: pointer;
+  transition: all 0.1s ease;
+  margin: 2px;
+  position: relative;
+  
+  &:hover {
+    transform: scale(1.01);
+    z-index: 1;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .list-image {
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+    object-fit: cover;
+  }
+
+  .list-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .list-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  ${props => props.isDark && `
+    color: #fff;
+    
+    .chip {
+      background: #2b2b2b;
+      color: #fff;
+    }
+  `}
+`;
+
 interface NFTCardProps {
   token: ListingTokenI | NFTIndexerTokenI;
   listing?: NFTIndexerListingI;
@@ -252,6 +310,7 @@ interface NFTCardProps {
   selected?: boolean;
   size?: "small" | "medium" | "large";
   imageOnly?: boolean;
+  viewMode?: 'grid' | 'list';
 }
 
 const CartNftCard: React.FC<NFTCardProps> = ({
@@ -261,6 +320,7 @@ const CartNftCard: React.FC<NFTCardProps> = ({
   listing,
   onClick,
   selected,
+  viewMode = 'grid',
 }) => {
   const { activeAccount, signTransactions } = useWallet();
 
@@ -535,84 +595,167 @@ const CartNftCard: React.FC<NFTCardProps> = ({
     ? metadata.name
     : `${metadata.name} #${token.tokenId}`;
 
+  const isDarkTheme = useSelector((state: RootState) => state.theme.isDarkTheme);
+
+  if (viewMode === 'list') {
+    return (
+      <>
+        <ListViewWrapper isDark={isDarkTheme} onClick={onClick}>
+          <img 
+            className="list-image" 
+            src={url} 
+            alt={displayName}
+          />
+          <div className="list-content">
+            <div className="list-header">
+              <Stack gap={0.25}>
+                <CollectionName isDark={isDarkTheme} inList>{displayName}</CollectionName>
+                <CollectionVolume isDark={isDarkTheme} inList>
+                  {price !== "0" ? (
+                    <Stack direction="row" gap={0.5} sx={{ alignItems: "center" }}>
+                      <span>
+                        {`${priceNormal || price} ${
+                          priceNormal ? "VOI" : currencySymbol
+                        }`}
+                      </span>
+                      {priceNormal && currencySymbol !== "VOI" ? (
+                        <Chip
+                          className="chip"
+                          size="small"
+                          sx={{ 
+                            background: isDarkTheme ? "#2b2b2b" : "#fff",
+                            color: isDarkTheme ? "#fff" : "#161717",
+                            border: isDarkTheme ? "none" : "1px solid #eaebf0",
+                            height: '20px',
+                            fontSize: '11px',
+                            padding: '0 6px'
+                          }}
+                          label={`${price} ${currencySymbol}`}
+                        />
+                      ) : null}
+                    </Stack>
+                  ) : null}
+                </CollectionVolume>
+              </Stack>
+              {price !== "0" ? (
+                <img
+                  style={{ zIndex: 2 }}
+                  height="32"
+                  width="32"
+                  src="/static/icon-cart.png"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    handleBuyButtonClick();
+                  }}
+                />
+              ) : null}
+            </div>
+          </div>
+        </ListViewWrapper>
+        {activeAccount && openBuyModal && listing ? (
+          <BuySaleModal
+            token={token}
+            listing={listing}
+            seller={listing.seller}
+            open={openBuyModal}
+            loading={isBuying}
+            handleClose={() => setOpenBuyModal(false)}
+            onSave={handleCartIconClick}
+            title="Buy NFT"
+            buttonText="Buy"
+            image={metadata.image}
+            price={price}
+            priceNormal={priceNormal || ""}
+            priceAU={listing.price.toString()}
+            currency={currencySymbol}
+            paymentTokenId={listing.currency}
+          />
+        ) : null}
+      </>
+    );
+  }
+
+  // Grid view
   return display ? (
-    <Box
-      style={{
-        border: `4px solid ${selected ? "green" : "transparent"}`,
-        borderRadius: "25px",
-      }}
-    >
+    <>
       <Box
         style={{
-          cursor: "pointer",
-          width: size === "medium" ? "305px" : "100px",
-          height: size === "medium" ? "305px" : "100px",
-          flexShrink: 0,
-          borderRadius: "20px",
-          background: `linear-gradient(0deg, rgba(0, 0, 0, 0.50) 10.68%, rgba(0, 0, 0, 0.00) 46.61%), 
-            url(${url}), 
-            lightgray 50% / cover no-repeat`,
-          backgroundSize: "cover",
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "center",
+          border: `4px solid ${selected ? "green" : "transparent"}`,
+          borderRadius: "25px",
         }}
-        onClick={
-          onClick
-          /*
-          (e) => {
-          navigate(`/collection/${token.contractId}/token/${token.tokenId}`);
-        }*/
-        }
       >
-        {!imageOnly ? (
-          <Stack
-            direction="row"
-            spacing={2}
-            sx={{
-              alignItems: "center",
-              justifyContent: "space-between",
-              color: "#fff",
-              width: "90%",
-              height: "52px",
-              marginBottom: "27px",
-            }}
-          >
-            <Stack gap={1}>
-              <CollectionName>{displayName}</CollectionName>
-              <CollectionVolume>
-                {price !== "0" ? (
-                  <Stack direction="row" gap={1} sx={{ alignItems: "center" }}>
-                    <span>
-                      {`${priceNormal || price} ${
-                        priceNormal ? "VOI" : currencySymbol
-                      }`}
-                    </span>
-                    {priceNormal && currencySymbol !== "VOI" ? (
-                      <Chip
-                        sx={{ background: "#fff" }}
-                        label={`${price} ${currencySymbol}`}
-                      />
-                    ) : null}
-                  </Stack>
-                ) : null}
-              </CollectionVolume>
+        <Box
+          style={{
+            cursor: "pointer",
+            width: size === "medium" ? "305px" : "100px",
+            height: size === "medium" ? "305px" : "100px",
+            flexShrink: 0,
+            borderRadius: "20px",
+            background: `linear-gradient(0deg, rgba(0, 0, 0, 0.50) 10.68%, rgba(0, 0, 0, 0.00) 46.61%), 
+              url(${url}), 
+              lightgray 50% / cover no-repeat`,
+            backgroundSize: "cover",
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "center",
+          }}
+          onClick={onClick}
+        >
+          {!imageOnly ? (
+            <Stack
+              direction="row"
+              spacing={2}
+              sx={{
+                alignItems: "center",
+                justifyContent: "space-between",
+                color: "#fff",
+                width: "90%",
+                height: "52px",
+                marginBottom: "27px",
+              }}
+            >
+              <Stack gap={1}>
+                <CollectionName isDark={true}>{displayName}</CollectionName>
+                <CollectionVolume isDark={true}>
+                  {price !== "0" ? (
+                    <Stack direction="row" gap={1} sx={{ alignItems: "center" }}>
+                      <span>
+                        {`${priceNormal || price} ${
+                          priceNormal ? "VOI" : currencySymbol
+                        }`}
+                      </span>
+                      {priceNormal && currencySymbol !== "VOI" ? (
+                        <Chip
+                          sx={{ 
+                            background: "#fff",
+                            color: "#161717",
+                            border: "none",
+                            fontWeight: 500
+                          }}
+                          label={`${price} ${currencySymbol}`}
+                        />
+                      ) : null}
+                    </Stack>
+                  ) : null}
+                </CollectionVolume>
+              </Stack>
+              {price !== "0" ? (
+                <img
+                  style={{ zIndex: 2 }}
+                  height="40"
+                  width="40"
+                  src="/static/icon-cart.png"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    handleBuyButtonClick();
+                  }}
+                />
+              ) : null}
             </Stack>
-            {price !== "0" ? (
-              <img
-                style={{ zIndex: 2 }}
-                height="40"
-                width="40"
-                src="/static/icon-cart.png"
-                onClick={(e) => {
-                  e.stopPropagation(); // Prevents the outer onClick handler from triggering
-                  e.preventDefault();
-                  handleBuyButtonClick();
-                }}
-              />
-            ) : null}
-          </Stack>
-        ) : null}
+          ) : null}
+        </Box>
       </Box>
       {activeAccount && openBuyModal && listing ? (
         <BuySaleModal
@@ -633,7 +776,7 @@ const CartNftCard: React.FC<NFTCardProps> = ({
           paymentTokenId={listing.currency}
         />
       ) : null}
-    </Box>
+    </>
   ) : null;
 };
 
