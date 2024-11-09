@@ -28,25 +28,27 @@ import { useSelector } from "react-redux";
 import { useWallet } from "@txnlab/use-wallet-react";
 import { HIGHFORGE_CDN } from "@/config/arc72-idx";
 import { RootState } from "../../store/store";
+import { fetchTokenInfo } from "@/utils/dex";
+import { decodeRoyalties } from "@/utils/hf";
 
 const formatter = Intl.NumberFormat("en", { notation: "compact" });
 
 const CollectionName = styled.div<{ isDark?: boolean; inList?: boolean }>`
-  color: ${props => props.isDark ? '#fff' : '#161717'};
+  color: ${(props) => (props.isDark ? "#fff" : "#161717")};
   leading-trim: both;
   text-edge: cap;
   font-feature-settings: "clig" off, "liga" off;
   font-family: Inter;
-  font-size: ${props => props.inList ? '16px' : '20px'};
+  font-size: ${(props) => (props.inList ? "16px" : "20px")};
   font-style: normal;
   font-weight: 800;
-  line-height: ${props => props.inList ? '22px' : '24px'};
+  line-height: ${(props) => (props.inList ? "22px" : "24px")};
 `;
 
 const CollectionVolume = styled.div<{ isDark?: boolean; inList?: boolean }>`
-  color: ${props => props.isDark ? '#fff' : '#161717'};
+  color: ${(props) => (props.isDark ? "#fff" : "#161717")};
   font-family: Inter;
-  font-size: ${props => props.inList ? '14px' : '16px'};
+  font-size: ${(props) => (props.inList ? "14px" : "16px")};
   font-style: normal;
   font-weight: 600;
   line-height: 140%;
@@ -253,13 +255,13 @@ const ListViewWrapper = styled.div<{ isDark?: boolean }>`
   padding: 12px 16px;
   gap: 16px;
   border-radius: 12px;
-  background: ${props => props.isDark ? '#202020' : '#fff'};
-  border: 1px solid ${props => props.isDark ? '#2b2b2b' : '#eaebf0'};
+  background: ${(props) => (props.isDark ? "#202020" : "#fff")};
+  border: 1px solid ${(props) => (props.isDark ? "#2b2b2b" : "#eaebf0")};
   cursor: pointer;
   transition: all 0.1s ease;
   margin: 2px;
   position: relative;
-  
+
   &:hover {
     transform: scale(1.01);
     z-index: 1;
@@ -293,7 +295,9 @@ const ListViewWrapper = styled.div<{ isDark?: boolean }>`
     align-items: center;
   }
 
-  ${props => props.isDark && `
+  ${(props) =>
+    props.isDark &&
+    `
     color: #fff;
     
     .chip {
@@ -310,7 +314,7 @@ interface NFTCardProps {
   selected?: boolean;
   size?: "small" | "medium" | "large";
   imageOnly?: boolean;
-  viewMode?: 'grid' | 'list';
+  viewMode?: "grid" | "list";
 }
 
 const CartNftCard: React.FC<NFTCardProps> = ({
@@ -320,11 +324,16 @@ const CartNftCard: React.FC<NFTCardProps> = ({
   listing,
   onClick,
   selected,
-  viewMode = 'grid',
+  viewMode = "grid",
 }) => {
   const { activeAccount, signTransactions } = useWallet();
 
   const metadata = JSON.parse(token.metadata || "{}");
+  const royalties = metadata?.royalties
+    ? decodeRoyalties(metadata?.royalties || "")
+    : null;
+
+  console.log({ royalties });
 
   const navigate = useNavigate();
 
@@ -363,6 +372,7 @@ const CartNftCard: React.FC<NFTCardProps> = ({
         return;
       }
       const { algodClient, indexerClient } = getAlgorandClients();
+
       const ci = new CONTRACT(
         listing?.mpContractId || 0,
         algodClient,
@@ -449,18 +459,51 @@ const CartNftCard: React.FC<NFTCardProps> = ({
       toast.info(e.message);
     }
   };
-  
-  const handleCartIconClick = async (pool: any, discount: any) => {
+
+  const handleCartIconClick = async (
+    pool: any,
+    discount: any,
+    simulationResults: any
+  ) => {
+    console.log({ pool, discount, simulationResults });
     if (!activeAccount || !listing) {
       toast.info("Please connect wallet!");
       return;
     }
     try {
+      const doWithdraw = listing.currency === 0;
       setIsBuying(true);
       // -------------------------------------
       // SIM HERE
       // -------------------------------------
       const { algodClient, indexerClient } = getAlgorandClients();
+
+      // approve spending
+
+      // {
+      //   const ci = new CONTRACT(
+      //     Number(listing?.currency),
+      //     algodClient,
+      //     indexerClient,
+      //     abi.nt200,
+      //     {
+      //       addr: activeAccount.address,
+      //       sk: new Uint8Array(0),
+      //     }
+      //   );
+      //   const approveR = await ci.arc200_approve(
+      //     algosdk.getApplicationAddress(pool.contractId),
+      //     Number.MAX_SAFE_INTEGER
+      //   );
+      //   if (!approveR.success) throw new Error("approve failed");
+      //   const stxn = await signTransactions(
+      //     approveR.txns.map(
+      //       (t: string) => new Uint8Array(Buffer.from(t, "base64"))
+      //     )
+      //   );
+      //   await algodClient.sendRawTransaction(stxn as Uint8Array[]).do();
+      // }
+
       let customR;
       for (const skipEnsure of [true, false]) {
         if (pool) {
@@ -471,50 +514,64 @@ const CartNftCard: React.FC<NFTCardProps> = ({
             poolBalA,
             poolBalB,
           } = pool;
+          console.log({ poolId, tokAId, tokBId });
           // -------------------------------------
-          const tokA: TokenType = smartTokens.find(
-            (el: any) => `${el.contractId}` === tokAId
-          );
-          const tokB: TokenType = smartTokens.find(
-            (el: any) => `${el.contractId}` === tokBId
-          );
-          const inToken = tokA?.tokenId === "0" ? tokA : tokB;
-          const outToken = tokA?.tokenId !== "0" ? tokA : tokB;
-          const ratio =
-            inToken === tokA
-              ? new BigNumber(poolBalA).div(poolBalB).toNumber()
-              : new BigNumber(poolBalB).div(poolBalA).toNumber();
+
+          // request tokens from api
+
+          const tokA = await fetchTokenInfo(tokAId);
+          const tokB = await fetchTokenInfo(tokBId);
+
+          const inToken = tokA?.tokenId === "0" ? tokB : tokA;
+          const outToken = tokA?.tokenId !== "0" ? tokB : tokA;
+
+          console.log({ tokA, tokB, inToken, outToken, poolId });
+
+          const amount = new BigNumber(
+            simulationResults[inToken?.contractId || 0]?.outputAmount
+          )
+            .dividedBy(new BigNumber(10).pow(inToken?.decimals || 0))
+            .toString();
+
+          console.log({ amount });
+
+          const A = {
+            ...inToken,
+            amount,
+          };
+          const B = {
+            ...outToken,
+          };
           // figure out how much to swap
           const swapR: any = await new swap(
             poolId,
             algodClient,
             indexerClient
-          ).swap(
-            activeAccount.address,
-            poolId,
-            {
-              amount: new BigNumber(ratio)
-                .times(priceBn.minus(new BigNumber(discount || 0)))
-                .times(multiplier)
-                .toFixed(6),
-              contractId: inToken?.contractId,
-              tokenId: "0",
-              symbol: "VOI",
-            },
-            {
-              contractId: outToken?.contractId,
-              symbol: outToken?.symbol,
-              decimals: `${outToken?.decimals}`,
-            }
-          );
-          if (!swapR.success) throw new Error("swap failed");
-          const returnValue = swapR.response.txnGroups[0].txnResults
-            .slice(-1)[0]
-            .txnResult.logs.slice(-1)[0];
+          ).swap(activeAccount.address, poolId, A, B, [], {
+            doWithdraw,
+          }); // withdraws by default
 
-          const selector = returnValue.slice(0, 4).toString("hex");
-          const outA = algosdk.bytesToBigInt(returnValue.slice(4, 36));
-          const outB = algosdk.bytesToBigInt(returnValue.slice(36, 68));
+          console.log({ swapR });
+
+          if (!swapR.success) throw new Error("swap failed");
+          // const returnValue = swapR.response.txnGroups[0].txnResults
+          //   .slice(-1)[0]
+          //   .txnResult.logs.slice(-1)[0];
+
+          // const selector = returnValue.slice(0, 4).toString("hex");
+          // const outA = algosdk.bytesToBigInt(returnValue.slice(4, 36));
+          // const outB = algosdk.bytesToBigInt(returnValue.slice(36, 68));
+
+          // const currencyId =
+          //   listing.currency === 0 ? TOKEN_WVOI : listing.currency;
+
+          const currency = {
+            contractId: 390001,
+            name: "Wrapped Voi",
+            symbol: "wVOI",
+            decimals: 6,
+            tokenId: "0",
+          };
 
           customR = await mp.buy(activeAccount.address, listing, currency, {
             paymentTokenId:
@@ -525,11 +582,15 @@ const CartNftCard: React.FC<NFTCardProps> = ({
             indexerClient,
             skipEnsure,
           });
+          console.log({ customR });
         } else {
-          // no pool
-          const paymentToken = smartTokens.find(
-            (el: any) => `${el.contractId}` === `${listing.currency}`
-          );
+          const paymentToken = {
+            contractId: 390001,
+            name: "Wrapped Voi",
+            symbol: "wVOI",
+            decimals: 6,
+            tokenId: "0",
+          };
           customR = await mp.buy(activeAccount.address, listing, paymentToken, {
             paymentTokenId:
               listing.currency === 0 ? TOKEN_WVOI : listing.currency,
@@ -542,7 +603,6 @@ const CartNftCard: React.FC<NFTCardProps> = ({
         }
         if (customR.success) break;
       }
-      console.log({ customR });
       if (!customR.success) throw new Error("custom failed at end"); // abort
       // -------------------------------------
       // SIGM HERE
@@ -595,24 +655,28 @@ const CartNftCard: React.FC<NFTCardProps> = ({
     ? metadata.name
     : `${metadata.name} #${token.tokenId}`;
 
-  const isDarkTheme = useSelector((state: RootState) => state.theme.isDarkTheme);
+  const isDarkTheme = useSelector(
+    (state: RootState) => state.theme.isDarkTheme
+  );
 
-  if (viewMode === 'list') {
+  if (viewMode === "list") {
     return (
       <>
         <ListViewWrapper isDark={isDarkTheme} onClick={onClick}>
-          <img 
-            className="list-image" 
-            src={url} 
-            alt={displayName}
-          />
+          <img className="list-image" src={url} alt={displayName} />
           <div className="list-content">
             <div className="list-header">
               <Stack gap={0.25}>
-                <CollectionName isDark={isDarkTheme} inList>{displayName}</CollectionName>
+                <CollectionName isDark={isDarkTheme} inList>
+                  {displayName}
+                </CollectionName>
                 <CollectionVolume isDark={isDarkTheme} inList>
                   {price !== "0" ? (
-                    <Stack direction="row" gap={0.5} sx={{ alignItems: "center" }}>
+                    <Stack
+                      direction="row"
+                      gap={0.5}
+                      sx={{ alignItems: "center" }}
+                    >
                       <span>
                         {`${priceNormal || price} ${
                           priceNormal ? "VOI" : currencySymbol
@@ -622,13 +686,13 @@ const CartNftCard: React.FC<NFTCardProps> = ({
                         <Chip
                           className="chip"
                           size="small"
-                          sx={{ 
+                          sx={{
                             background: isDarkTheme ? "#2b2b2b" : "#fff",
                             color: isDarkTheme ? "#fff" : "#161717",
                             border: isDarkTheme ? "none" : "1px solid #eaebf0",
-                            height: '20px',
-                            fontSize: '11px',
-                            padding: '0 6px'
+                            height: "20px",
+                            fontSize: "11px",
+                            padding: "0 6px",
                           }}
                           label={`${price} ${currencySymbol}`}
                         />
@@ -719,7 +783,11 @@ const CartNftCard: React.FC<NFTCardProps> = ({
                 <CollectionName isDark={true}>{displayName}</CollectionName>
                 <CollectionVolume isDark={true}>
                   {price !== "0" ? (
-                    <Stack direction="row" gap={1} sx={{ alignItems: "center" }}>
+                    <Stack
+                      direction="row"
+                      gap={1}
+                      sx={{ alignItems: "center" }}
+                    >
                       <span>
                         {`${priceNormal || price} ${
                           priceNormal ? "VOI" : currencySymbol
@@ -727,11 +795,11 @@ const CartNftCard: React.FC<NFTCardProps> = ({
                       </span>
                       {priceNormal && currencySymbol !== "VOI" ? (
                         <Chip
-                          sx={{ 
+                          sx={{
                             background: "#fff",
                             color: "#161717",
                             border: "none",
-                            fontWeight: 500
+                            fontWeight: 500,
                           }}
                           label={`${price} ${currencySymbol}`}
                         />

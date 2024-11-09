@@ -17,6 +17,9 @@ import {
   WalletProvider,
 } from "@txnlab/use-wallet-react";
 import Wallet from './pages/Wallet';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { theme } from './theme';
 
 const BackgroundLayer = styled.div`
   width: 100%;
@@ -105,26 +108,29 @@ const App: React.FC = () => {
   });
 
   return (
-    <WalletProvider manager={walletManager}>
-      <QueryClientProvider client={queryClient}>
-        <Provider store={store}>
-          <PersistGate loading={null} persistor={persistor}>
-            <AppContainer>
-              <Router>
-                <Navbar />
-                <Routes>
-                  {routes.map((el, key) => (
-                    <Route key={key} path={el.path} Component={el.Component} />
-                  ))}
-                  <Route path="/wallet/:accountId" element={<Wallet />} />
-                </Routes>
-              </Router>
-            </AppContainer>
-          </PersistGate>
-        </Provider>
-        <ToastContainer />
-      </QueryClientProvider>
-    </WalletProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <WalletProvider manager={walletManager}>
+        <QueryClientProvider client={queryClient}>
+          <Provider store={store}>
+            <PersistGate loading={null} persistor={persistor}>
+              <AppContainer>
+                <Router>
+                  <Navbar />
+                  <Routes>
+                    {routes.map((el, key) => (
+                      <Route key={key} path={el.path} Component={el.Component} />
+                    ))}
+                    <Route path="/wallet/:accountId" element={<Wallet />} />
+                  </Routes>
+                </Router>
+              </AppContainer>
+            </PersistGate>
+          </Provider>
+          <ToastContainer />
+        </QueryClientProvider>
+      </WalletProvider>
+    </ThemeProvider>
   );
 };
 

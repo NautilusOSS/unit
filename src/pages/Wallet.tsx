@@ -13,6 +13,7 @@ import { RootState } from "@/store/store";
 import { ViewList, ViewModule, PieChart } from "@mui/icons-material";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
+import { useBalances } from '../hooks/useBalance';
 
 // Register ChartJS components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -69,6 +70,10 @@ export default function Wallet() {
   const [selectedToken, setSelectedToken] = useState<TokenInfo | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'pie'>('list');
+
+  // Example array of ARC200 asset IDs
+  const arc200AssetIds = ['asset1', 'asset2'];
+  const arc200Balances = useBalances(accountId);
 
   const fetchBalances = async () => {
     if (!accountId) return;
@@ -300,7 +305,7 @@ export default function Wallet() {
                 onClick={() => setSearchTerm("")}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
               >
-                ×
+                
               </button>
             )}
           </div>
