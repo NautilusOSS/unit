@@ -1,10 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Button,
   TableCell,
   TableRow,
   useTheme,
   Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Link,
+  TextField,
+  Grid,
+  Box,
 } from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import Skeleton from "@mui/material/Skeleton";
@@ -22,6 +30,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import DelegateModal from "@/components/modals/DelegateModal";
 import { NAAS_ADDRESS } from "@/contants/staking";
+import humanizeDuration from "humanize-duration";
 
 const { algodClient } = getAlgorandClients();
 
@@ -35,6 +44,7 @@ interface PositionTokenRowProps {
       contractAddress: string;
       withdrawable: string;
       global_delegate: string;
+      part_vote_lst: number;
     };
   };
   index: number;
@@ -42,6 +52,249 @@ interface PositionTokenRowProps {
   lastRowStyle: React.CSSProperties;
   cellStyle: React.CSSProperties;
 }
+
+const ParticipateModal: React.FC<{
+  open: boolean;
+  onClose: () => void;
+  contractId: string;
+}> = ({ open, onClose, contractId }) => {
+  const { isDarkTheme } = useSelector((state: RootState) => state.theme);
+  const { activeAccount, signTransactions } = useWallet();
+
+  const [formData, setFormData] = useState({
+    firstRound: "",
+    lastRound: "",
+    keyDilution: "",
+    selectionKey: "",
+    votingKey: "",
+    stateProofKey: "",
+  });
+
+  const textFieldStyle = {
+    "& .MuiInputLabel-root": {
+      color: isDarkTheme ? "rgba(255, 255, 255, 0.7)" : undefined,
+    },
+    "& .MuiOutlinedInput-root": {
+      color: isDarkTheme ? "#FFFFFF" : undefined,
+      "& fieldset": {
+        borderColor: isDarkTheme ? "rgba(255, 255, 255, 0.23)" : undefined,
+      },
+    },
+  };
+
+  const handleSubmit = async () => {
+    if (!activeAccount) {
+      toast.error("Please connect your wallet");
+      return;
+    }
+
+    console.log({ contractId });
+
+    try {
+      const ci = new CONTRACT(
+        Number(contractId),
+        algodClient,
+        undefined,
+        {
+          name: "NautilusVoiStaking",
+          methods: [
+            {
+              name: "participate",
+              args: [
+                { type: "byte[32]", name: "vote_k" },
+                { type: "byte[32]", name: "sel_k" },
+                { type: "uint64", name: "vote_fst" },
+                { type: "uint64", name: "vote_lst" },
+                { type: "uint64", name: "vote_kd" },
+                { type: "byte[64]", name: "sp_key" },
+              ],
+              returns: { type: "void" },
+              desc: "Register participation keys.",
+            },
+          ],
+          events: [],
+        },
+        { addr: activeAccount.address, sk: new Uint8Array(0) }
+      );
+
+      ci.setFee(5000);
+      ci.setPaymentAmount(1000);
+
+      // Convert base64 keys to byte arrays
+      const votingKeyBytes = new Uint8Array(
+        Buffer.from(formData.votingKey, "base64")
+      );
+      const selectionKeyBytes = new Uint8Array(
+        Buffer.from(formData.selectionKey, "base64")
+      );
+      const stateProofKeyBytes = new Uint8Array(
+        Buffer.from(formData.stateProofKey, "base64")
+      );
+
+      // Ensure key lengths are correct
+      if (
+        votingKeyBytes.length !== 32 ||
+        selectionKeyBytes.length !== 32 ||
+        stateProofKeyBytes.length !== 64
+      ) {
+        throw new Error("Invalid key lengths");
+      }
+
+      const participateResult = await ci.participate(
+        votingKeyBytes, // vote_k
+        selectionKeyBytes, // sel_k
+        BigInt(formData.firstRound), // vote_fst
+        BigInt(formData.lastRound), // vote_lst
+        BigInt(formData.keyDilution), // vote_kd
+        stateProofKeyBytes // sp_key
+      );
+
+      console.log({ participateResult });
+
+      if (!participateResult.success) {
+        console.error({ participateResult });
+        throw new Error("Participate failed in simulate");
+      }
+
+      const stxns = await signTransactions(
+        participateResult.txns.map(
+          (txn: string) => new Uint8Array(Buffer.from(txn, "base64"))
+        )
+      );
+
+      const { txId } = await algodClient
+        .sendRawTransaction(stxns as Uint8Array[])
+        .do();
+
+      await waitForConfirmation(algodClient, txId, 4);
+      toast.success("Successfully registered participation keys");
+      onClose();
+    } catch (error) {
+      console.error("Error registering participation:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to register participation"
+      );
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          backgroundColor: isDarkTheme
+            ? "rgba(30, 30, 30, 0.95)"
+            : "rgba(255, 255, 255, 0.95)",
+          backdropFilter: "blur(10px)",
+          borderRadius: "16px",
+        },
+      }}
+    >
+      <DialogTitle>
+        <Typography variant="h6" color={isDarkTheme ? "#FFFFFF" : undefined}>
+          Participate in Consensus
+        </Typography>
+      </DialogTitle>
+      <DialogContent>
+        <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid item xs={6}>
+            <TextField
+              fullWidth
+              label="First Round"
+              value={formData.firstRound}
+              onChange={(e) =>
+                setFormData({ ...formData, firstRound: e.target.value })
+              }
+              sx={textFieldStyle}
+            />
+          </Grid>
+          <Grid item xs={6}>
+            <TextField
+              fullWidth
+              label="Last Round"
+              value={formData.lastRound}
+              onChange={(e) =>
+                setFormData({ ...formData, lastRound: e.target.value })
+              }
+              sx={textFieldStyle}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Key Dilution"
+              value={formData.keyDilution}
+              onChange={(e) =>
+                setFormData({ ...formData, keyDilution: e.target.value })
+              }
+              sx={textFieldStyle}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Selection Key"
+              value={formData.selectionKey}
+              onChange={(e) =>
+                setFormData({ ...formData, selectionKey: e.target.value })
+              }
+              sx={textFieldStyle}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Voting Key"
+              value={formData.votingKey}
+              onChange={(e) =>
+                setFormData({ ...formData, votingKey: e.target.value })
+              }
+              sx={textFieldStyle}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              multiline
+              rows={2}
+              label="State Proof Key"
+              value={formData.stateProofKey}
+              onChange={(e) =>
+                setFormData({ ...formData, stateProofKey: e.target.value })
+              }
+              sx={textFieldStyle}
+            />
+          </Grid>
+        </Grid>
+      </DialogContent>
+      <DialogActions>
+        <Button
+          onClick={onClose}
+          variant={isDarkTheme ? "outlined" : "contained"}
+          sx={{
+            color: isDarkTheme ? "#FFFFFF" : undefined,
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          variant={isDarkTheme ? "outlined" : "contained"}
+          sx={{
+            color: isDarkTheme ? "#FFFFFF" : undefined,
+          }}
+        >
+          Submit
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
 
 const PositionTokenRow: React.FC<PositionTokenRowProps> = ({
   nft,
@@ -58,6 +311,39 @@ const PositionTokenRow: React.FC<PositionTokenRowProps> = ({
     includeWithdrawable: true,
   });
   const [isDelegateModalOpen, setIsDelegateModalOpen] = useState(false);
+  const [currentRound, setCurrentRound] = useState<number>(0);
+  const [isParticipateModalOpen, setIsParticipateModalOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchCurrentRound = async () => {
+      try {
+        const status = await algodClient.status().do();
+        setCurrentRound(status["last-round"]);
+      } catch (error) {
+        console.error("Error fetching current round:", error);
+      }
+    };
+
+    fetchCurrentRound();
+    const interval = setInterval(fetchCurrentRound, 10000); // Update every 10 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const getExpirationTime = (part_vote_lst: number) => {
+    if (!part_vote_lst || !currentRound) return null;
+
+    const roundDifference = part_vote_lst - currentRound;
+    if (roundDifference <= 0) return "Expired";
+
+    const secondsRemaining = roundDifference * 2.8;
+
+    return humanizeDuration(secondsRemaining * 1000, {
+      largest: 2,
+      round: true,
+      units: ["y", "mo", "d", "h", "m"],
+    });
+  };
 
   const handleClaim = async () => {
     if (!activeAccount) return;
@@ -135,6 +421,95 @@ const PositionTokenRow: React.FC<PositionTokenRowProps> = ({
 
   const cellStyleWithColor = {
     ...cellStyle,
+  };
+
+  const renderExpirationCell = () => {
+    if (!data?.part_vote_lst) {
+      return (
+        <>
+          <Button
+            variant={isDarkTheme ? "outlined" : "contained"}
+            size="small"
+            onClick={() => setIsParticipateModalOpen(true)}
+            sx={{
+              borderRadius: "12px",
+              fontSize: "0.75rem",
+              color: isDarkTheme ? "#FFFFFF" : undefined,
+              backgroundColor: isDarkTheme ? "transparent" : undefined,
+              borderColor: isDarkTheme ? "rgba(255, 255, 255, 0.3)" : undefined,
+              "&:hover": {
+                backgroundColor: isDarkTheme
+                  ? "rgba(255, 255, 255, 0.1)"
+                  : undefined,
+                borderColor: isDarkTheme
+                  ? "rgba(255, 255, 255, 0.5)"
+                  : undefined,
+              },
+            }}
+          >
+            Go Online
+          </Button>
+        </>
+      );
+    }
+
+    const roundDifference = data.part_vote_lst - currentRound;
+    const isExpired = roundDifference <= 0;
+    const timeRemaining = getExpirationTime(data.part_vote_lst);
+    
+    // Calculate if expiration is within 7 days
+    const secondsRemaining = roundDifference * 2.8;
+    const sevenDaysInSeconds = 7 * 24 * 60 * 60;
+    const isNearExpiration = secondsRemaining <= sevenDaysInSeconds;
+
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+          justifyContent: "flex-end",
+        }}
+      >
+        {timeRemaining === null ? (
+          <Skeleton width={80} />
+        ) : (
+          <Typography sx={{ color: isExpired ? "error.main" : isNearExpiration ? "warning.main" : "inherit" }}>
+            {timeRemaining}
+          </Typography>
+        )}
+        {(!isExpired && isNearExpiration) && (
+          <Button
+            variant={isDarkTheme ? "outlined" : "contained"}
+            size="small"
+            onClick={() => setIsParticipateModalOpen(true)}
+            sx={{
+              borderRadius: "12px",
+              fontSize: "0.75rem",
+              minWidth: "60px",
+              color: isDarkTheme ? "#FFFFFF" : undefined,
+              backgroundColor: isDarkTheme ? "transparent" : undefined,
+              borderColor: isDarkTheme ? "rgba(255, 255, 255, 0.3)" : undefined,
+              "&:hover": {
+                backgroundColor: isDarkTheme
+                  ? "rgba(255, 255, 255, 0.1)"
+                  : undefined,
+                borderColor: isDarkTheme
+                  ? "rgba(255, 255, 255, 0.5)"
+                  : undefined,
+              },
+            }}
+          >
+            Renew
+          </Button>
+        )}
+        <ParticipateModal
+          open={isParticipateModalOpen}
+          onClose={() => setIsParticipateModalOpen(false)}
+          contractId={nft.tokenId}
+        />
+      </Box>
+    );
   };
 
   return (
@@ -240,6 +615,16 @@ const PositionTokenRow: React.FC<PositionTokenRowProps> = ({
               align="right"
             >
               {moment.unix(getStakingUnlockTime(data)).fromNow(true)}
+            </TableCell>
+            <TableCell
+              style={{
+                ...cellStyleWithColor,
+                color: isDarkTheme ? "white" : "inherit",
+                fontWeight: 100,
+              }}
+              align="right"
+            >
+              {renderExpirationCell()}
             </TableCell>
             <TableCell style={cellStyleWithColor} align="right">
               <Button

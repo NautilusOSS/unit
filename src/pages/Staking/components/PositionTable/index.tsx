@@ -57,7 +57,7 @@ interface ResponsiveTableProps {
 }
 
 type SortDirection = "asc" | "desc" | null;
-type SortColumn = "contractId" | "totalStaked" | "unlock" | "claimable" | null;
+type SortColumn = "contractId" | "totalStaked" | "unlock" | "claimable" | "expires" | null;
 
 const StyledTabs = styled(Tabs)<{ $isDarkTheme: boolean }>`
   .MuiTab-root {
@@ -119,6 +119,9 @@ const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
       } else if (sortColumn === "claimable") {
         aValue = Number(a.withdrawable || 0);
         bValue = Number(b.withdrawable || 0);
+      } else if (sortColumn === "expires") {
+        aValue = Number(a.expires || 0);
+        bValue = Number(b.expires || 0);
       }
 
       if (sortDirection === "asc") {
@@ -147,6 +150,9 @@ const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
       } else if (sortColumn === "claimable") {
         aValue = Number(a.staking?.withdrawable || 0);
         bValue = Number(b.staking?.withdrawable || 0);
+      } else if (sortColumn === "expires") {
+        aValue = Number(a.staking?.expires || 0);
+        bValue = Number(b.staking?.expires || 0);
       }
 
       if (sortDirection === "asc") {
@@ -260,6 +266,9 @@ const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
                   <SortableHeader column="unlock">Unlock Time</SortableHeader>
                 </TableCell>
                 <TableCell style={headCellStyle} align="right">
+                  <SortableHeader column="expires">Expires</SortableHeader>
+                </TableCell>
+                <TableCell style={headCellStyle} align="right">
                   <SortableHeader column="claimable">Claimable</SortableHeader>
                 </TableCell>
               </TableRow>
@@ -307,6 +316,9 @@ const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
                 </TableCell>
                 <TableCell style={headCellStyle} align="right">
                   <SortableHeader column="unlock">Unlock Time</SortableHeader>
+                </TableCell>
+                <TableCell style={headCellStyle} align="right">
+                  <SortableHeader column="expires">Expires</SortableHeader>
                 </TableCell>
                 <TableCell style={headCellStyle} align="right">
                   <SortableHeader column="claimable">Claimable</SortableHeader>

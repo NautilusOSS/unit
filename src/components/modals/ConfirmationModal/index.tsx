@@ -16,6 +16,8 @@ interface ConfirmationModalProps {
   onConfirm: () => void;
   tokenSymbol: string;
   price: string;
+  priceImpact: string;
+  finalPrice: string | null;
 }
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -24,6 +26,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   onConfirm,
   tokenSymbol,
   price,
+  priceImpact,
+  finalPrice,
 }) => {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';

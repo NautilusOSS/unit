@@ -27,7 +27,9 @@ export interface PaymentToken {
   tokenId: number;
   symbol: string;
   decimals: number;
-  pool?: string;
+  pool?: {
+    contractId: string;
+  };
 }
 
 export interface PoolsResponse {
