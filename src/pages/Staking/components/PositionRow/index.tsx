@@ -442,6 +442,31 @@ const PositionRow: React.FC<PositionRowProps> = ({ position, cellStyle }) => {
             {timeRemaining}
           </Typography>
         )}
+        {(!isExpired && !isNearExpiration) && (
+          <Button
+            variant={isDarkTheme ? "outlined" : "contained"}
+            size="small"
+            onClick={() => setIsParticipateModalOpen(true)}
+            sx={{
+              borderRadius: "12px",
+              fontSize: "0.75rem",
+              minWidth: "60px",
+              color: isDarkTheme ? "#FFFFFF" : undefined,
+              backgroundColor: isDarkTheme ? "transparent" : undefined,
+              borderColor: isDarkTheme ? "rgba(255, 255, 255, 0.3)" : undefined,
+              "&:hover": {
+                backgroundColor: isDarkTheme
+                  ? "rgba(255, 255, 255, 0.1)"
+                  : undefined,
+                borderColor: isDarkTheme
+                  ? "rgba(255, 255, 255, 0.5)"
+                  : undefined,
+              },
+            }}
+          >
+            Update
+          </Button>
+        )}
         {(!isExpired && isNearExpiration) && (
           <Button
             variant={isDarkTheme ? "outlined" : "contained"}

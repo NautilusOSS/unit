@@ -424,31 +424,36 @@ const PositionTokenRow: React.FC<PositionTokenRowProps> = ({
   };
 
   const renderExpirationCell = () => {
+    // Check if active account is the delegate
+    const isDelegate = activeAccount?.address === data?.global_delegate;
+
     if (!data?.part_vote_lst) {
       return (
         <>
-          <Button
-            variant={isDarkTheme ? "outlined" : "contained"}
-            size="small"
-            onClick={() => setIsParticipateModalOpen(true)}
-            sx={{
-              borderRadius: "12px",
-              fontSize: "0.75rem",
-              color: isDarkTheme ? "#FFFFFF" : undefined,
-              backgroundColor: isDarkTheme ? "transparent" : undefined,
-              borderColor: isDarkTheme ? "rgba(255, 255, 255, 0.3)" : undefined,
-              "&:hover": {
-                backgroundColor: isDarkTheme
-                  ? "rgba(255, 255, 255, 0.1)"
-                  : undefined,
-                borderColor: isDarkTheme
-                  ? "rgba(255, 255, 255, 0.5)"
-                  : undefined,
-              },
-            }}
-          >
-            Go Online
-          </Button>
+          {isDelegate && (
+            <Button
+              variant={isDarkTheme ? "outlined" : "contained"}
+              size="small"
+              onClick={() => setIsParticipateModalOpen(true)}
+              sx={{
+                borderRadius: "12px",
+                fontSize: "0.75rem",
+                color: isDarkTheme ? "#FFFFFF" : undefined,
+                backgroundColor: isDarkTheme ? "transparent" : undefined,
+                borderColor: isDarkTheme ? "rgba(255, 255, 255, 0.3)" : undefined,
+                "&:hover": {
+                  backgroundColor: isDarkTheme
+                    ? "rgba(255, 255, 255, 0.1)"
+                    : undefined,
+                  borderColor: isDarkTheme
+                    ? "rgba(255, 255, 255, 0.5)"
+                    : undefined,
+                },
+              }}
+            >
+              Go Online
+            </Button>
+          )}
         </>
       );
     }
@@ -478,7 +483,32 @@ const PositionTokenRow: React.FC<PositionTokenRowProps> = ({
             {timeRemaining}
           </Typography>
         )}
-        {(!isExpired && isNearExpiration) && (
+        {(!isExpired && !isNearExpiration && isDelegate) && (
+          <Button
+            variant={isDarkTheme ? "outlined" : "contained"}
+            size="small"
+            onClick={() => setIsParticipateModalOpen(true)}
+            sx={{
+              borderRadius: "12px",
+              fontSize: "0.75rem",
+              minWidth: "60px",
+              color: isDarkTheme ? "#FFFFFF" : undefined,
+              backgroundColor: isDarkTheme ? "transparent" : undefined,
+              borderColor: isDarkTheme ? "rgba(255, 255, 255, 0.3)" : undefined,
+              "&:hover": {
+                backgroundColor: isDarkTheme
+                  ? "rgba(255, 255, 255, 0.1)"
+                  : undefined,
+                borderColor: isDarkTheme
+                  ? "rgba(255, 255, 255, 0.5)"
+                  : undefined,
+              },
+            }}
+          >
+            Update
+          </Button>
+        )}
+        {(!isExpired && isNearExpiration && isDelegate) && (
           <Button
             variant={isDarkTheme ? "outlined" : "contained"}
             size="small"
