@@ -20,6 +20,7 @@ import {
   IconButton,
   Dialog,
   DialogContent,
+  Link,
 } from "@mui/material";
 import { PaymentToken } from "@/types";
 import BigNumber from "bignumber.js";
@@ -34,6 +35,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import { DEFAULT_ENABLED_TOKENS } from "../UserSettings";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 
 interface CurrencySelectProps {
   value: number;
@@ -380,6 +382,20 @@ const CurrencySelect: React.FC<CurrencySelectProps> = ({
     });
   };
 
+  const getDexUrl = (tokenId: number) => {
+    // Get pool ID for the token
+    const pool = tokens.find((t) => t.tokenId === tokenId)?.pool;
+
+    console.log("pool", pool);
+
+    // If we have a pool ID, use it for direct swap link
+    if (pool) {
+      return `https://voi.humble.sh/#/swap?poolId=${pool.contractId}`;
+    }
+    // Fallback to nothing
+    return ``;
+  };
+
   if (isMobile) {
     return (
       <>
@@ -488,27 +504,54 @@ const CurrencySelect: React.FC<CurrencySelectProps> = ({
                         {renderPrice(token)}
                       </Grid>
                       <Grid item xs={12}>
-                        <Button
-                          variant="contained"
-                          fullWidth
-                          onClick={() => handleBuyClick(token)}
-                          disabled={!isTokenBuyable(token)}
+                        <Box
                           sx={{
-                            minWidth: "80px",
-                            borderRadius: "12px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            justifyContent: "flex-end",
                           }}
                         >
-                          {token.tokenId === 390001 ? (
-                            "Buy"
-                          ) : isLoading(token) ? (
-                            <Skeleton
-                              width={40}
-                              sx={{ bgcolor: "rgba(255,255,255,0.1)" }}
-                            />
-                          ) : (
-                            "Buy"
+                          {!isTokenBuyable(token) && !isLoading(token) && (
+                            <Link
+                              href={getDexUrl(token.tokenId)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                                color: isDarkMode ? "rgba(255, 255, 255, 0.7)" : "inherit",
+                                textDecoration: "none",
+                                "&:hover": {
+                                  color: isDarkMode ? "#FFFFFF" : "primary.main",
+                                },
+                              }}
+                            >
+                              Get {token.symbol}
+                              <OpenInNewIcon sx={{ fontSize: 16 }} />
+                            </Link>
                           )}
-                        </Button>
+                          <Button
+                            variant="contained"
+                            fullWidth
+                            onClick={() => handleBuyClick(token)}
+                            disabled={!isTokenBuyable(token)}
+                            sx={{
+                              minWidth: "80px",
+                              maxWidth: "120px",
+                              borderRadius: "12px",
+                            }}
+                          >
+                            {token.tokenId === 390001 ? (
+                              "Buy"
+                            ) : isLoading(token) ? (
+                              <Skeleton width={40} sx={{ bgcolor: "rgba(255,255,255,0.1)" }} />
+                            ) : (
+                              "Buy"
+                            )}
+                          </Button>
+                        </Box>
                       </Grid>
                     </Grid>
                   </CardContent>
@@ -588,7 +631,7 @@ const CurrencySelect: React.FC<CurrencySelectProps> = ({
               ? "1px solid rgba(255, 255, 255, 0.15)"
               : "1px solid rgba(0, 0, 0, 0.1)",
             "& .MuiTable-root": {
-              backgroundColor: 'transparent',
+              backgroundColor: "transparent",
               color: isDarkMode ? "#FFFFFF" : undefined,
             },
             "& .MuiTableCell-root": {
@@ -597,9 +640,10 @@ const CurrencySelect: React.FC<CurrencySelectProps> = ({
                 : "rgba(0, 0, 0, 0.1)",
               color: isDarkMode ? "#FFFFFF" : undefined,
               padding: "16px",
-              "& > *": {  // Force all child elements to be white
+              "& > *": {
+                // Force all child elements to be white
                 color: isDarkMode ? "#FFFFFF !important" : undefined,
-              }
+              },
             },
             "& .MuiTableCell-head": {
               color: isDarkMode ? "#FFFFFF !important" : undefined,
@@ -632,7 +676,7 @@ const CurrencySelect: React.FC<CurrencySelectProps> = ({
                     backgroundColor: isDarkMode
                       ? "rgba(25, 118, 210, 0.25) !important"
                       : undefined,
-                  }
+                  },
                 },
                 "& .MuiTypography-root": {
                   color: isDarkMode ? "#FFFFFF !important" : undefined,
@@ -744,27 +788,53 @@ const CurrencySelect: React.FC<CurrencySelectProps> = ({
                       {renderPrice(token)}
                     </TableCell>
                     <TableCell align="right">
-                      <Button
-                        variant="contained"
-                        size="small"
-                        onClick={() => handleBuyClick(token)}
-                        disabled={!isTokenBuyable(token)}
+                      <Box
                         sx={{
-                          minWidth: "80px",
-                          borderRadius: "12px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          justifyContent: "flex-end",
                         }}
                       >
-                        {token.tokenId === 390001 ? (
-                          "Buy"
-                        ) : isLoading(token) ? (
-                          <Skeleton
-                            width={40}
-                            sx={{ bgcolor: "rgba(255,255,255,0.1)" }}
-                          />
-                        ) : (
-                          "Buy"
+                        {!isTokenBuyable(token) && !isLoading(token) && (
+                          <Link
+                            href={getDexUrl(token.tokenId)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                              color: isDarkMode ? "rgba(255, 255, 255, 0.7)" : "inherit",
+                              textDecoration: "none",
+                              "&:hover": {
+                                color: isDarkMode ? "#FFFFFF" : "primary.main",
+                              },
+                            }}
+                          >
+                            Get {token.symbol}
+                            <OpenInNewIcon sx={{ fontSize: 16 }} />
+                          </Link>
                         )}
-                      </Button>
+                        <Button
+                          variant="contained"
+                          size="small"
+                          onClick={() => handleBuyClick(token)}
+                          disabled={!isTokenBuyable(token)}
+                          sx={{
+                            minWidth: "80px",
+                            borderRadius: "12px",
+                          }}
+                        >
+                          {token.tokenId === 390001 ? (
+                            "Buy"
+                          ) : isLoading(token) ? (
+                            <Skeleton width={40} sx={{ bgcolor: "rgba(255,255,255,0.1)" }} />
+                          ) : (
+                            "Buy"
+                          )}
+                        </Button>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))
