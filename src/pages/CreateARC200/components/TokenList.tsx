@@ -176,6 +176,12 @@ const ActionButton = styled(Button)<{ $isDarkTheme: boolean }>`
   }
 `;
 
+const ButtonText = styled.span`
+  @media (max-width: 600px) {
+    display: none;
+  }
+`;
+
 const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
@@ -525,7 +531,9 @@ const TokenList: React.FC<TokenListProps> = ({ tokens }) => {
                     ) : (
                       <>
                         <SwapHorizIcon sx={{ fontSize: 20 }} />
-                        <Typography variant="body2">Swap</Typography>
+                        <ButtonText>
+                          <Typography variant="body2">Swap</Typography>
+                        </ButtonText>
                       </>
                     )}
                   </ActionButton>

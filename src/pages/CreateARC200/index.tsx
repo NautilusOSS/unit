@@ -330,6 +330,12 @@ const convertToPNG = async (file: File): Promise<Blob> => {
   });
 };
 
+const ButtonText = styled.span`
+  @media (max-width: 600px) {
+    display: none;
+  }
+`;
+
 export const CreateARC200: React.FC = () => {
   const isDarkTheme = useSelector(
     (state: RootState) => state.theme.isDarkTheme
@@ -905,7 +911,21 @@ export const CreateARC200: React.FC = () => {
                 }}
                 startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
               >
-                {isSubmitting ? "Creating Token..." : "Create Token"}
+                {isSubmitting ? (
+                  <>
+                    <ButtonText>Creating Token...</ButtonText>
+                    <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+                      Creating...
+                    </Box>
+                  </>
+                ) : (
+                  <>
+                    <ButtonText>Create Token</ButtonText>
+                    <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+                      Create
+                    </Box>
+                  </>
+                )}
               </Button>
             </Grid>
           </Grid>
