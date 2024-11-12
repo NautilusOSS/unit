@@ -418,7 +418,7 @@ export const Home: React.FC = () => {
       try {
         const metadata = JSON.parse(collection.firstToken.metadata);
         return (
-          metadata.name?.replace(/\s*#\d+$/, "") ||
+          metadata.name?.replace(/\s*#?\d+$/, "") ||
           `Collection #${collectionId}`
         );
       } catch {
@@ -1084,7 +1084,6 @@ export const Home: React.FC = () => {
                         sale.tokenId
                       );
                       const metadata = JSON.parse(tokenInfo?.metadata || "{}");
-                      console.log({ metadata });
                       return (
                         <TableRow key={sale.transactionId}>
                           <TableCell>
