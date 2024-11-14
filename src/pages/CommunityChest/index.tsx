@@ -7,6 +7,7 @@ import {
   TextField,
   CircularProgress,
   useTheme,
+  Link,
 } from "@mui/material";
 import styled, { keyframes } from "styled-components";
 import { toast } from "react-toastify";
@@ -18,14 +19,46 @@ import axios from "axios";
 import { abi, CONTRACT } from "ulujs";
 import { useWallet } from "@txnlab/use-wallet-react";
 import party from "party-js";
+import DepositModal from "./components/DepositModal";
+import WithdrawModal from "./components/WithdrawModal";
+import HowItWorksModal from "./components/HowItWorksModal";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 
-const Container = styled(Layout)<{ $isDarkTheme: boolean }>`
+function weightedRandomSelect(data: any) {
+  // Step 1: Convert balances to numbers and calculate total weight
+  const totalBalance = data.balances.reduce(
+    (sum: number, item: any) => sum + Number(item.balance),
+    0
+  );
+
+  // Step 2: Calculate cumulative weights
+  const cumulativeWeights = [];
+  let cumulativeSum = 0;
+  for (const item of data.balances) {
+    cumulativeSum += Number(item.balance) / totalBalance;
+    cumulativeWeights.push(cumulativeSum);
+  }
+
+  // Step 3: Generate a random number and select based on cumulative weights
+  const random = Math.random();
+  for (let i = 0; i < cumulativeWeights.length; i++) {
+    if (random < cumulativeWeights[i]) {
+      return data.balances[i].accountId;
+    }
+  }
+}
+
+const Container = styled(Box)<{ $isDarkTheme: boolean }>`
   padding: 24px;
   max-width: 800px;
-  margin: 0 auto;
+  margin: 48px auto 0;
   color: ${(props) => (props.$isDarkTheme ? "#fff" : "#000")};
   background-color: ${(props) =>
     props.$isDarkTheme ? "rgba(0, 0, 0, 0.4)" : "rgba(255, 255, 255, 0.1)"};
+
+  @media (min-width: 768px) {
+    margin-top: 64px;
+  }
 `;
 
 const StatsCard = styled(Card)<{ $isDarkTheme: boolean }>`
@@ -226,6 +259,64 @@ const StorySection = styled(Typography)<{ $isDarkTheme: boolean }>`
   @media (min-width: 768px) {
     margin-bottom: 96px;
   }
+
+  .how-it-works-link {
+    color: ${(props) => (props.$isDarkTheme ? "#90caf9" : "#1976d2")};
+    cursor: pointer;
+    text-decoration: none;
+    margin-left: 8px;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+`;
+
+const Disclaimer = styled(Typography)<{ $isDarkTheme: boolean }>`
+  text-align: left;
+  margin-top: 32px;
+  padding: 16px;
+  font-size: 12px;
+  color: ${(props) =>
+    props.$isDarkTheme ? "rgba(255, 255, 255, 0.6)" : "rgba(0, 0, 0, 0.6)"};
+  border-top: 1px solid
+    ${(props) =>
+      props.$isDarkTheme ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)"};
+  line-height: 1.6;
+`;
+
+// Add keyframes for fade-in animation
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+// Update the RollDiceSection styled component
+const RollDiceSection = styled(Box)<{ $isDarkTheme: boolean }>`
+  text-align: center;
+  margin-bottom: 32px;
+  padding: 16px;
+  background-color: ${(props) =>
+    props.$isDarkTheme ? "rgba(0, 0, 0, 0.4)" : "rgba(255, 255, 255, 0.1)"};
+  border-radius: 16px;
+  border: 1px solid
+    ${(props) =>
+      props.$isDarkTheme ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)"};
+  color: ${(props) => (props.$isDarkTheme ? "#fff" : "#000")};
+
+  .selected-account {
+    font-size: 24px;
+    font-weight: bold;
+    color: ${(props) => (props.$isDarkTheme ? "#90caf9" : "#1976d2")};
+    margin-top: 16px;
+    animation: ${fadeIn} 0.5s ease-in-out; // Apply fade-in animation
+  }
 `;
 
 interface CommunityChestProps {
@@ -246,6 +337,12 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
   const [depositAmount, setDepositAmount] = useState<string>("");
   const [withdrawAmount, setWithdrawAmount] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [depositModalOpen, setDepositModalOpen] = useState(false);
+  const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
+  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
+  const [isRolling, setIsRolling] = useState<boolean>(false);
+  const [holdersList, setHoldersList] = useState<any[]>([]);
 
   useEffect(() => {
     if (connected) {
@@ -258,21 +355,27 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
     try {
       const { algodClient } = getAlgorandClients();
       // get contract balance
-      const ctcInfo = 390001;
+      const ctcInfo = 664258;
       const ctcAddr = algosdk.getApplicationAddress(ctcInfo);
       const accInfo = await algodClient.accountInformation(ctcAddr).do();
       const { amount } = accInfo;
       // get number of holders
       const response = await axios.get(
-        `https://mainnet-idx.nautilus.sh/nft-indexer/v1/arc200/balances?contractId=390001`
+        `https://mainnet-idx.nautilus.sh/nft-indexer/v1/arc200/balances?contractId=664258`
       );
-      console.log({ response });
+      const filteredHolders =
+        response?.data?.balances?.filter(
+          (balance: any) =>
+            balance.accountId !== algosdk.getApplicationAddress(664258) &&
+            balance.balance !== "0"
+        ) || [];
+      setHoldersList(filteredHolders);
       const holders = response?.data?.balances?.length || 0;
       // get user balance
       // const userBalance =
       //   response?.data?.balances?.find((b: any) => b.accountId === address)
       //     ?.balance || "0";
-      const ci = new CONTRACT(390001, algodClient, null, abi.nt200, {
+      const ci = new CONTRACT(664258, algodClient, null, abi.nt200, {
         addr: address || "",
         sk: Uint8Array.from([]),
       });
@@ -302,12 +405,12 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
       setIsLoading(true);
 
       const { algodClient } = getAlgorandClients();
-      const ciC = new CONTRACT(390001, algodClient, null, abi.custom, {
+      const ciC = new CONTRACT(664258, algodClient, null, abi.custom, {
         addr: address || "",
         sk: Uint8Array.from([]),
       });
       const ci = new CONTRACT(
-        390001,
+        664258,
         algodClient,
         null,
         abi.nt200,
@@ -367,6 +470,7 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
         size: party.variation.range(1, 1.4),
       });
       toast.success("Deposit successful!");
+      setDepositModalOpen(false);
       fetchData();
     } catch (error) {
       console.error("Error depositing:", error);
@@ -386,7 +490,7 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
     try {
       setIsLoading(true);
       const { algodClient } = getAlgorandClients();
-      const ci = new CONTRACT(390001, algodClient, null, abi.nt200, {
+      const ci = new CONTRACT(664258, algodClient, null, abi.nt200, {
         addr: address || "",
         sk: Uint8Array.from([]),
       });
@@ -414,6 +518,7 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
         size: party.variation.range(1, 1.4),
       });
       toast.success("Withdrawal successful!");
+      setWithdrawModalOpen(false);
       fetchData();
     } catch (error) {
       console.error("Error withdrawing:", error);
@@ -435,6 +540,38 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
     if (value < 10000) return 3;
     if (value < 100000) return 5;
     return 7;
+  };
+
+  const handleRollDice = () => {
+    if (!connected) {
+      toast.error("Please connect your wallet");
+      return;
+    }
+    setIsRolling(true);
+    setSelectedAccount(null);
+    setTimeout(() => {
+      const selected = weightedRandomSelect({ balances: holdersList });
+      party.confetti(document.body, {
+        count: party.variation.range(200, 300),
+        size: party.variation.range(1, 1.4),
+      });
+      setIsRolling(false);
+      setTimeout(() => {
+        setSelectedAccount(selected);
+      }, 1000);
+    }, 2000); // Simulate a delay for cinematic effect
+  };
+
+  // Add a function to copy text to clipboard
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        toast.success("Address copied to clipboard");
+      })
+      .catch(() => {
+        toast.error("Failed to copy address");
+      });
   };
 
   return (
@@ -465,9 +602,16 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
           Welcome to the Community Chest - a collaborative pool where members
           can deposit VOI for a chance to win big! Every deposit increases the
           chest's value, and weekly draws give participants the opportunity to
-          win exciting rewards. The best part? Your deposit is never lost - you
-          can withdraw your contribution at any time. Join us in building this
-          treasure trove of possibilities!
+          win exciting rewards. Your deposit remains fully accessible - you can
+          withdraw your entire contribution at any time without restrictions.
+          Join us in building this treasure trove of possibilities!
+          <Link
+            component="span"
+            className="how-it-works-link"
+            onClick={() => setHowItWorksOpen(true)}
+          >
+            Learn how it works →
+          </Link>
         </StorySection>
 
         <StatsCard
@@ -535,6 +679,54 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
           </StatusRow>
         </StatsCard>
 
+        <RollDiceSection $isDarkTheme={isDarkTheme}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Roll Them Dice
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={handleRollDice}
+            disabled={isRolling || !connected}
+            sx={{
+              bgcolor: isDarkTheme ? "#90caf9" : "#1976d2",
+              color: isDarkTheme ? "#000" : "#fff",
+              "&:hover": {
+                bgcolor: isDarkTheme ? "#64b5f6" : "#1565c0",
+              },
+            }}
+          >
+            {isRolling ? <CircularProgress size={24} /> : "Roll the Dice"}
+          </Button>
+          {selectedAccount && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                mt: 2,
+              }}
+            >
+              <Typography className="selected-account">
+                🎉 Winner:{" "}
+                {`${selectedAccount.slice(0, 6)}...${selectedAccount.slice(
+                  -6
+                )}`}{" "}
+                🎉
+              </Typography>
+              <ContentCopyIcon
+                sx={{
+                  cursor: "pointer",
+                  fontSize: "20px",
+                  ml: 1,
+                  color: isDarkTheme ? "#90caf9" : "#1976d2",
+                  "&:hover": { opacity: 0.8 },
+                }}
+                onClick={() => copyToClipboard(selectedAccount)}
+              />
+            </Box>
+          )}
+        </RollDiceSection>
+
         <ActionCard
           style={{
             background: "transparent",
@@ -546,48 +738,71 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
             <Typography variant="h6" sx={{ mb: 2 }}>
               Deposit
             </Typography>
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <TextField
-                fullWidth
-                type="number"
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
-                placeholder="Amount to deposit"
-                disabled={isLoading || !connected}
-              />
-              <Button
-                variant="contained"
-                onClick={handleDeposit}
-                disabled={isLoading || !connected || !depositAmount}
-              >
-                Deposit
-              </Button>
-            </Box>
+            <Button
+              variant="contained"
+              onClick={() => setDepositModalOpen(true)}
+              disabled={!connected}
+              fullWidth
+            >
+              Deposit VOI
+            </Button>
           </Box>
 
           <Box>
             <Typography variant="h6" sx={{ mb: 2 }}>
               Withdraw
             </Typography>
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <TextField
-                fullWidth
-                type="number"
-                value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(e.target.value)}
-                placeholder="Amount to withdraw"
-                disabled={isLoading || !connected}
-              />
-              <Button
-                variant="contained"
-                onClick={handleWithdraw}
-                disabled={isLoading || !connected || !withdrawAmount}
-              >
-                Withdraw
-              </Button>
-            </Box>
+            <Button
+              variant="contained"
+              onClick={() => setWithdrawModalOpen(true)}
+              disabled={!connected}
+              fullWidth
+            >
+              Withdraw VOI
+            </Button>
           </Box>
         </ActionCard>
+
+        <Disclaimer $isDarkTheme={isDarkTheme}>
+          DISCLAIMER: The Community Chest is an experimental feature.
+          Participants acknowledge and accept all risks associated with using
+          this service. While deposits can be withdrawn at any time without
+          restrictions, smart contract interactions may take a few seconds to
+          process. Past performance does not guarantee future results. Always
+          invest responsibly and never commit more than you can afford to lose.
+        </Disclaimer>
+
+        <DepositModal
+          open={depositModalOpen}
+          onClose={() => {
+            setDepositModalOpen(false);
+            setDepositAmount("");
+          }}
+          onDeposit={handleDeposit}
+          amount={depositAmount}
+          setAmount={setDepositAmount}
+          isLoading={isLoading}
+          isDarkTheme={isDarkTheme}
+        />
+
+        <WithdrawModal
+          open={withdrawModalOpen}
+          onClose={() => {
+            setWithdrawModalOpen(false);
+            setWithdrawAmount("");
+          }}
+          onWithdraw={handleWithdraw}
+          amount={withdrawAmount}
+          setAmount={setWithdrawAmount}
+          isLoading={isLoading}
+          isDarkTheme={isDarkTheme}
+        />
+
+        <HowItWorksModal
+          open={howItWorksOpen}
+          onClose={() => setHowItWorksOpen(false)}
+          isDarkTheme={isDarkTheme}
+        />
       </Container>
     </Layout>
   );
