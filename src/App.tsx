@@ -17,11 +17,11 @@ import {
   WalletProvider,
   useWallet,
 } from "@txnlab/use-wallet-react";
-import Wallet from './pages/Wallet';
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { theme } from './theme';
-import CommunityChest from './pages/CommunityChest';
+import Wallet from "./pages/Wallet";
+import { ThemeProvider } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+import { theme } from "./theme";
+import CommunityChest from "./pages/CommunityChest";
 
 const BackgroundLayer = styled.div`
   width: 100%;
@@ -60,7 +60,9 @@ const AppContainer: React.FC<AppContainerProps> = ({ children }) => {
 // New component that uses the wallet hook
 const AppRoutes: React.FC = () => {
   const { activeAccount } = useWallet();
-  const isDarkTheme = useSelector((state: RootState) => state.theme.isDarkTheme);
+  const isDarkTheme = useSelector(
+    (state: RootState) => state.theme.isDarkTheme
+  );
 
   return (
     <AppContainer>
@@ -71,15 +73,15 @@ const AppRoutes: React.FC = () => {
             <Route key={key} path={el.path} Component={el.Component} />
           ))}
           <Route path="/wallet/:accountId" element={<Wallet />} />
-          <Route 
-            path="/community-chest" 
+          <Route
+            path="/community-chest"
             element={
-              <CommunityChest 
-                isDarkTheme={isDarkTheme} 
-                connected={!!activeAccount} 
-                address={activeAccount?.address} 
+              <CommunityChest
+                isDarkTheme={isDarkTheme}
+                connected={true} //!!activeAccount}
+                address={activeAccount?.address}
               />
-            } 
+            }
           />
         </Routes>
       </Router>

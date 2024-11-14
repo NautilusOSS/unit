@@ -372,11 +372,10 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
       setHoldersList(filteredHolders);
       const holders = response?.data?.balances?.length || 0;
       // get user balance
-      // const userBalance =
-      //   response?.data?.balances?.find((b: any) => b.accountId === address)
-      //     ?.balance || "0";
       const ci = new CONTRACT(664258, algodClient, null, abi.nt200, {
-        addr: address || "",
+        addr:
+          address ||
+          "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ",
         sk: Uint8Array.from([]),
       });
       const arc200_balanceOf =
@@ -406,7 +405,9 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
 
       const { algodClient } = getAlgorandClients();
       const ciC = new CONTRACT(664258, algodClient, null, abi.custom, {
-        addr: address || "",
+        addr:
+          address ||
+          "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ",
         sk: Uint8Array.from([]),
       });
       const ci = new CONTRACT(
@@ -415,7 +416,9 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
         null,
         abi.nt200,
         {
-          addr: address || "",
+          addr:
+            address ||
+            "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ",
           sk: Uint8Array.from([]),
         },
         true,
@@ -491,7 +494,9 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
       setIsLoading(true);
       const { algodClient } = getAlgorandClients();
       const ci = new CONTRACT(664258, algodClient, null, abi.nt200, {
-        addr: address || "",
+        addr:
+          address ||
+          "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ",
         sk: Uint8Array.from([]),
       });
       const amountBI = BigInt(
@@ -659,24 +664,26 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
             )}
           </StatusRow>
 
-          <StatusRow $isDarkTheme={isDarkTheme}>
-            <Label $isDarkTheme={isDarkTheme}>Your Balance</Label>
-            {isLoading ? (
-              <CircularProgress size={24} />
-            ) : (
-              <>
-                <BigNumberDisplay $isDarkTheme={isDarkTheme}>
-                  {formatAmount(userBalance)}
-                </BigNumberDisplay>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: isDarkTheme ? "#90caf9" : "#1976d2" }}
-                >
-                  VOI
-                </Typography>
-              </>
-            )}
-          </StatusRow>
+          {address ? (
+            <StatusRow $isDarkTheme={isDarkTheme}>
+              <Label $isDarkTheme={isDarkTheme}>Your Balance</Label>
+              {isLoading ? (
+                <CircularProgress size={24} />
+              ) : (
+                <>
+                  <BigNumberDisplay $isDarkTheme={isDarkTheme}>
+                    {formatAmount(userBalance)}
+                  </BigNumberDisplay>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ color: isDarkTheme ? "#90caf9" : "#1976d2" }}
+                  >
+                    VOI
+                  </Typography>
+                </>
+              )}
+            </StatusRow>
+          ) : null}
         </StatsCard>
 
         <RollDiceSection $isDarkTheme={isDarkTheme}>
@@ -727,41 +734,43 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
           )}
         </RollDiceSection>
 
-        <ActionCard
-          style={{
-            background: "transparent",
-            border: "none",
-          }}
-          $isDarkTheme={isDarkTheme}
-        >
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Deposit
-            </Typography>
-            <Button
-              variant="contained"
-              onClick={() => setDepositModalOpen(true)}
-              disabled={!connected}
-              fullWidth
-            >
-              Deposit VOI
-            </Button>
-          </Box>
+        {address ? (
+          <ActionCard
+            style={{
+              background: "transparent",
+              border: "none",
+            }}
+            $isDarkTheme={isDarkTheme}
+          >
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Deposit
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={() => setDepositModalOpen(true)}
+                disabled={!connected}
+                fullWidth
+              >
+                Deposit VOI
+              </Button>
+            </Box>
 
-          <Box>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Withdraw
-            </Typography>
-            <Button
-              variant="contained"
-              onClick={() => setWithdrawModalOpen(true)}
-              disabled={!connected}
-              fullWidth
-            >
-              Withdraw VOI
-            </Button>
-          </Box>
-        </ActionCard>
+            <Box>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Withdraw
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={() => setWithdrawModalOpen(true)}
+                disabled={!connected}
+                fullWidth
+              >
+                Withdraw VOI
+              </Button>
+            </Box>
+          </ActionCard>
+        ) : null}
 
         <Disclaimer $isDarkTheme={isDarkTheme}>
           DISCLAIMER: The Community Chest is an experimental feature.
