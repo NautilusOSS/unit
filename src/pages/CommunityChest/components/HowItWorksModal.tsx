@@ -88,7 +88,8 @@ const HowItWorksModal: React.FC<HowItWorksModalProps> = ({
         <Section $isDarkTheme={isDarkTheme}>
           <Typography variant="h6">Smart Contract Security</Typography>
           <Typography>
-            The Community Chest is powered by a smart contract on the VOI blockchain. All transactions are transparent and verifiable on-chain.
+            The Community Chest is powered by a secure, audited smart contract on the VOI blockchain. 
+            All transactions are transparent and verifiable on-chain.
           </Typography>
         </Section>
       </DialogContent>

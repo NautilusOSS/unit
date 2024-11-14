@@ -8,6 +8,7 @@ import {
   CircularProgress,
   useTheme,
   Link,
+  Tooltip,
 } from "@mui/material";
 import styled, { keyframes } from "styled-components";
 import { toast } from "react-toastify";
@@ -23,6 +24,48 @@ import DepositModal from "./components/DepositModal";
 import WithdrawModal from "./components/WithdrawModal";
 import HowItWorksModal from "./components/HowItWorksModal";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import RankingsModal from "./components/RankingsModal";
+import LeaderboardIcon from "@mui/icons-material/Leaderboard";
+import BlockProductionGraph from './components/BlockProductionGraph';
+import InfoIcon from "@mui/icons-material/Info";
+import RewardDistributionModal from './components/RewardDistributionModal';
+
+const findCommonRatio = (a: number, totalSum: number, n: number) => {
+  // Using numerical method (binary search) to find r
+  // where a(1-r^n)/(1-r) = totalSum
+  let left = 0.1; // Lower bound for r
+  let right = 2.0; // Upper bound for r
+  const epsilon = 0.0000001; // Precision
+
+  while (right - left > epsilon) {
+    const mid = (left + right) / 2;
+    const sum = (a * (1 - Math.pow(mid, n))) / (1 - mid);
+
+    if (sum < totalSum) {
+      left = mid;
+    } else {
+      right = mid;
+    }
+  }
+
+  return (left + right) / 2;
+};
+
+export const getTokensByEpoch = async (epoch: number) => {
+  // tokens = 3000000 for epoch 1
+  // tokens = a * r^(i-1)
+  const a = 3_000_000;
+  const totalSum = 1_000_000_000;
+  const n = 1042;
+  const r = findCommonRatio(a, totalSum, n);
+  return Math.round(a * Math.pow(r, epoch - 1));
+};
+
+interface CommunityChestProps {
+  isDarkTheme: boolean;
+  connected: boolean;
+  address?: string;
+}
 
 function weightedRandomSelect(data: any) {
   // Step 1: Convert balances to numbers and calculate total weight
@@ -319,10 +362,18 @@ const RollDiceSection = styled(Box)<{ $isDarkTheme: boolean }>`
   }
 `;
 
-interface CommunityChestProps {
-  isDarkTheme: boolean;
-  connected: boolean;
-  address?: string;
+// Update the EpochSummary interface
+interface EpochSummary {
+  start_date: string;
+  end_date: string;
+  proposers: any[];
+  total_blocks: number;
+  ballast_blocks: number;
+}
+
+interface ApiResponse {
+  last_updated: number;
+  snapshots: EpochSummary[];
 }
 
 const CommunityChest: React.FC<CommunityChestProps> = ({
@@ -330,6 +381,7 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
   connected,
   address,
 }) => {
+  const ctcInfo = 664258;
   const { signTransactions } = useWallet();
   const [totalInChest, setTotalInChest] = useState<string>("0");
   const [holders, setHolders] = useState<number>(0);
@@ -343,6 +395,10 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [isRolling, setIsRolling] = useState<boolean>(false);
   const [holdersList, setHoldersList] = useState<any[]>([]);
+  const [showRankings, setShowRankings] = useState(false);
+  const [epochSummaries, setEpochSummaries] = useState<EpochSummary[]>([]);
+  const [currentEpochTokens, setCurrentEpochTokens] = useState<string>("0");
+  const [showRewardDistribution, setShowRewardDistribution] = useState(false);
 
   useEffect(() => {
     if (connected) {
@@ -350,16 +406,19 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
     }
   }, [connected, address]);
 
+  // Update the fetchData function
   const fetchData = async () => {
     setIsLoading(true);
     try {
       const { algodClient } = getAlgorandClients();
-      // get contract balance
-      const ctcInfo = 664258;
+
+      // Fetch contract data
+
       const ctcAddr = algosdk.getApplicationAddress(ctcInfo);
       const accInfo = await algodClient.accountInformation(ctcAddr).do();
       const { amount } = accInfo;
-      // get number of holders
+
+      // Fetch holders data
       const response = await axios.get(
         `https://mainnet-idx.nautilus.sh/nft-indexer/v1/arc200/balances?contractId=664258`
       );
@@ -370,9 +429,26 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
             balance.balance !== "0"
         ) || [];
       setHoldersList(filteredHolders);
-      const holders = response?.data?.balances?.length || 0;
-      // get user balance
-      const ci = new CONTRACT(664258, algodClient, null, abi.nt200, {
+      const holders = filteredHolders.length || 0;
+
+      // Fetch epoch summary
+      const epochResponse = await axios.get<ApiResponse>(
+        `https://api.voirewards.com/proposers/index_main_3.php?action=epoch-summary&wallet=${algosdk.getApplicationAddress(
+          ctcInfo
+        )}`
+      );
+
+      // Sort snapshots by start date in descending order (newest first)
+      const sortedEpochs = epochResponse.data.snapshots.sort(
+        (a, b) =>
+          new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
+      );
+
+      setEpochSummaries(sortedEpochs);
+      console.log("Latest Epoch:", sortedEpochs[0]);
+
+      // Get user balance
+      const ci = new CONTRACT(ctcInfo, algodClient, null, abi.nt200, {
         addr:
           address ||
           "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ",
@@ -382,10 +458,20 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
         (await ci.arc200_balanceOf(address))?.returnValue || BigInt(0);
       const userBalance = arc200_balanceOf.toString();
 
-      // Placeholder data
       setTotalInChest(amount);
       setHolders(holders);
       setUserBalance(userBalance);
+
+      // Add token calculations
+      if (sortedEpochs.length > 0) {
+        // number of weeks since launch (since October 30, 2024 UTC)
+        const weeksSinceLaunch = Math.floor(
+          (new Date().getTime() - new Date("2024-10-30").getTime()) /
+            (1000 * 60 * 60 * 24 * 7)
+        );
+        const current = await getTokensByEpoch(weeksSinceLaunch);
+        setCurrentEpochTokens(current.toString());
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to fetch community chest data");
@@ -404,14 +490,14 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
       setIsLoading(true);
 
       const { algodClient } = getAlgorandClients();
-      const ciC = new CONTRACT(664258, algodClient, null, abi.custom, {
+      const ciC = new CONTRACT(ctcInfo, algodClient, null, abi.custom, {
         addr:
           address ||
           "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ",
         sk: Uint8Array.from([]),
       });
       const ci = new CONTRACT(
-        664258,
+        ctcInfo,
         algodClient,
         null,
         abi.nt200,
@@ -493,7 +579,7 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
     try {
       setIsLoading(true);
       const { algodClient } = getAlgorandClients();
-      const ci = new CONTRACT(664258, algodClient, null, abi.nt200, {
+      const ci = new CONTRACT(ctcInfo, algodClient, null, abi.nt200, {
         addr:
           address ||
           "G3MSA75OZEJTCCENOJDLDJK7UD7E2K5DNC7FVHCNOV7E3I4DTXTOWDUIFQ",
@@ -579,6 +665,13 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
       });
   };
 
+  // Add this helper function near the top with other utility functions
+  const calculateAverageStake = (total: string, holders: number): string => {
+    if (holders === 0) return "0";
+    const totalBN = new BigNumber(total);
+    return totalBN.dividedBy(holders).dividedBy(1e6).toFixed(6);
+  };
+
   return (
     <Layout>
       <Container $isDarkTheme={isDarkTheme}>
@@ -646,6 +739,25 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
           </StatusRow>
 
           <StatusRow $isDarkTheme={isDarkTheme}>
+            <Label $isDarkTheme={isDarkTheme}>Average Stake</Label>
+            {isLoading ? (
+              <CircularProgress size={24} />
+            ) : (
+              <>
+                <BigNumberDisplay $isDarkTheme={isDarkTheme}>
+                  {calculateAverageStake(totalInChest, holders)}
+                </BigNumberDisplay>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ color: isDarkTheme ? "#90caf9" : "#1976d2" }}
+                >
+                  VOI/HOLDER
+                </Typography>
+              </>
+            )}
+          </StatusRow>
+
+          <StatusRow $isDarkTheme={isDarkTheme}>
             <Label $isDarkTheme={isDarkTheme}>Number of Holders</Label>
             {isLoading ? (
               <CircularProgress size={24} />
@@ -654,37 +766,148 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
                 <BigNumberDisplay $isDarkTheme={isDarkTheme}>
                   {holders.toLocaleString()}
                 </BigNumberDisplay>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ color: isDarkTheme ? "#90caf9" : "#1976d2" }}
+                  >
+                    PARTICIPANTS
+                  </Typography>
+                  <LeaderboardIcon
+                    sx={{
+                      cursor: "pointer",
+                      fontSize: "20px",
+                      color: isDarkTheme ? "#90caf9" : "#1976d2",
+                      "&:hover": { opacity: 0.8 },
+                    }}
+                    onClick={() => setShowRankings(true)}
+                  />
+                </Box>
+              </>
+            )}
+          </StatusRow>
+        </StatsCard>
+
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            marginBottom: "24px",
+          }}
+        >
+          <Label $isDarkTheme={isDarkTheme} style={{ textAlign: 'left', marginLeft: '4px' }}>
+            Block Production History
+          </Label>
+          {isLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : (
+            <BlockProductionGraph
+              isDarkTheme={isDarkTheme}
+              data={epochSummaries.slice(0, 6).map((epoch, index) => ({
+                count: epoch.proposers.length,
+                label: `Week ${index}`
+              }))}
+            />
+          )}
+        </Box>
+
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            marginBottom: "24px",
+          }}
+        >
+          <StatusRow $isDarkTheme={isDarkTheme} style={{ flex: 1 }}>
+            <Label $isDarkTheme={isDarkTheme}>Current Epoch Tokens</Label>
+            {isLoading ? (
+              <CircularProgress size={24} />
+            ) : (
+              <>
+                <BigNumberDisplay $isDarkTheme={isDarkTheme}>
+                  {currentEpochTokens.toLocaleString()}
+                </BigNumberDisplay>
                 <Typography
                   variant="subtitle2"
                   sx={{ color: isDarkTheme ? "#90caf9" : "#1976d2" }}
                 >
-                  PARTICIPANTS
+                  VOI
                 </Typography>
               </>
             )}
           </StatusRow>
 
-          {address ? (
-            <StatusRow $isDarkTheme={isDarkTheme}>
-              <Label $isDarkTheme={isDarkTheme}>Your Balance</Label>
-              {isLoading ? (
-                <CircularProgress size={24} />
-              ) : (
-                <>
-                  <BigNumberDisplay $isDarkTheme={isDarkTheme}>
-                    {formatAmount(userBalance)}
-                  </BigNumberDisplay>
-                  <Typography
-                    variant="subtitle2"
-                    sx={{ color: isDarkTheme ? "#90caf9" : "#1976d2" }}
-                  >
-                    VOI
-                  </Typography>
-                </>
-              )}
-            </StatusRow>
-          ) : null}
-        </StatsCard>
+          <StatusRow $isDarkTheme={isDarkTheme} style={{ flex: 1 }}>
+            <Label $isDarkTheme={isDarkTheme}>Current Block Reward</Label>
+            {isLoading ? (
+              <CircularProgress size={24} />
+            ) : (
+              <>
+                <BigNumberDisplay $isDarkTheme={isDarkTheme}>
+                  {epochSummaries.length > 0 && Number(currentEpochTokens) > 0
+                    ? (
+                        Number(currentEpochTokens) /
+                        (epochSummaries[0].total_blocks - epochSummaries[0].ballast_blocks)
+                      ).toFixed(2)
+                    : "0"}
+                </BigNumberDisplay>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ color: isDarkTheme ? "#90caf9" : "#1976d2" }}
+                >
+                  VOI PER BLOCK
+                </Typography>
+              </>
+            )}
+          </StatusRow>
+        </Box>
+
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            marginBottom: "24px",
+          }}
+        >
+          <StatusRow $isDarkTheme={isDarkTheme} style={{ flex: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Label $isDarkTheme={isDarkTheme}>Estimated Reward</Label>
+              <InfoIcon
+                sx={{
+                  fontSize: 16,
+                  color: isDarkTheme ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)",
+                  cursor: "pointer",
+                  "&:hover": { opacity: 0.8 },
+                }}
+                onClick={() => setShowRewardDistribution(true)}
+              />
+            </Box>
+            {isLoading ? (
+              <CircularProgress size={24} />
+            ) : (
+              <>
+                <BigNumberDisplay $isDarkTheme={isDarkTheme}>
+                  {epochSummaries.length > 0 && Number(currentEpochTokens) > 0
+                    ? (
+                        ((Number(currentEpochTokens) /
+                          (epochSummaries[0].total_blocks - epochSummaries[0].ballast_blocks)) *
+                        epochSummaries[0].proposers.length) * 0.45
+                      ).toFixed(2)
+                    : "0"}
+                </BigNumberDisplay>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ color: isDarkTheme ? "#90caf9" : "#1976d2" }}
+                >
+                  VOI THIS EPOCH
+                </Typography>
+              </>
+            )}
+          </StatusRow>
+        </Box>
 
         <RollDiceSection $isDarkTheme={isDarkTheme}>
           <Typography variant="h6" sx={{ mb: 2 }}>
@@ -733,6 +956,30 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
             </Box>
           )}
         </RollDiceSection>
+
+        {address && (
+          <StatusRow
+            $isDarkTheme={isDarkTheme}
+            style={{ marginBottom: "24px" }}
+          >
+            <Label $isDarkTheme={isDarkTheme}>Your Balance</Label>
+            {isLoading ? (
+              <CircularProgress size={24} />
+            ) : (
+              <>
+                <BigNumberDisplay $isDarkTheme={isDarkTheme}>
+                  {formatAmount(userBalance)}
+                </BigNumberDisplay>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ color: isDarkTheme ? "#90caf9" : "#1976d2" }}
+                >
+                  VOI
+                </Typography>
+              </>
+            )}
+          </StatusRow>
+        )}
 
         {address ? (
           <ActionCard
@@ -810,6 +1057,20 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
         <HowItWorksModal
           open={howItWorksOpen}
           onClose={() => setHowItWorksOpen(false)}
+          isDarkTheme={isDarkTheme}
+        />
+
+        <RankingsModal
+          open={showRankings}
+          onClose={() => setShowRankings(false)}
+          isDarkTheme={isDarkTheme}
+          holders={holdersList}
+          totalSupply={totalInChest}
+        />
+
+        <RewardDistributionModal
+          open={showRewardDistribution}
+          onClose={() => setShowRewardDistribution(false)}
           isDarkTheme={isDarkTheme}
         />
       </Container>

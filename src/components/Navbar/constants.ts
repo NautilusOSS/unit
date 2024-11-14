@@ -1,15 +1,19 @@
 export const navlinks = [
   {
-    label: "Swap",
-    href: "/",
+    label: "Listings",
+    href: "/listing",
   },
   {
-    label: "Liquidity",
-    href: "/liquidity",
+    label: "Collections",
+    href: "/collection",
   },
   {
     label: "Staking",
     href: "/staking",
+  },
+  {
+    label: "Launchpad",
+    href: "/create-arc200",
   },
   {
     label: "Community Chest",
@@ -18,9 +22,9 @@ export const navlinks = [
 ];
 
 export const linkLabels: { [key: string]: string } = {
-  "/": "Swap",
-  "/liquidity": "Liquidity",
+  "/listings": "Listings",
+  "/collection": "Collections",
   "/staking": "Staking",
+  "/create-arc200": "Launchpad",
   "/community-chest": "Community Chest",
-  // ... any other existing mappings ...
-}; 
+};
