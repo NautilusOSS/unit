@@ -26,9 +26,9 @@ import HowItWorksModal from "./components/HowItWorksModal";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import RankingsModal from "./components/RankingsModal";
 import LeaderboardIcon from "@mui/icons-material/Leaderboard";
-import BlockProductionGraph from './components/BlockProductionGraph';
+import BlockProductionGraph from "./components/BlockProductionGraph";
 import InfoIcon from "@mui/icons-material/Info";
-import RewardDistributionModal from './components/RewardDistributionModal';
+import RewardDistributionModal from "./components/RewardDistributionModal";
 
 const findCommonRatio = (a: number, totalSum: number, n: number) => {
   // Using numerical method (binary search) to find r
@@ -366,7 +366,7 @@ const RollDiceSection = styled(Box)<{ $isDarkTheme: boolean }>`
 interface EpochSummary {
   start_date: string;
   end_date: string;
-  proposers: any[];
+  proposers: { [key: string]: number } | []; // Update to handle object format
   total_blocks: number;
   ballast_blocks: number;
 }
@@ -465,7 +465,7 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
       // Add token calculations
       if (sortedEpochs.length > 0) {
         // number of weeks since launch (since October 30, 2024 UTC)
-        const weeksSinceLaunch = Math.floor(
+        const weeksSinceLaunch = Math.ceil(
           (new Date().getTime() - new Date("2024-10-30").getTime()) /
             (1000 * 60 * 60 * 24 * 7)
         );
@@ -790,27 +790,54 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
 
         <Box
           sx={{
-            display: 'flex',
-            flexDirection: 'column',
+            display: "flex",
+            flexDirection: "column",
             gap: 2,
             marginBottom: "24px",
           }}
         >
-          <Label $isDarkTheme={isDarkTheme} style={{ textAlign: 'left', marginLeft: '4px' }}>
+          <Label
+            $isDarkTheme={isDarkTheme}
+            style={{ textAlign: "left", marginLeft: "4px" }}
+          >
             Block Production History
           </Label>
           {isLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
               <CircularProgress size={24} />
             </Box>
           ) : (
-            <BlockProductionGraph
-              isDarkTheme={isDarkTheme}
-              data={epochSummaries.slice(0, 6).map((epoch, index) => ({
-                count: epoch.proposers.length,
-                label: `Week ${index}`
-              }))}
-            />
+            <>
+              <BlockProductionGraph
+                isDarkTheme={isDarkTheme}
+                data={epochSummaries.slice(0, 6).map((epoch, index) => ({
+                  count: Array.isArray(epoch.proposers)
+                    ? 0
+                    : Object.values(epoch.proposers).reduce(
+                        (sum, blocks) => sum + blocks,
+                        0
+                      ),
+                  label: `Week ${index}`,
+                }))}
+              />
+              <Link
+                href="https://voirewards.com/wallet/KS55CA7K5HQG6P7M5IDH5VXDXBJILSYEVMPP24H3QGJSLPQXPX3LKPW7WM#proposals"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  color: isDarkTheme ? "#90caf9" : "#1976d2",
+                  textDecoration: "none",
+                  fontSize: "14px",
+                  textAlign: "right",
+                  mt: 1,
+                  "&:hover": {
+                    textDecoration: "underline",
+                  },
+                }}
+              >
+                View on Voi Rewards →
+              </Link>
+            </>
           )}
         </Box>
 
@@ -848,10 +875,31 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
               <>
                 <BigNumberDisplay $isDarkTheme={isDarkTheme}>
                   {epochSummaries.length > 0 && Number(currentEpochTokens) > 0
-                    ? (
-                        Number(currentEpochTokens) /
-                        (epochSummaries[0].total_blocks - epochSummaries[0].ballast_blocks)
-                      ).toFixed(2)
+                    ? (() => {
+                        const nonBallastBlocks = epochSummaries[0].total_blocks;
+
+                        console.log("nonBallastBlocks", nonBallastBlocks);
+
+                        if (nonBallastBlocks <= 0) return "0";
+
+                        // Calculate percentage through epoch
+                        const secondsElapsed =
+                          new Date().getTime() / 1000 -
+                          new Date(epochSummaries[0].start_date).getTime() /
+                            1000;
+                        const secondsInEpoch = 7 * 24 * 60 * 60;
+                        const percentageThroughEpoch =
+                          secondsElapsed / secondsInEpoch;
+
+                        const rewardPerBlock =
+                          (Number(currentEpochTokens) *
+                            percentageThroughEpoch) /
+                          nonBallastBlocks;
+
+                        return isNaN(rewardPerBlock)
+                          ? "0"
+                          : rewardPerBlock.toFixed(2);
+                      })()
                     : "0"}
                 </BigNumberDisplay>
                 <Typography
@@ -878,7 +926,9 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
               <InfoIcon
                 sx={{
                   fontSize: 16,
-                  color: isDarkTheme ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)",
+                  color: isDarkTheme
+                    ? "rgba(255, 255, 255, 0.7)"
+                    : "rgba(0, 0, 0, 0.7)",
                   cursor: "pointer",
                   "&:hover": { opacity: 0.8 },
                 }}
@@ -891,11 +941,44 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
               <>
                 <BigNumberDisplay $isDarkTheme={isDarkTheme}>
                   {epochSummaries.length > 0 && Number(currentEpochTokens) > 0
-                    ? (
-                        ((Number(currentEpochTokens) /
-                          (epochSummaries[0].total_blocks - epochSummaries[0].ballast_blocks)) *
-                        epochSummaries[0].proposers.length) * 0.45
-                      ).toFixed(2)
+                    ? (() => {
+                        const nonBallastBlocks = epochSummaries[0].total_blocks;
+
+                        if (nonBallastBlocks <= 0) return "0";
+
+                        const blocksProduced = Array.isArray(
+                          epochSummaries[0].proposers
+                        )
+                          ? 0
+                          : Object.values(epochSummaries[0].proposers).reduce(
+                              (sum, blocks) => sum + blocks,
+                              0
+                            );
+
+                        console.log("blocksProduced", blocksProduced);
+
+                        // Calculate percentage through epoch
+                        const secondsElapsed =
+                          new Date().getTime() / 1000 -
+                          new Date(epochSummaries[0].start_date).getTime() /
+                            1000;
+                        const secondsInEpoch = 7 * 24 * 60 * 60;
+                        const percentageThroughEpoch =
+                          secondsElapsed / secondsInEpoch;
+
+                        // Calculate rewards based on total blocks in epoch
+                        const rewardPerBlock =
+                          (Number(currentEpochTokens) *
+                            percentageThroughEpoch) /
+                          nonBallastBlocks;
+
+                        const totalReward = rewardPerBlock * blocksProduced;
+                        const estimatedReward = totalReward; // * 0.45; // 45% of rewards
+
+                        return isNaN(estimatedReward)
+                          ? "0"
+                          : estimatedReward.toFixed(2);
+                      })()
                     : "0"}
                 </BigNumberDisplay>
                 <Typography

@@ -60,8 +60,18 @@ interface BlockProductionGraphProps {
   isDarkTheme: boolean;
 }
 
-const BlockProductionGraph: React.FC<BlockProductionGraphProps> = ({ data, isDarkTheme }) => {
-  const maxCount = Math.max(...data.map(d => d.count));
+const BlockProductionGraph: React.FC<BlockProductionGraphProps> = ({ data = [], isDarkTheme }) => {
+  if (!data || data.length === 0) {
+    return (
+      <GraphContainer $isDarkTheme={isDarkTheme}>
+        <Typography sx={{ color: isDarkTheme ? '#fff' : '#000', m: 'auto' }}>
+          No data available
+        </Typography>
+      </GraphContainer>
+    );
+  }
+
+  const maxCount = Math.max(...data.map(d => d?.count || 0));
 
   return (
     <Box>
@@ -69,11 +79,11 @@ const BlockProductionGraph: React.FC<BlockProductionGraphProps> = ({ data, isDar
         {data.map((item, index) => (
           <Box key={index} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
             <Bar
-              $height={(item.count / maxCount) * 80}
+              $height={maxCount > 0 ? ((item?.count || 0) / maxCount) * 80 : 0}
               $isDarkTheme={isDarkTheme}
-              title={`${item.count.toLocaleString()} blocks`}
+              title={`${item?.count?.toLocaleString() || 0} blocks`}
             />
-            <Label $isDarkTheme={isDarkTheme}>{item.label}</Label>
+            <Label $isDarkTheme={isDarkTheme}>{item?.label || `Week ${index}`}</Label>
           </Box>
         ))}
       </GraphContainer>
