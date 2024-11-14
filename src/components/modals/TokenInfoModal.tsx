@@ -58,8 +58,8 @@ const StyledDialogTitle = styled(DialogTitle)<{ $isDarkTheme: boolean }>`
 `;
 
 const TokenIcon = styled.img`
-  width: 64px;
-  height: 64px;
+  width: 200px;
+  height: 200px;
   border-radius: 50%;
   margin-bottom: 16px;
 `;
@@ -170,10 +170,15 @@ const TokenInfoModal: React.FC<TokenInfoModalProps> = ({
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
             {token.verified && (
               <TokenIcon 
-                src={`https://asset-verification.nautilus.sh/icons/${token.contractId}.png`}
+                src={`https://asset-verification.nautilus.sh/icons/${token.contractId}.gif`}
                 alt={token.name}
                 onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                  e.currentTarget.style.display = 'none';
+                  const imgElement = e.currentTarget;
+                  if (imgElement.src.endsWith('.gif')) {
+                    imgElement.src = `https://asset-verification.nautilus.sh/icons/${token.contractId}.png`;
+                  } else {
+                    imgElement.style.display = 'none';
+                  }
                 }}
               />
             )}
