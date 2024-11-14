@@ -29,6 +29,7 @@ import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 import BlockProductionGraph from "./components/BlockProductionGraph";
 import InfoIcon from "@mui/icons-material/Info";
 import RewardDistributionModal from "./components/RewardDistributionModal";
+import LEDCountdown from './components/LEDCountdown';
 
 const findCommonRatio = (a: number, totalSum: number, n: number) => {
   // Using numerical method (binary search) to find r
@@ -399,6 +400,7 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
   const [epochSummaries, setEpochSummaries] = useState<EpochSummary[]>([]);
   const [currentEpochTokens, setCurrentEpochTokens] = useState<string>("0");
   const [showRewardDistribution, setShowRewardDistribution] = useState(false);
+  const [timeUntilNextEpoch, setTimeUntilNextEpoch] = useState<string>("");
 
   useEffect(() => {
     if (connected) {
@@ -672,6 +674,30 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
     return totalBN.dividedBy(holders).dividedBy(1e6).toFixed(6);
   };
 
+  const formatTimeRemaining = (seconds: number): string => {
+    const days = Math.floor(seconds / (24 * 60 * 60));
+    const hours = Math.floor((seconds % (24 * 60 * 60)) / (60 * 60));
+    const minutes = Math.floor((seconds % (60 * 60)) / 60);
+
+    return `${days}d ${hours}h ${minutes}m`;
+  };
+
+  useEffect(() => {
+    const updateCountdown = () => {
+      if (epochSummaries.length > 0) {
+        const endDate = new Date(epochSummaries[0].end_date);
+        const now = new Date();
+        const diff = Math.max(0, Math.floor((endDate.getTime() - now.getTime()) / 1000));
+        setTimeUntilNextEpoch(formatTimeRemaining(diff));
+      }
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [epochSummaries]);
+
   return (
     <Layout>
       <Container $isDarkTheme={isDarkTheme}>
@@ -920,6 +946,35 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
             )}
           </StatusRow>
         </Box>
+
+        <StatusRow $isDarkTheme={isDarkTheme} style={{ flex: 1, marginBottom: "24px" }}>
+          <Label $isDarkTheme={isDarkTheme}>Time Until Next Epoch</Label>
+          {isLoading ? (
+            <CircularProgress size={24} />
+          ) : (
+            <>
+              {epochSummaries.length > 0 && (
+                <LEDCountdown
+                  isDarkTheme={isDarkTheme}
+                  days={Math.floor(
+                    (new Date(epochSummaries[0].end_date).getTime() - new Date().getTime()) /
+                      (1000 * 60 * 60 * 24)
+                  )}
+                  hours={Math.floor(
+                    ((new Date(epochSummaries[0].end_date).getTime() - new Date().getTime()) %
+                      (1000 * 60 * 60 * 24)) /
+                      (1000 * 60 * 60)
+                  )}
+                  minutes={Math.floor(
+                    ((new Date(epochSummaries[0].end_date).getTime() - new Date().getTime()) %
+                      (1000 * 60 * 60)) /
+                      (1000 * 60)
+                  )}
+                />
+              )}
+            </>
+          )}
+        </StatusRow>
 
         <Box
           sx={{
