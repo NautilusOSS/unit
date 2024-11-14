@@ -1002,7 +1002,7 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
 
         <RollDiceSection $isDarkTheme={isDarkTheme}>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            Roll Them Dice
+            Feeling Lucky?
           </Typography>
           <Button
             variant="contained"
