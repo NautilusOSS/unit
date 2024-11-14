@@ -29,7 +29,7 @@ import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 import BlockProductionGraph from "./components/BlockProductionGraph";
 import InfoIcon from "@mui/icons-material/Info";
 import RewardDistributionModal from "./components/RewardDistributionModal";
-import LEDCountdown from './components/LEDCountdown';
+import LEDCountdown from "./components/LEDCountdown";
 
 const findCommonRatio = (a: number, totalSum: number, n: number) => {
   // Using numerical method (binary search) to find r
@@ -687,7 +687,10 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
       if (epochSummaries.length > 0) {
         const endDate = new Date(epochSummaries[0].end_date);
         const now = new Date();
-        const diff = Math.max(0, Math.floor((endDate.getTime() - now.getTime()) / 1000));
+        const diff = Math.max(
+          0,
+          Math.floor((endDate.getTime() - now.getTime()) / 1000)
+        );
         setTimeUntilNextEpoch(formatTimeRemaining(diff));
       }
     };
@@ -947,7 +950,10 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
           </StatusRow>
         </Box>
 
-        <StatusRow $isDarkTheme={isDarkTheme} style={{ flex: 1, marginBottom: "24px" }}>
+        <StatusRow
+          $isDarkTheme={isDarkTheme}
+          style={{ flex: 1, marginBottom: "24px" }}
+        >
           <Label $isDarkTheme={isDarkTheme}>Time Until Next Epoch</Label>
           {isLoading ? (
             <CircularProgress size={24} />
@@ -957,16 +963,19 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
                 <LEDCountdown
                   isDarkTheme={isDarkTheme}
                   days={Math.floor(
-                    (new Date(epochSummaries[0].end_date).getTime() - new Date().getTime()) /
+                    (new Date(epochSummaries[0].end_date).getTime() -
+                      new Date().getTime()) /
                       (1000 * 60 * 60 * 24)
                   )}
                   hours={Math.floor(
-                    ((new Date(epochSummaries[0].end_date).getTime() - new Date().getTime()) %
+                    ((new Date(epochSummaries[0].end_date).getTime() -
+                      new Date().getTime()) %
                       (1000 * 60 * 60 * 24)) /
                       (1000 * 60 * 60)
                   )}
                   minutes={Math.floor(
-                    ((new Date(epochSummaries[0].end_date).getTime() - new Date().getTime()) %
+                    ((new Date(epochSummaries[0].end_date).getTime() -
+                      new Date().getTime()) %
                       (1000 * 60 * 60)) /
                       (1000 * 60)
                   )}
@@ -1036,7 +1045,7 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
                           nonBallastBlocks;
 
                         const totalReward = rewardPerBlock * blocksProduced;
-                        const estimatedReward = totalReward; // * 0.45; // 45% of rewards
+                        const estimatedReward = totalReward * 0.45; // 45% of rewards
 
                         return isNaN(estimatedReward)
                           ? "0"
