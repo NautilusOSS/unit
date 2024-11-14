@@ -810,15 +810,20 @@ const CommunityChest: React.FC<CommunityChestProps> = ({
             <>
               <BlockProductionGraph
                 isDarkTheme={isDarkTheme}
-                data={epochSummaries.slice(0, 6).map((epoch, index) => ({
-                  count: Array.isArray(epoch.proposers)
+                data={epochSummaries.slice(0, 6).map((epoch, index) => {
+                  // For empty array or empty object, return 0
+                  const blockCount = Array.isArray(epoch.proposers)
                     ? 0
                     : Object.values(epoch.proposers).reduce(
                         (sum, blocks) => sum + blocks,
                         0
-                      ),
-                  label: `Week ${index}`,
-                }))}
+                      );
+
+                  return {
+                    count: blockCount,
+                    label: `Week ${epochSummaries.length - index - 1}`, // Count down from current week
+                  };
+                })}
               />
               <Link
                 href="https://voirewards.com/wallet/KS55CA7K5HQG6P7M5IDH5VXDXBJILSYEVMPP24H3QGJSLPQXPX3LKPW7WM#proposals"

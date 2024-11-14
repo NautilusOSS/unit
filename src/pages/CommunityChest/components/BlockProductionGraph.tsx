@@ -1,6 +1,6 @@
-import React from 'react';
-import styled from 'styled-components';
-import { Box, Typography } from '@mui/material';
+import React from "react";
+import styled from "styled-components";
+import { Box, Typography } from "@mui/material";
 
 interface BlockData {
   count: number;
@@ -14,14 +14,15 @@ const GraphContainer = styled(Box)<{ $isDarkTheme: boolean }>`
   align-items: flex-end;
   gap: 8px;
   padding: 16px;
-  background: ${props => props.$isDarkTheme ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
+  background: ${(props) =>
+    props.$isDarkTheme ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.1)"};
   border-radius: 8px;
 `;
 
 const Bar = styled.div<{ $height: number; $isDarkTheme: boolean }>`
   flex: 1;
-  height: ${props => props.$height}%;
-  background: ${props => props.$isDarkTheme ? '#90caf9' : '#1976d2'};
+  height: ${(props) => props.$height}%;
+  background: ${(props) => (props.$isDarkTheme ? "#90caf9" : "#1976d2")};
   border-radius: 4px;
   transition: height 0.3s ease;
   position: relative;
@@ -33,13 +34,13 @@ const Bar = styled.div<{ $height: number; $isDarkTheme: boolean }>`
   }
 
   &:hover::after {
-    content: '${props => props.title}';
+    content: "${(props) => props.title}";
     position: absolute;
     top: -30px;
     left: 50%;
     transform: translateX(-50%);
-    background: ${props => props.$isDarkTheme ? '#333' : '#fff'};
-    color: ${props => props.$isDarkTheme ? '#fff' : '#000'};
+    background: ${(props) => (props.$isDarkTheme ? "#333" : "#fff")};
+    color: ${(props) => (props.$isDarkTheme ? "#fff" : "#000")};
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 12px;
@@ -49,7 +50,8 @@ const Bar = styled.div<{ $height: number; $isDarkTheme: boolean }>`
 `;
 
 const Label = styled(Typography)<{ $isDarkTheme: boolean }>`
-  color: ${props => props.$isDarkTheme ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)'};
+  color: ${(props) =>
+    props.$isDarkTheme ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)"};
   font-size: 12px;
   text-align: center;
   margin-top: 8px;
@@ -60,30 +62,45 @@ interface BlockProductionGraphProps {
   isDarkTheme: boolean;
 }
 
-const BlockProductionGraph: React.FC<BlockProductionGraphProps> = ({ data = [], isDarkTheme }) => {
+const BlockProductionGraph: React.FC<BlockProductionGraphProps> = ({
+  data = [],
+  isDarkTheme,
+}) => {
   if (!data || data.length === 0) {
     return (
       <GraphContainer $isDarkTheme={isDarkTheme}>
-        <Typography sx={{ color: isDarkTheme ? '#fff' : '#000', m: 'auto' }}>
+        <Typography sx={{ color: isDarkTheme ? "#fff" : "#000", m: "auto" }}>
           No data available
         </Typography>
       </GraphContainer>
     );
   }
 
-  const maxCount = Math.max(...data.map(d => d?.count || 0));
+  console.log("data", data);
+
+  const maxCount = Math.max(...data.map((d) => d?.count || 0));
 
   return (
     <Box>
       <GraphContainer $isDarkTheme={isDarkTheme}>
         {data.map((item, index) => (
-          <Box key={index} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+          <Box
+            key={index}
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              flex: 1,
+            }}
+          >
             <Bar
               $height={maxCount > 0 ? ((item?.count || 0) / maxCount) * 80 : 0}
               $isDarkTheme={isDarkTheme}
               title={`${item?.count?.toLocaleString() || 0} blocks`}
             />
-            <Label $isDarkTheme={isDarkTheme}>{item?.label || `Week ${index}`}</Label>
+            <Label $isDarkTheme={isDarkTheme}>
+              {item?.label || `Week ${index}`}
+            </Label>
           </Box>
         ))}
       </GraphContainer>
@@ -91,4 +108,4 @@ const BlockProductionGraph: React.FC<BlockProductionGraphProps> = ({ data = [], 
   );
 };
 
-export default BlockProductionGraph; 
+export default BlockProductionGraph;
