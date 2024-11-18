@@ -1,45 +1,27 @@
-import * as Page from "./pages";
-export const routes = [
+import SearchName from "./pages/SearchName";
+import RegisterName from "./pages/RegisterName";
+import MyNames from "./pages/MyNames";
+
+interface Route {
+  path: string;
+  Component: React.ComponentType;
+}
+
+export const routes: Route[] = [
   {
     path: "/",
-    Component: Page.Home,
+    Component: SearchName,
   },
   {
-    path: "/collection",
-    Component: Page.Collections,
+    path: "/search",
+    Component: SearchName,
   },
   {
-    path: "/collection/:id",
-    Component: Page.Collection,
+    path: "/register",
+    Component: RegisterName,
   },
   {
-    path: "/collection/:id/token/:tid",
-    Component: Page.Token,
-  },
-  {
-    path: "/account/:id",
-    Component: Page.Account,
-  },
-  /*
-  {
-    path: "/activity",
-    Component: Page.Activity,
-  },
-  */
-  {
-    path: "/create-arc200",
-    Component: Page.CreateARC200,
-  },
-  {
-    path: "/staking",
-    Component: Page.Staking,
-  },
-  {
-    path: "/listing",
-    Component: Page.Listings,
-  },
-  {
-    path: "/sandbox",
-    Component: Page.Sandbox,
+    path: "/my-names",
+    Component: MyNames,
   },
 ];
