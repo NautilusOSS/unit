@@ -1,27 +1,24 @@
-import SearchName from "./pages/SearchName";
-import RegisterName from "./pages/RegisterName";
-import MyNames from "./pages/MyNames";
+import { ComponentType } from "react";
+import UnitHome from "./pages/UnitHome";
+import Wallet from "./pages/Wallet";
+import UnitConverter from "./pages/UnitConverter";
 
 interface Route {
   path: string;
-  Component: React.ComponentType;
+  Component: ComponentType;
 }
 
 export const routes: Route[] = [
   {
     path: "/",
-    Component: SearchName,
+    Component: UnitHome
   },
   {
-    path: "/search",
-    Component: SearchName,
+    path: "/wallet",
+    Component: Wallet
   },
   {
-    path: "/register",
-    Component: RegisterName,
-  },
-  {
-    path: "/my-names",
-    Component: MyNames,
-  },
+    path: "/converter",
+    Component: UnitConverter
+  }
 ];

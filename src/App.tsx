@@ -1,7 +1,7 @@
 import React from "react";
 import { HashRouter as Router, Route, Routes } from "react-router-dom";
-import { Provider, useSelector } from "react-redux";
-import { store, persistor, RootState } from "./store/store";
+import { Provider } from "react-redux";
+import { store, persistor } from "./store/store";
 import { PersistGate } from "redux-persist/integration/react";
 import { routes } from "./routes";
 import { getCurrentNodeEnv } from "./wallets";
@@ -17,18 +17,23 @@ import {
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { theme } from "./theme";
-import EnvoiLayout from "./layouts/EnvoiLayout";
+import UnitLayout from "./layouts/UnitLayout";
+import { ThemeProvider as CustomThemeProvider } from './contexts/ThemeContext';
 
 // New component that uses the wallet hook
 const AppRoutes: React.FC = () => {
   return (
-    <EnvoiLayout>
+    <UnitLayout>
       <Routes>
         {routes.map((el, key) => (
-          <Route key={key} path={el.path} Component={el.Component} />
+          <Route
+            key={key}
+            path={el.path}
+            element={<el.Component />}
+          />
         ))}
       </Routes>
-    </EnvoiLayout>
+    </UnitLayout>
   );
 };
 
@@ -44,17 +49,17 @@ const App: React.FC = () => {
       WalletId.KIBISIS,
       {
         id: WalletId.LUTE,
-        options: { siteName: "Envoi" },
+        options: { siteName: "Unit Token" },
       },
       {
         id: WalletId.BIATEC,
         options: {
           projectId: walletConnectProjectId,
           metadata: {
-            name: "Envoi",
-            url: "https://envoi.voi",
-            description: "Envoi Name Service",
-            icons: ["https://envoi.voi/favicon.ico"],
+            name: "Unit Token",
+            url: "https://unit.voi",
+            description: "Unit Token Name Service",
+            icons: ["https://unit.voi/favicon.ico"],
           },
           themeMode: "light",
         },
@@ -64,10 +69,10 @@ const App: React.FC = () => {
         options: {
           projectId: walletConnectProjectId,
           metadata: {
-            name: "Envoi",
-            url: "https://envoi.voi",
-            description: "Envoi Name Service",
-            icons: ["https://envoi.voi/favicon.ico"],
+            name: "Unit Token",
+            url: "https://unit.voi",
+            description: "Unit Token Name Service",
+            icons: ["https://unit.voi/favicon.ico"],
           },
           themeMode: "light",
         },
@@ -84,18 +89,20 @@ const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <WalletProvider manager={walletManager}>
-        <QueryClientProvider client={queryClient}>
-          <Provider store={store}>
-            <PersistGate loading={null} persistor={persistor}>
-              <Router>
-                <AppRoutes />
-              </Router>
-            </PersistGate>
-          </Provider>
-          <ToastContainer />
-        </QueryClientProvider>
-      </WalletProvider>
+      <CustomThemeProvider>
+        <WalletProvider manager={walletManager}>
+          <QueryClientProvider client={queryClient}>
+            <Provider store={store}>
+              <PersistGate loading={null} persistor={persistor}>
+                <Router>
+                  <AppRoutes />
+                </Router>
+              </PersistGate>
+            </Provider>
+            <ToastContainer />
+          </QueryClientProvider>
+        </WalletProvider>
+      </CustomThemeProvider>
     </ThemeProvider>
   );
 };
