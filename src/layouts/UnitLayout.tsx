@@ -132,7 +132,6 @@ const UnitLayout: React.FC<UnitLayoutProps> = ({ children }) => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
           width: '100%',
           minHeight: '100vh',
           backgroundColor: isDarkMode ? 'rgb(18, 18, 18)' : 'white',
