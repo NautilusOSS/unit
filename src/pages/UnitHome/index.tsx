@@ -45,7 +45,22 @@ const UnitHome: React.FC = () => {
   return (
     <Container maxWidth="lg">
       <Box sx={{ mt: 8, mb: 8 }}>
-        <Typography variant="h2" component="h1" align="center" gutterBottom>
+        <Typography 
+          variant="h2" 
+          component="h1" 
+          align="center" 
+          gutterBottom
+          sx={{ 
+            fontSize: { xs: '2.5rem', md: '3.5rem' },
+            fontWeight: 700,
+            background: isDarkMode 
+              ? 'linear-gradient(45deg, #64B5F6 30%, #2196F3 90%)'
+              : 'linear-gradient(45deg, #1976D2 30%, #2196F3 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            mb: 2
+          }}
+        >
           Welcome to Unit
         </Typography>
         <Typography 
@@ -64,7 +79,22 @@ const UnitHome: React.FC = () => {
           variant="h4" 
           align="center" 
           gutterBottom
-          sx={{ mb: 4 }}
+          sx={{ 
+            mb: 4,
+            fontWeight: 600,
+            position: 'relative',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -8,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 60,
+              height: 3,
+              backgroundColor: isDarkMode ? '#2196F3' : '#1976D2',
+              borderRadius: 1
+            }
+          }}
         >
           Tools
         </Typography>
@@ -82,10 +112,13 @@ const UnitHome: React.FC = () => {
                   alignItems: 'center',
                   textAlign: 'center',
                   backgroundColor: isDarkMode ? 'rgb(28, 28, 28)' : 'white',
+                  transition: 'all 0.3s ease-in-out',
                   '&:hover': {
-                    backgroundColor: isDarkMode ? 'rgb(38, 38, 38)' : '#f5f5f5',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.3s'
+                    transform: 'translateY(-4px)',
+                    boxShadow: isDarkMode 
+                      ? '0 8px 24px rgba(0,0,0,0.4)' 
+                      : '0 8px 24px rgba(0,0,0,0.1)',
+                    backgroundColor: isDarkMode ? 'rgb(38, 38, 38)' : '#f8f8f8',
                   }
                 }}
               >
@@ -116,7 +149,22 @@ const UnitHome: React.FC = () => {
           variant="h4" 
           align="center" 
           gutterBottom
-          sx={{ mb: 4, mt: 8 }}
+          sx={{ 
+            mb: 4,
+            fontWeight: 600,
+            position: 'relative',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -8,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 60,
+              height: 3,
+              backgroundColor: isDarkMode ? '#2196F3' : '#1976D2',
+              borderRadius: 1
+            }
+          }}
         >
           Tokens
         </Typography>
@@ -133,6 +181,14 @@ const UnitHome: React.FC = () => {
                   alignItems: 'center',
                   textAlign: 'center',
                   backgroundColor: isDarkMode ? 'rgb(28, 28, 28)' : 'white',
+                  transition: 'all 0.3s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: isDarkMode 
+                      ? '0 8px 24px rgba(0,0,0,0.4)' 
+                      : '0 8px 24px rgba(0,0,0,0.1)',
+                    backgroundColor: isDarkMode ? 'rgb(38, 38, 38)' : '#f8f8f8',
+                  }
                 }}
               >
                 <Box 
@@ -140,10 +196,17 @@ const UnitHome: React.FC = () => {
                   src={token.icon}
                   alt={token.title}
                   sx={{
-                    width: 64,
-                    height: 64,
+                    width: 80,
+                    height: 80,
                     mb: 2,
-                    borderRadius: '50%'
+                    borderRadius: '50%',
+                    padding: 1,
+                    background: isDarkMode 
+                      ? 'linear-gradient(45deg, rgba(33,150,243,0.1), rgba(33,150,243,0.2))'
+                      : 'linear-gradient(45deg, rgba(25,118,210,0.1), rgba(25,118,210,0.2))',
+                    boxShadow: isDarkMode 
+                      ? '0 0 20px rgba(33,150,243,0.2)'
+                      : '0 0 20px rgba(25,118,210,0.2)',
                   }}
                 />
                 <Typography 
@@ -185,11 +248,14 @@ const UnitHome: React.FC = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       sx={{
-                        borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.23)' : undefined,
-                        color: isDarkMode ? 'white' : undefined,
+                        borderColor: isDarkMode ? 'rgba(33,150,243,0.5)' : undefined,
+                        color: isDarkMode ? '#2196F3' : undefined,
+                        borderRadius: 2,
                         '&:hover': {
-                          borderColor: isDarkMode ? 'white' : undefined,
-                          backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : undefined,
+                          borderColor: isDarkMode ? '#2196F3' : undefined,
+                          backgroundColor: isDarkMode ? 'rgba(33,150,243,0.1)' : undefined,
+                          transform: 'translateY(-2px)',
+                          transition: 'all 0.2s ease-in-out'
                         }
                       }}
                     >
@@ -254,7 +320,23 @@ const UnitHome: React.FC = () => {
           variant="h4" 
           align="center" 
           gutterBottom
-          sx={{ mb: 4, mt: 8 }}
+          sx={{ 
+            mb: 4,
+            mt: 12,
+            fontWeight: 600,
+            position: 'relative',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -8,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 60,
+              height: 3,
+              backgroundColor: isDarkMode ? '#2196F3' : '#1976D2',
+              borderRadius: 1
+            }
+          }}
         >
           Projects
         </Typography>
@@ -272,30 +354,39 @@ const UnitHome: React.FC = () => {
                   alignItems: 'center',
                   textAlign: 'center',
                   backgroundColor: isDarkMode ? 'rgb(28, 28, 28)' : 'white',
-                  borderRadius: 2,
-                  backgroundImage: project.backgroundImage ? `url(${project.backgroundImage})` : 'none',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
+                  borderRadius: 3,
+                  overflow: 'hidden',
                   position: 'relative',
+                  transition: 'all 0.3s ease-in-out',
                   '&:hover': {
-                    backgroundColor: isDarkMode ? 'rgb(38, 38, 38)' : '#f5f5f5',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.3s',
+                    transform: 'scale(1.02)',
                     '&::after': {
                       opacity: 0.7,
                     }
                   },
-                  '&::after': project.backgroundImage ? {
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '200px',
+                    backgroundImage: `url(${project.backgroundImage})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  },
+                  '&::after': {
                     content: '""',
                     position: 'absolute',
                     top: 0,
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    backgroundColor: isDarkMode ? 'rgba(28, 28, 28, 0.85)' : 'rgba(255, 255, 255, 0.85)',
-                    borderRadius: 2,
+                    background: isDarkMode 
+                      ? 'linear-gradient(180deg, rgba(28,28,28,0.9) 0%, rgba(28,28,28,0.95) 100%)'
+                      : 'linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.95) 100%)',
                     transition: 'opacity 0.3s',
-                  } : {},
+                  }
                 }}
               >
                 <Box sx={{ position: 'relative', zIndex: 1, width: '100%' }}>
