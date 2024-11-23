@@ -1,8 +1,5 @@
 import React from "react";
 import { HashRouter as Router, Route, Routes } from "react-router-dom";
-import { Provider } from "react-redux";
-import { store, persistor } from "./store/store";
-import { PersistGate } from "redux-persist/integration/react";
 import { routes } from "./routes";
 import { getCurrentNodeEnv } from "./wallets";
 import { ToastContainer } from "react-toastify";
@@ -20,7 +17,6 @@ import { theme } from "./theme";
 import UnitLayout from "./layouts/UnitLayout";
 import { ThemeProvider as CustomThemeProvider } from './contexts/ThemeContext';
 
-// New component that uses the wallet hook
 const AppRoutes: React.FC = () => {
   return (
     <UnitLayout>
@@ -92,13 +88,9 @@ const App: React.FC = () => {
       <CustomThemeProvider>
         <WalletProvider manager={walletManager}>
           <QueryClientProvider client={queryClient}>
-            <Provider store={store}>
-              <PersistGate loading={null} persistor={persistor}>
-                <Router>
-                  <AppRoutes />
-                </Router>
-              </PersistGate>
-            </Provider>
+            <Router>
+              <AppRoutes />
+            </Router>
             <ToastContainer />
           </QueryClientProvider>
         </WalletProvider>
