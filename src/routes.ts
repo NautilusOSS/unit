@@ -1,5 +1,4 @@
 import { ComponentType } from "react";
-import UnitHome from "./pages/UnitHome";
 import Wallet from "./pages/Wallet";
 import UnitConverter from "./pages/UnitConverter";
 
@@ -11,14 +10,10 @@ interface Route {
 export const routes: Route[] = [
   {
     path: "/",
-    Component: UnitHome
+    Component: UnitConverter
   },
   {
     path: "/wallet",
     Component: Wallet
-  },
-  {
-    path: "/converter",
-    Component: UnitConverter
   }
 ];
